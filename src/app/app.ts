@@ -124,14 +124,15 @@ export class App implements AfterViewInit {
     // Always open in new tab
     window.open(url, '_blank');
 
-    // For Claude and Gemini, also copy URL to clipboard since they don't auto-fill
+    // For Claude and Gemini, also copy the actual prompt text to clipboard
     if (chatbotName !== 'ChatGPT') {
-      navigator.clipboard.writeText(url).then(() => {
-        this.showCopyMessage(chatbotName);
+      const promptText = this.extractPromptFromUrl(url);
+      navigator.clipboard.writeText(promptText).then(() => {
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
       }).catch(() => {
         // Fallback for older browsers
-        this.fallbackCopyTextToClipboard(url);
-        this.showCopyMessage(chatbotName);
+        this.fallbackCopyTextToClipboard(promptText);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
       });
     }
   }
@@ -160,6 +161,38 @@ export class App implements AfterViewInit {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
+  }
+
+  copyDirectUrl(url: string, chatbotName: string) {
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage(`${chatbotName} URL copied!`);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage(`${chatbotName} URL copied!`);
+    });
+  }
+
+  getShortenedUrl(url: string): string {
+    // Extract domain and show first 50 chars of the prompt
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+    const searchParams = urlObj.searchParams;
+
+    // Get the prompt parameter
+    const prompt = searchParams.get('q') || searchParams.get('prompt') || '';
+    const shortenedPrompt = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+
+    return `${domain}?${shortenedPrompt}`;
+  }
+
+  extractPromptFromUrl(url: string): string {
+    // Extract and decode the prompt from the URL
+    const urlObj = new URL(url);
+    const searchParams = urlObj.searchParams;
+
+    // Get the prompt parameter and decode it
+    const encodedPrompt = searchParams.get('q') || searchParams.get('prompt') || '';
+    return decodeURIComponent(encodedPrompt);
   }
 
   resetForm() {

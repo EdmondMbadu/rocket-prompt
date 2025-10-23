@@ -171,8 +171,23 @@
                 class="w-full {{chatbot.color}} text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 Open {{chatbot.name}}
               </button>
-              <p *ngIf="chatbot.name !== 'ChatGPT'" class="text-gray-400 text-xs mt-2">URL copied to clipboard - Paste
-                with Cmd+V (Mac) or Ctrl+V (Windows)</p>
+              <p *ngIf="chatbot.name !== 'ChatGPT'" class="text-gray-400 text-xs mt-2">Prompt copied to clipboard -
+                Paste with Cmd+V (Mac) or Ctrl+V (Windows)</p>
+
+              <!-- Direct URL for embedding -->
+              <div class="mt-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                <p class="text-gray-400 text-xs mb-2 font-medium">Direct URL:</p>
+                <div class="space-y-2">
+                  <input [value]="getShortenedUrl(chatbot.url)" readonly
+                    class="w-full bg-white/10 text-gray-300 text-xs p-2 rounded border border-white/20 font-mono"
+                    (click)="$event.target.select()" />
+                  <button (click)="copyDirectUrl(chatbot.url, chatbot.name)"
+                    class="w-full text-gray-400 hover:text-white text-xs px-3 py-2 rounded border border-white/20 hover:border-white/40 transition-colors">
+                    Copy URL
+                  </button>
+                </div>
+                <p class="text-gray-500 text-xs mt-2">Click URL to select, or copy for embedding</p>
+              </div>
             </div>
           </div>
         </div>
