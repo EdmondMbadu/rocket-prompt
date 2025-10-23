@@ -85,44 +85,102 @@
 
     <div class="max-w-3xl mx-auto">
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-8 border border-white/20">
-        <!-- Name Your Prompt -->
-        <div class="mb-6 md:mb-8">
-          <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Name Your Prompt</label>
-          <input type="text" placeholder="e.g., Productivity Coach for Impossible Goals"
-            class="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm md:text-base">
-          <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">Give your prompt a descriptive name for easy
-            identification</p>
-        </div>
-
-        <!-- Enter your prompt -->
-        <div class="mb-6 md:mb-8">
-          <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Enter your prompt</label>
-          <textarea rows="6" md:rows="8"
-            placeholder="You are a wise and experienced professional productivity coach tasked with creating a comprehensive time management strategy guide for individuals seeking rapidly achieve their impossible stretch goals. Based on the ROCKET Goals framework, provide detailed, structured responses that include actionable steps and real-world examples tailored to intermediate learners..."
-            class="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 resize-none text-sm md:text-base"></textarea>
-          <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">0 characters</p>
-        </div>
-
-        <!-- Custom short name -->
-        <div class="mb-6 md:mb-8">
-          <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Custom short name
-            (optional)</label>
-          <div class="flex items-center">
-            <span
-              class="bg-white/20 border border-white/30 border-r-0 rounded-l-lg px-2 py-2 md:px-4 md:py-3 text-gray-300 text-xs md:text-sm">rocketprompt.io/</span>
-            <input type="text" placeholder="impossible-goals"
-              class="flex-1 bg-white/20 border border-white/30 rounded-r-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm md:text-base">
+        <form [formGroup]="promptForm" (ngSubmit)="onSubmit()">
+          <!-- Name Your Prompt -->
+          <div class="mb-6 md:mb-8">
+            <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Name Your Prompt</label>
+            <input type="text" formControlName="name" placeholder="e.g., Productivity Coach for Impossible Goals"
+              class="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm md:text-base">
+            <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">Give your prompt a descriptive name for easy
+              identification</p>
+            <div *ngIf="promptForm.get('name')?.invalid && promptForm.get('name')?.touched"
+              class="text-red-400 text-xs mt-1">
+              <span *ngIf="promptForm.get('name')?.errors?.['required']">Name is required</span>
+              <span *ngIf="promptForm.get('name')?.errors?.['minlength']">Name must be at least 3 characters</span>
+            </div>
           </div>
-          <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">Leave blank for auto-generated URL</p>
-        </div>
 
-        <!-- Submit Button -->
-        <div class="text-center">
-          <button
-            class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 md:px-12 md:py-4 rounded-lg text-lg md:text-xl font-semibold transition-all transform hover:scale-105 w-full sm:w-auto">
-            🚀 Shorten Me 🚀
-          </button>
+          <!-- Enter your prompt -->
+          <div class="mb-6 md:mb-8">
+            <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Enter your prompt</label>
+            <textarea rows="6" md:rows="8" formControlName="content"
+              placeholder="You are a wise and experienced professional productivity coach tasked with creating a comprehensive time management strategy guide for individuals seeking rapidly achieve their impossible stretch goals. Based on the ROCKET Goals framework, provide detailed, structured responses that include actionable steps and real-world examples tailored to intermediate learners..."
+              class="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 resize-none text-sm md:text-base"></textarea>
+            <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">{{characterCount}} characters</p>
+            <div *ngIf="promptForm.get('content')?.invalid && promptForm.get('content')?.touched"
+              class="text-red-400 text-xs mt-1">
+              <span *ngIf="promptForm.get('content')?.errors?.['required']">Prompt content is required</span>
+              <span *ngIf="promptForm.get('content')?.errors?.['minlength']">Prompt must be at least 10
+                characters</span>
+            </div>
+          </div>
+
+          <!-- Custom short name -->
+          <div class="mb-6 md:mb-8">
+            <label class="block text-white text-base md:text-lg font-semibold mb-2 md:mb-3">Custom short name
+              (optional)</label>
+            <div class="flex items-center">
+              <span
+                class="bg-white/20 border border-white/30 border-r-0 rounded-l-lg px-2 py-2 md:px-4 md:py-3 text-gray-300 text-xs md:text-sm">rocketprompt.io/</span>
+              <input type="text" formControlName="customUrl" placeholder="impossible-goals"
+                class="flex-1 bg-white/20 border border-white/30 rounded-r-lg px-3 py-2 md:px-4 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm md:text-base">
+            </div>
+            <p class="text-gray-400 text-xs md:text-sm mt-1 md:mt-2">Leave blank for auto-generated URL</p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="text-center">
+            <button type="submit" [disabled]="promptForm.invalid"
+              class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white px-8 py-3 md:px-12 md:py-4 rounded-lg text-lg md:text-xl font-semibold transition-all transform hover:scale-105 w-full sm:w-auto">
+              🚀 Shorten Me 🚀
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div *ngIf="showResults" id="results" class="container mx-auto px-4 md:px-6 py-8 md:py-12">
+    <h2 class="text-2xl md:text-3xl font-bold text-white text-center mb-8 md:mb-12">Your Prompt is Ready! 🎉</h2>
+
+    <div class="max-w-4xl mx-auto">
+      <!-- Short URL Display -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-white/20 mb-8">
+        <h3 class="text-xl font-semibold text-white mb-4">Your Short URL</h3>
+        <div class="bg-white/20 rounded-lg p-4 border border-white/30">
+          <p class="text-purple-300 font-mono text-lg">{{generateShortUrl(promptForm.get('customUrl')?.value ||
+            promptForm.get('name')?.value)}}</p>
         </div>
+        <p class="text-gray-400 text-sm mt-2">Share this URL to let others access your prompt</p>
+      </div>
+
+      <!-- Chatbot Links -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-white/20">
+        <h3 class="text-xl font-semibold text-white mb-6 text-center">Launch Your Prompt</h3>
+        <p class="text-gray-300 text-center mb-8">Click on any chatbot below to open it with your prompt pre-filled</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div *ngFor="let chatbot of generatedLinks"
+            class="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-white/40 transition-all transform hover:scale-105">
+            <div class="text-center">
+              <div class="text-4xl mb-4">{{chatbot.icon}}</div>
+              <h4 class="text-lg font-semibold text-white mb-4">{{chatbot.name}}</h4>
+              <button (click)="openChatbot(chatbot.url)"
+                class="w-full {{chatbot.color}} text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                Open {{chatbot.name}}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Button -->
+      <div class="text-center mt-8">
+        <button (click)="resetForm()"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+          Create Another Prompt
+        </button>
       </div>
     </div>
   </div>

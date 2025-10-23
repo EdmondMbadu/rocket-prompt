@@ -1,17 +1,133 @@
 import { Component, signal, AfterViewInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
+interface PromptData {
+  name: string;
+  content: string;
+  customUrl?: string;
+}
+
+interface ChatbotLink {
+  name: string;
+  url: string;
+  icon: string;
+  color: string;
+}
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ReactiveFormsModule, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App implements AfterViewInit {
   protected readonly title = signal('rocket-prompt');
 
+  promptForm: FormGroup;
+  generatedLinks: ChatbotLink[] = [];
+  showResults = false;
+  characterCount = 0;
+
+  constructor(private fb: FormBuilder) {
+    this.promptForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      content: ['', [Validators.required, Validators.minLength(10)]],
+      customUrl: ['']
+    });
+
+    // Watch for content changes to update character count
+    this.promptForm.get('content')?.valueChanges.subscribe(value => {
+      this.characterCount = value?.length || 0;
+    });
+  }
+
   ngAfterViewInit() {
     this.setupSmoothScrolling();
+  }
+
+  onSubmit() {
+    if (this.promptForm.valid) {
+      const promptData: PromptData = this.promptForm.value;
+      this.generateShortenedLinks(promptData);
+    }
+  }
+
+  private generateShortenedLinks(promptData: PromptData) {
+    // Generate a short URL (for now, we'll use a simple hash)
+    const shortUrl = this.generateShortUrl(promptData.customUrl || promptData.name);
+
+    // Create chatbot links with the prompt pre-filled
+    this.generatedLinks = [
+      {
+        name: 'ChatGPT',
+        url: this.createChatGPTUrl(promptData.content),
+        icon: '🤖',
+        color: 'bg-green-600 hover:bg-green-700'
+      },
+      {
+        name: 'Gemini',
+        url: this.createGeminiUrl(promptData.content),
+        icon: '💎',
+        color: 'bg-blue-600 hover:bg-blue-700'
+      },
+      {
+        name: 'Claude',
+        url: this.createClaudeUrl(promptData.content),
+        icon: '🧠',
+        color: 'bg-orange-600 hover:bg-orange-700'
+      }
+    ];
+
+    this.showResults = true;
+
+    // Scroll to results
+    setTimeout(() => {
+      const resultsElement = document.getElementById('results');
+      if (resultsElement) {
+        resultsElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  }
+
+  generateShortUrl(customUrl?: string): string {
+    if (customUrl) {
+      return `rocketprompt.io/${customUrl}`;
+    }
+
+    // Generate a random short URL
+    const randomId = Math.random().toString(36).substring(2, 8);
+    return `rocketprompt.io/${randomId}`;
+  }
+
+  private createChatGPTUrl(prompt: string): string {
+    // ChatGPT doesn't have a direct URL parameter for prompts, but we can use the web interface
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://chat.openai.com/?q=${encodedPrompt}`;
+  }
+
+  private createGeminiUrl(prompt: string): string {
+    // Gemini URL with prompt parameter
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+  }
+
+  private createClaudeUrl(prompt: string): string {
+    // Claude URL with prompt parameter
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  openChatbot(url: string) {
+    window.open(url, '_blank');
+  }
+
+  resetForm() {
+    this.promptForm.reset();
+    this.showResults = false;
+    this.generatedLinks = [];
+    this.characterCount = 0;
   }
 
   private setupSmoothScrolling() {
