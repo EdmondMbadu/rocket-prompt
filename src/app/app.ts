@@ -104,7 +104,8 @@ export class App implements AfterViewInit {
   private createChatGPTUrl(prompt: string): string {
     // ChatGPT doesn't have a direct URL parameter for prompts, but we can use the web interface
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://chat.openai.com/?q=${encodedPrompt}`;
+    const timestamp = Date.now(); // Add timestamp to prevent caching
+    return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
   private createGeminiUrl(prompt: string): string {
