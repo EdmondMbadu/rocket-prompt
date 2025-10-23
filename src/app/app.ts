@@ -119,8 +119,46 @@ export class App implements AfterViewInit {
     return `https://claude.ai/?prompt=${encodedPrompt}`;
   }
 
-  openChatbot(url: string) {
+  openChatbot(url: string, chatbotName: string) {
+    // Always open in new tab
     window.open(url, '_blank');
+
+    // For Claude and Gemini, also copy URL to clipboard since they don't auto-fill
+    if (chatbotName !== 'ChatGPT') {
+      navigator.clipboard.writeText(url).then(() => {
+        this.showCopyMessage(chatbotName);
+      }).catch(() => {
+        // Fallback for older browsers
+        this.fallbackCopyTextToClipboard(url);
+        this.showCopyMessage(chatbotName);
+      });
+    }
+  }
+
+  private showCopyMessage(chatbotName: string) {
+    // Create a temporary success message
+    const message = document.createElement('div');
+    message.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all';
+    message.textContent = `${chatbotName} URL copied! Paste with Cmd+V`;
+
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
   }
 
   resetForm() {

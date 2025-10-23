@@ -158,7 +158,8 @@
       <!-- Chatbot Links -->
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-white/20">
         <h3 class="text-xl font-semibold text-white mb-6 text-center">Launch Your Prompt</h3>
-        <p class="text-gray-300 text-center mb-8">Click on any chatbot below to open it with your prompt pre-filled</p>
+        <p class="text-gray-300 text-center mb-8">All chatbots open in new tabs. Claude & Gemini URLs are also copied
+          for manual pasting</p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div *ngFor="let chatbot of generatedLinks"
@@ -166,10 +167,11 @@
             <div class="text-center">
               <div class="text-4xl mb-4">{{chatbot.icon}}</div>
               <h4 class="text-lg font-semibold text-white mb-4">{{chatbot.name}}</h4>
-              <button (click)="openChatbot(chatbot.url)"
+              <button (click)="openChatbot(chatbot.url, chatbot.name)"
                 class="w-full {{chatbot.color}} text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 Open {{chatbot.name}}
               </button>
+              <p *ngIf="chatbot.name !== 'ChatGPT'" class="text-gray-400 text-xs mt-2">URL copied to clipboard</p>
             </div>
           </div>
         </div>
