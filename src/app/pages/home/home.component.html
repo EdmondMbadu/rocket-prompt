@@ -1,71 +1,174 @@
+<!-- PAGE WRAPPER -->
 <ng-container *ngIf="profile$ | async as profile; else loading">
-  <section class="space-y-8">
-    <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-purple-600/40 via-slate-900 to-slate-950 p-8 shadow-2xl shadow-purple-900/50 backdrop-blur-xl">
-      <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p class="text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/80">Welcome aboard</p>
-          <h1 class="mt-3 text-4xl font-bold leading-tight">
-            {{ profile.firstName }} {{ profile.lastName }}
-          </h1>
-          <p class="mt-2 text-sm text-white/70">Your Firebase user ID is synced with the RocketPrompt user profile. You’re ready to launch.</p>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-white/70">
-          <p class="font-semibold text-white">Account details</p>
-          <p class="mt-2 flex items-center gap-2 break-all">
-            <span class="text-white/50 uppercase text-xs tracking-wide">Email</span>
-            <span class="font-medium text-purple-100">{{ profile.email }}</span>
-          </p>
-          <p class="mt-2 flex items-center gap-2">
-            <span class="text-white/50 uppercase text-xs tracking-wide">User ID</span>
-            <span class="font-mono text-sm text-purple-200">{{ profile.id }}</span>
-          </p>
-        </div>
-      </div>
-    </div>
+  <div class="min-h-screen bg-[#f8fafc] text-slate-900">
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <div class="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <h2 class="text-2xl font-semibold text-white">Next steps</h2>
-        <p class="text-sm text-white/70">
-          You can now wire this authenticated identity into the rest of your RocketPrompt experience. Use the matching UID in Firestore to look up saved prompts, preferences, or billing records.
-        </p>
-        <ul class="space-y-3 text-sm text-white/60">
-          <li class="flex items-start gap-3">
-            <span class="mt-1 text-lg">🗂️</span>
-            <span><strong class="text-white">Create user collections</strong> keyed by your Firebase UID to store prompts.</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="mt-1 text-lg">📨</span>
-            <span><strong class="text-white">Gate access</strong> based on verified email status for premium features.</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="mt-1 text-lg">⚙️</span>
-            <span><strong class="text-white">Extend profile</strong> with team roles, plan tiers, or onboarding progress.</span>
-          </li>
-        </ul>
-      </div>
+    <!-- TOP BAR -->
+    <header class="bg-[#6B21A8]">
+      <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 sm:gap-6 sm:px-6 lg:px-8">
 
-      <div class="flex flex-col justify-between rounded-3xl border border-white/10 bg-black/40 p-6 shadow-xl shadow-purple-900/40">
-        <div class="space-y-4">
-          <h2 class="text-2xl font-semibold text-white">Session controls</h2>
-          <p class="text-sm text-white/70">Need to switch accounts? Sign out safely and return to the login screen.</p>
+        <!-- Brand -->
+        <div class="flex items-center gap-3 text-white">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-2xl">🚀</div>
+          <div class="leading-tight">
+            <p class="text-lg font-bold">Rocket Prompt</p>
+            <p class="text-xs opacity-80">AI Prompts Library</p>
+          </div>
         </div>
-        <button
-          type="button"
-          (click)="signOut()"
-          class="mt-6 inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-white/40 hover:bg-white/10"
-        >
-          <span aria-hidden="true">↪</span>
-          Sign out
+
+        <!-- Search -->
+        <div class="mx-4 hidden flex-1 items-center sm:flex">
+          <label class="group relative flex w-full items-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-5 w-5 text-slate-400">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
+
+          </label>
+        </div>
+
+        <!-- New Prompt button -->
+        <button type="button"
+          class="ml-auto inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#6B21A8] shadow-sm ring-1 ring-black/5 hover:bg-slate-50">
+          <span class="text-base">＋</span>
+          New Prompt
         </button>
       </div>
-    </div>
-  </section>
+
+      <!-- Mobile search -->
+      <div class="mx-auto block max-w-6xl px-4 pb-4 sm:hidden sm:px-6 lg:px-8">
+        <label class="group relative flex w-full items-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-5 w-5 text-slate-400">
+            <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <input type="search"
+            class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+            placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
+
+        </label>
+      </div>
+    </header>
+
+    <!-- CATEGORIES -->
+    <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap gap-3">
+        <button type="button" *ngFor="let category of categories" (click)="selectCategory(category.value)"
+          class="inline-flex items-center rounded-full border px-5 py-2 text-sm font-semibold capitalize transition"
+          [ngClass]="
+            selectedCategory() === category.value
+              ? 'border-transparent bg-[#6B21A8] text-white shadow-sm'
+              : 'border-slate-200 bg-white text-slate-600 hover:text-slate-800'
+          ">
+          {{ category.label }}
+        </button>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <main class="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+      <ng-container *ngIf="filteredPrompts().length > 0; else noResults">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <!-- CARD -->
+          <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+            class="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <!-- tiny gray label (category) -->
+            <span class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
+              {{ prompt.categoryLabel }}
+            </span>
+
+            <!-- title + desc -->
+            <h3 class="mt-3 text-xl font-semibold tracking-tight text-slate-900">
+              {{ prompt.title }}
+            </h3>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ prompt.description }}
+            </p>
+
+            <!-- snippet box -->
+            <div class="prompt-snippet mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+              {{ prompt.snippet }}
+            </div>
+
+            <!-- footer -->
+            <div class="mt-5 flex items-center justify-between text-sm text-slate-500">
+              <!-- metrics -->
+              <div class="flex items-center gap-4">
+                <span class="inline-flex items-center gap-1">
+                  <!-- eye -->
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M12 5c-7 0-9 7-9 7s2 7 9 7 9-7 9-7-2-7-9-7z" fill="none" stroke="currentColor"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  </svg>
+                  {{ prompt.views }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <!-- heart -->
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path
+                      d="M12.36 20.28a1 1 0 01-.72-.28l-6.4-6.2A4.74 4.74 0 014 10a4.5 4.5 0 018-2.5A4.5 4.5 0 0120 10a4.74 4.74 0 01-1.24 3.83l-6.4 6.2a1 1 0 01-.72.25z"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                  {{ prompt.favorites }}
+                </span>
+              </div>
+
+              <!-- actions -->
+              <div class="flex items-center gap-2">
+                <button type="button" class="icon-button" aria-label="Copy">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none" stroke="currentColor"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <rect x="3" y="9" width="10" height="12" rx="2" fill="none" stroke="currentColor"
+                      stroke-width="1.6" />
+                  </svg>
+                </button>
+                <button type="button" class="icon-button" aria-label="Share">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path
+                      d="M16 7a3 3 0 10-3-3 3 3 0 003 3zm-8 8a3 3 0 10-3-3 3 3 0 003 3zm8 8a3 3 0 10-3-3 3 3 0 003 3zm-8-6l8 4m0-14l-8 4"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <button type="button" class="icon-button" aria-label="Open">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M21 3l-9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M19 13v5a3 3 0 01-3 3H7a3 3 0 01-3-3V8a3 3 0 013-3h5" fill="none" stroke="currentColor"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </ng-container>
+    </main>
+  </div>
 </ng-container>
 
+<!-- EMPTY STATE -->
+<ng-template #noResults>
+  <div
+    class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-200 bg-white px-10 py-16 text-center shadow-sm">
+    <p class="text-lg font-semibold text-slate-800">No prompts found</p>
+    <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
+      Try a different search term or browse another category.
+    </p>
+  </div>
+</ng-template>
+
+<!-- LOADING -->
 <ng-template #loading>
-  <section class="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-white shadow-2xl shadow-purple-900/40 backdrop-blur-xl">
-    <p class="text-lg font-semibold">Loading your profile…</p>
-    <p class="mt-2 text-sm text-white/60">Hang tight while we connect to Firebase.</p>
+  <section class="mx-auto max-w-6xl rounded-2xl bg-white px-8 py-10 text-center shadow-sm ring-1 ring-slate-200">
+    <p class="text-lg font-semibold text-slate-800">Loading your library…</p>
+    <p class="mt-1 text-sm text-slate-500">Please wait.</p>
   </section>
 </ng-template>
