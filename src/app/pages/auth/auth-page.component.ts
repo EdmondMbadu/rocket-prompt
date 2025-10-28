@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FirebaseError } from 'firebase/app';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-auth-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './auth-page.component.html',
   styleUrl: './auth-page.component.css'
 })
@@ -24,6 +24,7 @@ export class AuthPageComponent {
     this.mode() === 'signup' ? 'Already have an account?' : "Don't have an account?"
   );
   readonly toggleAction = computed(() => (this.mode() === 'signup' ? 'Sign in' : 'Sign up'));
+  readonly mobileMenuOpen = signal(false);
 
   readonly authForm = this.fb.group({
     firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -40,6 +41,14 @@ export class AuthPageComponent {
     this.mode.set(this.mode() === 'signup' ? 'login' : 'signup');
     this.errorMessage = '';
     this.successMessage = '';
+  }
+
+  toggleMobileMenu() {
+    this.mobileMenuOpen.update(open => !open);
+  }
+
+  closeMobileMenu() {
+    this.mobileMenuOpen.set(false);
   }
 
   async onSubmit() {

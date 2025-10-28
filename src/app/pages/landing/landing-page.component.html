@@ -1,20 +1,52 @@
 <!-- RocketPrompt.io Landing Page -->
 <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 scroll-smooth text-white">
   <!-- Navigation -->
-  <nav class="flex items-center justify-between p-4 md:p-6">
-    <div class="text-xl md:text-2xl font-bold">
-      🚀 RocketPrompt.io
+  <nav class="relative px-4 py-4 md:px-6 md:py-6">
+    <div class="flex items-center justify-between gap-4">
+      <a routerLink="/" class="text-xl font-bold transition hover:text-purple-200 md:text-2xl" (click)="closeMobileMenu()">
+        🚀 RocketPrompt.io
+      </a>
+
+      <button
+        type="button"
+        class="flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-sm uppercase tracking-wide text-white transition hover:border-white/40 hover:bg-white/10 md:hidden"
+        (click)="toggleMobileMenu()"
+        aria-label="Toggle navigation"
+        [attr.aria-expanded]="mobileMenuOpen()"
+      >
+        <span>{{ mobileMenuOpen() ? 'Close' : 'Menu' }}</span>
+        <span class="text-lg" aria-hidden="true">☰</span>
+      </button>
+
+      <div class="hidden items-center gap-8 text-sm text-gray-300 md:flex">
+        <a href="#how-it-works" class="transition hover:text-white">How it works</a>
+        <a href="#get-started" class="transition hover:text-white">Get Started</a>
+      </div>
+
+      <div class="hidden items-center gap-3 md:flex">
+        <a
+          href="#get-started"
+          class="rounded-lg border border-white/30 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10"
+        >
+          Get Started
+        </a>
+        <a
+          routerLink="/auth"
+          class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-purple-700"
+        >
+          Log in
+        </a>
+      </div>
     </div>
-    <div class="hidden md:flex space-x-8">
-      <a href="#how-it-works" class="text-gray-300 hover:text-white transition-colors">How it works</a>
-      <a href="#get-started" class="text-gray-300 hover:text-white transition-colors">Get Started</a>
-    </div>
-    <a
-      routerLink="/auth"
-      class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 md:px-6 md:py-2 rounded-lg text-sm md:text-base transition-colors"
+
+    <div
+      *ngIf="mobileMenuOpen()"
+      class="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white md:hidden"
     >
-      Log in
-    </a>
+      <a href="#how-it-works" class="transition hover:text-purple-200" (click)="closeMobileMenu()">How it works</a>
+      <a href="#get-started" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Get Started</a>
+      <a routerLink="/auth" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Log in</a>
+    </div>
   </nav>
 
   <!-- Hero Section -->

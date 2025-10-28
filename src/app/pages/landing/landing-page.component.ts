@@ -25,6 +25,7 @@ interface ChatbotLink {
 })
 export class LandingPageComponent implements AfterViewInit {
   readonly title = signal('rocket-prompt');
+  readonly mobileMenuOpen = signal(false);
 
   promptForm: FormGroup;
   generatedLinks: ChatbotLink[] = [];
@@ -41,6 +42,14 @@ export class LandingPageComponent implements AfterViewInit {
     this.promptForm.get('content')?.valueChanges.subscribe(value => {
       this.characterCount = value?.length || 0;
     });
+  }
+
+  toggleMobileMenu() {
+    this.mobileMenuOpen.update(open => !open);
+  }
+
+  closeMobileMenu() {
+    this.mobileMenuOpen.set(false);
   }
 
   ngAfterViewInit() {
