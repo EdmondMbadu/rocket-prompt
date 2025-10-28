@@ -1,9 +1,15 @@
-<section class="mx-auto grid max-w-4xl gap-10 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:grid-cols-[1.1fr_0.9fr] md:p-10">
-  <div class="space-y-6">
-    <p class="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/70">
-      <span class="inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-purple-400 to-pink-400"></span>
-      RocketPrompt Access
-    </p>
+<div class="relative isolate mx-[-1px] min-h-[75vh] overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/80 to-slate-950 px-4 py-10 text-white md:mx-0 md:px-8 md:py-16">
+  <div class="pointer-events-none absolute inset-0 opacity-20">
+    <div class="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-purple-500 blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 h-52 w-52 rounded-full bg-pink-500 blur-3xl"></div>
+  </div>
+
+  <section class="relative z-10 mx-auto grid max-w-4xl gap-10 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:grid-cols-[1.1fr_0.9fr] md:p-10">
+    <div class="space-y-6">
+      <p class="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/70">
+        <span class="inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-purple-400 to-pink-400"></span>
+        RocketPrompt Access
+      </p>
     <h1 class="text-3xl font-bold leading-tight md:text-4xl">{{ heading() }}</h1>
     <p class="text-base text-white/70">
       Manage your RocketPrompt workspace with a secure login backed by Firebase Authentication. Enter your details to
@@ -109,4 +115,5 @@
       ID.
     </div>
   </form>
-</section>
+  </section>
+</div>

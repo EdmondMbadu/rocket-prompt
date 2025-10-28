@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Auth } from '@angular/fire/auth';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -13,7 +12,6 @@ import { AuthService } from '../../services/auth.service';
 })
 export class VerifyEmailComponent {
   private readonly authService = inject(AuthService);
-  private readonly auth = inject(Auth);
   private readonly router = inject(Router);
 
   readonly user$ = this.authService.currentUser$;
@@ -28,7 +26,7 @@ export class VerifyEmailComponent {
       this.isReloading = true;
       await this.authService.reloadCurrentUser();
 
-      if (this.auth.currentUser?.emailVerified) {
+      if (this.authService.currentUser?.emailVerified) {
         this.feedbackType = 'success';
         this.feedbackMessage = 'Email verified! Redirecting you to your home screen...';
         await this.router.navigate(['/home']);

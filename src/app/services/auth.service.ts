@@ -1,18 +1,28 @@
 import { Injectable } from '@angular/core';
+import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
 import {
   Auth,
   User,
-  authState,
   createUserWithEmailAndPassword,
+  getAuth,
+  onAuthStateChanged,
   reload,
   sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
   updateProfile
-} from '@angular/fire/auth';
-import { doc, docData, Firestore, getDoc, serverTimestamp, setDoc } from '@angular/fire/firestore';
+} from 'firebase/auth';
+import {
+  Firestore,
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  setDoc
+} from 'firebase/firestore';
+import { Observable, from, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { environment } from '../../../environments/environments';
 
 export interface UserProfile {
   id: string;
@@ -25,10 +35,25 @@ export interface UserProfile {
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly app: FirebaseApp;
+  private readonly auth: Auth;
+  private readonly firestore: Firestore;
+
   readonly currentUser$: Observable<User | null>;
 
-  constructor(private auth: Auth, private firestore: Firestore) {
-    this.currentUser$ = authState(this.auth);
+  constructor() {
+    this.app = this.ensureApp();
+    this.auth = getAuth(this.app);
+    this.firestore = getFirestore(this.app);
+    this.currentUser$ = new Observable<User | null>((subscriber) => {
+      const unsubscribe = onAuthStateChanged(
+        this.auth,
+        (user) => subscriber.next(user),
+        (error) => subscriber.error(error)
+      );
+
+      return () => unsubscribe();
+    });
   }
 
   async signUp(input: { firstName: string; lastName: string; email: string; password: string }) {
@@ -73,8 +98,17 @@ export class AuthService {
   }
 
   userProfile$(uid: string): Observable<UserProfile | undefined> {
-    return docData(doc(this.firestore, 'users', uid), { idField: 'id' }).pipe(
-      map(data => (data ? (data as UserProfile) : undefined)),
+    return from(getDoc(doc(this.firestore, 'users', uid))).pipe(
+      map(snapshot => {
+        if (!snapshot.exists()) {
+          return undefined;
+        }
+
+        return {
+          id: snapshot.id,
+          ...(snapshot.data() as Omit<UserProfile, 'id'>)
+        };
+      }),
       catchError(() => of(undefined))
     );
   }
@@ -90,5 +124,17 @@ export class AuthService {
       id: snapshot.id,
       ...data
     };
+  }
+
+  get currentUser() {
+    return this.auth.currentUser;
+  }
+
+  private ensureApp(): FirebaseApp {
+    if (getApps().length) {
+      return getApp();
+    }
+
+    return initializeApp(environment.firebase);
   }
 }

@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { AuthPageComponent } from './pages/auth/auth-page.component';
-import { HomeComponent } from './pages/home/home.component';
-import { VerifyEmailComponent } from './pages/verify-email/verify-email.component';
-import { requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
 import { LandingPageComponent } from './pages/landing/landing-page.component';
+import { AuthPageComponent } from './pages/auth/auth-page.component';
+import { VerifyEmailComponent } from './pages/verify-email/verify-email.component';
+import { HomeComponent } from './pages/home/home.component';
+import { requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
