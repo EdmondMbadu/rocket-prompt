@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FirebaseError } from 'firebase/app';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -16,6 +17,7 @@ export class AuthPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly mode = signal<'signup' | 'login'>('signup');
   readonly heading = computed(() => (this.mode() === 'signup' ? 'Create your account' : 'Welcome back'));
@@ -37,10 +39,24 @@ export class AuthPageComponent {
   errorMessage = '';
   successMessage = '';
 
+  constructor() {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe(params => {
+        const modeParam = params.get('mode') === 'login' ? 'login' : 'signup';
+        this.mode.set(modeParam);
+      });
+  }
+
   switchMode() {
     this.mode.set(this.mode() === 'signup' ? 'login' : 'signup');
     this.errorMessage = '';
     this.successMessage = '';
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { mode: this.mode() },
+      replaceUrl: true
+    });
   }
 
   toggleMobileMenu() {
@@ -49,6 +65,18 @@ export class AuthPageComponent {
 
   closeMobileMenu() {
     this.mobileMenuOpen.set(false);
+  }
+
+  setActiveMode(mode: 'signup' | 'login') {
+    this.mode.set(mode);
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.closeMobileMenu();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { mode },
+      replaceUrl: true
+    });
   }
 
   async onSubmit() {

@@ -1,10 +1,10 @@
-<div class="relative isolate mx-[-1px] min-h-[75vh] overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/80 to-slate-950 px-4 py-10 text-white md:mx-0 md:px-8 md:py-16">
+<div class="relative isolate min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/80 to-slate-950 px-4 pb-10 text-white md:px-8 md:pb-16">
   <div class="pointer-events-none absolute inset-0 opacity-20">
     <div class="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-purple-500 blur-3xl"></div>
     <div class="absolute bottom-10 right-10 h-52 w-52 rounded-full bg-pink-500 blur-3xl"></div>
   </div>
 
-  <nav class="relative z-10 mb-8 flex items-center justify-between gap-4 text-sm md:mb-12">
+  <nav class="relative z-10 flex items-center justify-between gap-4 px-1 py-6 text-sm md:px-0 md:py-8">
     <a routerLink="/" class="text-lg font-semibold transition hover:text-purple-200 md:text-xl" (click)="closeMobileMenu()">
       🚀 RocketPrompt.io
     </a>
@@ -20,24 +20,18 @@
       <span class="text-lg" aria-hidden="true">☰</span>
     </button>
 
-    <div class="hidden items-center gap-8 text-white/70 md:flex">
-      <a routerLink="/" class="transition hover:text-white" (click)="closeMobileMenu()">Home</a>
-      <a routerLink="/" fragment="get-started" class="transition hover:text-white" (click)="closeMobileMenu()">Get Started</a>
-    </div>
-
     <div class="hidden items-center gap-3 md:flex">
-      <a
-        routerLink="/"
-        fragment="get-started"
+      <button
+        type="button"
         class="rounded-lg border border-white/30 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10"
-        (click)="closeMobileMenu()"
+        (click)="setActiveMode('signup')"
       >
-        Get Started
-      </a>
+        Sign Up
+      </button>
       <button
         type="button"
         class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-purple-700"
-        (click)="closeMobileMenu(); mode.set('login')"
+        (click)="setActiveMode('login')"
       >
         Log in
       </button>
@@ -48,12 +42,17 @@
     *ngIf="mobileMenuOpen()"
     class="relative z-10 mb-6 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white md:hidden"
   >
-    <a routerLink="/" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Home</a>
-    <a routerLink="/" fragment="get-started" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Get Started</a>
+    <button
+      type="button"
+      class="rounded-lg border border-white/30 px-4 py-2 text-left font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10"
+      (click)="setActiveMode('signup')"
+    >
+      Sign Up
+    </button>
     <button
       type="button"
       class="rounded-lg bg-purple-600 px-4 py-2 text-left font-semibold uppercase tracking-wide text-white transition hover:bg-purple-700"
-      (click)="closeMobileMenu(); mode.set('login')"
+      (click)="setActiveMode('login')"
     >
       Log in
     </button>

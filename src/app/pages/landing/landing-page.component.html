@@ -20,18 +20,21 @@
 
       <div class="hidden items-center gap-8 text-sm text-gray-300 md:flex">
         <a href="#how-it-works" class="transition hover:text-white">How it works</a>
-        <a href="#get-started" class="transition hover:text-white">Get Started</a>
+        <a href="#signup" class="transition hover:text-white">Plans</a>
+        <a href="#get-started" class="transition hover:text-white">Demo</a>
       </div>
 
       <div class="hidden items-center gap-3 md:flex">
         <a
-          href="#get-started"
+          routerLink="/auth"
+          [queryParams]="{ mode: 'signup' }"
           class="rounded-lg border border-white/30 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10"
         >
-          Get Started
+          Sign Up
         </a>
         <a
           routerLink="/auth"
+          [queryParams]="{ mode: 'login' }"
           class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-purple-700"
         >
           Log in
@@ -44,8 +47,8 @@
       class="mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white md:hidden"
     >
       <a href="#how-it-works" class="transition hover:text-purple-200" (click)="closeMobileMenu()">How it works</a>
-      <a href="#get-started" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Get Started</a>
-      <a routerLink="/auth" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Log in</a>
+      <a routerLink="/auth" [queryParams]="{ mode: 'signup' }" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Sign Up</a>
+      <a routerLink="/auth" [queryParams]="{ mode: 'login' }" class="transition hover:text-purple-200" (click)="closeMobileMenu()">Log in</a>
     </div>
   </nav>
 
@@ -64,13 +67,14 @@
 
     <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4">
       <a
-        href="#get-started"
+        href="#signup"
         class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 md:px-8 md:py-3 rounded-lg text-base md:text-lg font-semibold transition-colors w-full sm:w-auto"
       >
         Get Started
       </a>
       <a
         routerLink="/auth"
+        [queryParams]="{ mode: 'login' }"
         class="border border-white/40 hover:border-white text-white px-6 py-3 md:px-8 md:py-3 rounded-lg text-base md:text-lg font-semibold transition-colors w-full sm:w-auto"
       >
         Log in
@@ -118,7 +122,7 @@
   </div>
 
   <!-- Get Started Form Section -->
-  <div id="get-started" class="container mx-auto px-4 md:px-6 py-8 md:py-12">
+  <div id="signup" class="container mx-auto px-4 md:px-6 py-8 md:py-12">
     <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Get Started</h2>
 
     <div class="max-w-3xl mx-auto">
