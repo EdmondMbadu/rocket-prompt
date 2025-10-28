@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -125,6 +125,7 @@ export class HomeComponent {
 
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
+  readonly menuOpen = signal(false);
 
   readonly filteredPrompts = computed(() => {
     const prompts = this.prompts();
@@ -151,6 +152,7 @@ export class HomeComponent {
   });
 
   async signOut() {
+    this.closeMenu();
     await this.authService.signOut();
     await this.router.navigate(['/']);
   }
@@ -165,5 +167,45 @@ export class HomeComponent {
 
   trackPromptById(_: number, prompt: PromptCard) {
     return prompt.id;
+  }
+
+  toggleMenu() {
+    this.menuOpen.update(open => !open);
+  }
+
+  closeMenu() {
+    this.menuOpen.set(false);
+  }
+
+  profileInitials(profile: UserProfile | undefined) {
+    if (!profile) {
+      return 'RP';
+    }
+
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  @HostListener('document:click', ['$event'])
+  handleDocumentClick(event: Event) {
+    if (!this.menuOpen()) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+
+    if (!target?.closest('[data-user-menu]')) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscape() {
+    if (this.menuOpen()) {
+      this.closeMenu();
+    }
   }
 }
