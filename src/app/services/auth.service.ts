@@ -1,27 +1,9 @@
 import { Injectable } from '@angular/core';
 import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
-import {
-  Auth,
-  User,
-  createUserWithEmailAndPassword,
-  getAuth,
-  onAuthStateChanged,
-  reload,
-  sendEmailVerification,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile
-} from 'firebase/auth';
-import {
-  Firestore,
-  doc,
-  getDoc,
-  getFirestore,
-  serverTimestamp,
-  setDoc
-} from 'firebase/firestore';
-import { Observable, from, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import type { Auth, User, UserCredential } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
+import { Observable, defer, from, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
 
 export interface UserProfile {
@@ -35,70 +17,85 @@ export interface UserProfile {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly app: FirebaseApp;
-  private readonly auth: Auth;
-  private readonly firestore: Firestore;
+  private readonly app: FirebaseApp = this.ensureApp();
 
-  readonly currentUser$: Observable<User | null>;
+  private auth: Auth | null = null;
+  private firestore: Firestore | null = null;
+  private authModule?: typeof import('firebase/auth');
+  private firestoreModule?: typeof import('firebase/firestore');
 
-  constructor() {
-    this.app = this.ensureApp();
-    this.auth = getAuth(this.app);
-    this.firestore = getFirestore(this.app);
-    this.currentUser$ = new Observable<User | null>((subscriber) => {
-      const unsubscribe = onAuthStateChanged(
-        this.auth,
-        (user) => subscriber.next(user),
-        (error) => subscriber.error(error)
-      );
+  readonly currentUser$ = new Observable<User | null>((subscriber) => {
+    let unsubscribe: (() => void) | undefined;
 
-      return () => unsubscribe();
-    });
-  }
+    this.getAuthContext()
+      .then(({ auth, authModule }) => {
+        unsubscribe = authModule.onAuthStateChanged(
+          auth,
+          (user) => subscriber.next(user),
+          (error) => subscriber.error(error)
+        );
+      })
+      .catch((error) => subscriber.error(error));
 
-  async signUp(input: { firstName: string; lastName: string; email: string; password: string }) {
-    const credential = await createUserWithEmailAndPassword(this.auth, input.email, input.password);
+    return () => unsubscribe?.();
+  });
 
-    await updateProfile(credential.user, {
+  async signUp(input: { firstName: string; lastName: string; email: string; password: string }): Promise<UserCredential> {
+    const { auth, authModule } = await this.getAuthContext();
+    const credential = await authModule.createUserWithEmailAndPassword(auth, input.email, input.password);
+
+    await authModule.updateProfile(credential.user, {
       displayName: `${input.firstName} ${input.lastName}`.trim()
     });
 
-    await setDoc(doc(this.firestore, 'users', credential.user.uid), {
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    await firestoreModule.setDoc(firestoreModule.doc(firestore, 'users', credential.user.uid), {
       firstName: input.firstName,
       lastName: input.lastName,
       email: credential.user.email ?? input.email,
-      createdAt: serverTimestamp()
+      createdAt: firestoreModule.serverTimestamp()
     });
 
-    await sendEmailVerification(credential.user);
+    await authModule.sendEmailVerification(credential.user);
 
     return credential;
   }
 
-  signIn(email: string, password: string) {
-    return signInWithEmailAndPassword(this.auth, email, password);
+  async signIn(email: string, password: string): Promise<UserCredential> {
+    const { auth, authModule } = await this.getAuthContext();
+    return authModule.signInWithEmailAndPassword(auth, email, password);
   }
 
-  signOut() {
-    return signOut(this.auth);
+  async signOut(): Promise<void> {
+    const { auth, authModule } = await this.getAuthContext();
+    await authModule.signOut(auth);
   }
 
-  async reloadCurrentUser() {
-    if (this.auth.currentUser) {
-      await reload(this.auth.currentUser);
+  async reloadCurrentUser(): Promise<void> {
+    const user = this.currentUser;
+    if (!user) {
+      return;
     }
+
+    const { authModule } = await this.getAuthContext();
+    await authModule.reload(user);
   }
 
-  async resendVerificationEmail() {
-    if (!this.auth.currentUser) {
+  async resendVerificationEmail(): Promise<void> {
+    const user = this.currentUser;
+    if (!user) {
       throw new Error('User is not signed in.');
     }
 
-    await sendEmailVerification(this.auth.currentUser);
+    const { authModule } = await this.getAuthContext();
+    await authModule.sendEmailVerification(user);
   }
 
-  userProfile$(uid: string): Observable<UserProfile | undefined> {
-    return from(getDoc(doc(this.firestore, 'users', uid))).pipe(
+  userProfile$(uid: string) {
+    return defer(() => this.getFirestoreContext()).pipe(
+      switchMap(({ firestore, firestoreModule }) =>
+        from(firestoreModule.getDoc(firestoreModule.doc(firestore, 'users', uid)))
+      ),
       map(snapshot => {
         if (!snapshot.exists()) {
           return undefined;
@@ -114,7 +111,9 @@ export class AuthService {
   }
 
   async fetchUserProfile(uid: string): Promise<UserProfile | undefined> {
-    const snapshot = await getDoc(doc(this.firestore, 'users', uid));
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const snapshot = await firestoreModule.getDoc(firestoreModule.doc(firestore, 'users', uid));
+
     if (!snapshot.exists()) {
       return undefined;
     }
@@ -126,8 +125,50 @@ export class AuthService {
     };
   }
 
-  get currentUser() {
-    return this.auth.currentUser;
+  get currentUser(): User | null {
+    return this.auth?.currentUser ?? null;
+  }
+
+  private async getAuthContext() {
+    const authModule = await this.importAuthModule();
+
+    if (!this.auth) {
+      this.auth = authModule.getAuth(this.app);
+    }
+
+    return {
+      auth: this.auth,
+      authModule
+    };
+  }
+
+  private async getFirestoreContext() {
+    const firestoreModule = await this.importFirestoreModule();
+
+    if (!this.firestore) {
+      this.firestore = firestoreModule.getFirestore(this.app);
+    }
+
+    return {
+      firestore: this.firestore,
+      firestoreModule
+    };
+  }
+
+  private async importAuthModule() {
+    if (!this.authModule) {
+      this.authModule = await import('firebase/auth');
+    }
+
+    return this.authModule;
+  }
+
+  private async importFirestoreModule() {
+    if (!this.firestoreModule) {
+      this.firestoreModule = await import('firebase/firestore');
+    }
+
+    return this.firestoreModule;
   }
 
   private ensureApp(): FirebaseApp {

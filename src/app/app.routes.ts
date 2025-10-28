@@ -1,28 +1,28 @@
 import { Routes } from '@angular/router';
-import { LandingPageComponent } from './pages/landing/landing-page.component';
-import { AuthPageComponent } from './pages/auth/auth-page.component';
-import { VerifyEmailComponent } from './pages/verify-email/verify-email.component';
-import { HomeComponent } from './pages/home/home.component';
 import { requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    component: LandingPageComponent
+    loadComponent: () =>
+      import('./pages/landing/landing-page.component').then(m => m.LandingPageComponent)
   },
   {
     path: 'auth',
-    component: AuthPageComponent
+    loadComponent: () =>
+      import('./pages/auth/auth-page.component').then(m => m.AuthPageComponent)
   },
   {
     path: 'verify-email',
-    component: VerifyEmailComponent,
-    canActivate: [requireAuthGuard]
+    canActivate: [requireAuthGuard],
+    loadComponent: () =>
+      import('./pages/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
   },
   {
     path: 'home',
-    component: HomeComponent,
-    canActivate: [verifiedUserGuard]
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
     path: '**',
