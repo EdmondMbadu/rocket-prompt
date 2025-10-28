@@ -1,0 +1,66 @@
+<ng-container *ngIf="user$ | async as user; else loggedOut">
+  <section class="mx-auto max-w-3xl space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 text-white shadow-2xl shadow-purple-900/40 backdrop-blur-xl">
+    <div class="space-y-2">
+      <p class="text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/70">Verify email</p>
+      <h1 class="text-3xl font-bold">Check your inbox, {{ user.displayName || 'friend' }}.</h1>
+      <p class="text-sm text-white/70">
+        We sent a verification link to <span class="font-medium text-purple-200">{{ user.email }}</span>. Click the link and then refresh your status here.
+      </p>
+    </div>
+
+    <div class="space-y-4 rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-white/70">
+      <p class="font-semibold text-white">Troubleshooting tips</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Look in spam, promotions, or updates folders.</li>
+        <li>The link expires after a short time—resend if needed.</li>
+        <li>Still not working? Resend below or contact your Firebase project admin.</li>
+      </ul>
+    </div>
+
+    <div *ngIf="feedbackMessage" class="rounded-2xl border p-4 text-sm" [ngClass]="{
+      'border-emerald-400/40 bg-emerald-400/10 text-emerald-200': feedbackType === 'success',
+      'border-rose-500/50 bg-rose-500/10 text-rose-200': feedbackType === 'error'
+    }">
+      {{ feedbackMessage }}
+    </div>
+
+    <div class="flex flex-col gap-3 md:flex-row">
+      <button
+        type="button"
+        (click)="refreshStatus()"
+        [disabled]="isReloading"
+        class="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:from-emerald-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:from-white/20 disabled:to-white/10 disabled:text-white/50"
+      >
+        {{ isReloading ? 'Checking...' : 'I verified my email' }}
+      </button>
+
+      <button
+        type="button"
+        (click)="resendEmail()"
+        [disabled]="isResending"
+        class="flex-1 rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-white/40 hover:bg-white/10 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/50"
+      >
+        {{ isResending ? 'Sending...' : 'Resend verification email' }}
+      </button>
+    </div>
+
+    <p class="text-xs text-white/60">
+      Signed in as {{ user.email }} ·
+      <a routerLink="/auth" class="font-semibold text-purple-200 hover:text-purple-100">Use a different account</a>
+    </p>
+  </section>
+</ng-container>
+
+<ng-template #loggedOut>
+  <section class="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-white shadow-2xl shadow-purple-900/40 backdrop-blur-xl">
+    <h1 class="text-3xl font-bold">Let’s get you signed in again</h1>
+    <p class="mt-4 text-sm text-white/70">We lost track of your session. Head back to the login screen and we’ll pick up where you left off.</p>
+    <a
+      routerLink="/auth"
+      class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:from-purple-400 hover:to-pink-400"
+    >
+      <span aria-hidden="true">↩</span>
+      Back to login
+    </a>
+  </section>
+</ng-template>
