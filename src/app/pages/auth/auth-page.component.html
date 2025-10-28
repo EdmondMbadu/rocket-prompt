@@ -74,7 +74,7 @@
       <p class="font-semibold text-white">What to know</p>
       <ul class="mt-2 space-y-1">
         <li>• Use the same email for Firebase auth and your user profile.</li>
-        <li>• First and last name must match your saved profile when signing in.</li>
+        <li>• Keep your profile details up to date for a smoother onboarding.</li>
         <li>• Accounts stay locked until you verify the email we send.</li>
       </ul>
     </div>
@@ -86,7 +86,7 @@
       <p class="text-sm text-white/60">{{ mode() === 'signup' ? 'Create a password to unlock your prompts.' : 'Enter your verified details to continue.' }}</p>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div *ngIf="mode() === 'signup'" class="grid gap-4 md:grid-cols-2">
       <label class="block text-sm text-white/80">
         <span class="mb-1 block font-semibold uppercase tracking-wide text-xs text-white/50">First name</span>
         <input

@@ -5,13 +5,7 @@ import type { Firestore } from 'firebase/firestore';
 import { Observable, defer, from, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
-
-export interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
+import type { UserProfile } from '../models/user-profile.model';
 
 @Injectable({
   providedIn: 'root'

@@ -45,11 +45,13 @@ export class AuthPageComponent {
       .subscribe(params => {
         const modeParam = params.get('mode') === 'login' ? 'login' : 'signup';
         this.mode.set(modeParam);
+        this.applyModeValidators(modeParam);
       });
   }
 
   switchMode() {
     this.mode.set(this.mode() === 'signup' ? 'login' : 'signup');
+    this.applyModeValidators(this.mode());
     this.errorMessage = '';
     this.successMessage = '';
     void this.router.navigate([], {
@@ -69,6 +71,7 @@ export class AuthPageComponent {
 
   setActiveMode(mode: 'signup' | 'login') {
     this.mode.set(mode);
+    this.applyModeValidators(mode);
     this.errorMessage = '';
     this.successMessage = '';
     this.closeMobileMenu();
@@ -86,7 +89,7 @@ export class AuthPageComponent {
     }
 
     const { firstName, lastName, email, password } = this.authForm.value;
-    if (!firstName || !lastName || !email || !password) {
+    if (!email || !password) {
       return;
     }
 
@@ -96,6 +99,13 @@ export class AuthPageComponent {
 
     try {
       if (this.mode() === 'signup') {
+        if (!firstName || !lastName) {
+          this.authForm.get('firstName')?.markAsTouched();
+          this.authForm.get('lastName')?.markAsTouched();
+          this.errorMessage = 'Please provide your first and last name to complete sign up.';
+          return;
+        }
+
         await this.authService.signUp({ firstName, lastName, email, password });
         this.successMessage =
           'Account created! We sent a verification link to your email. Please verify before signing in.';
@@ -109,15 +119,6 @@ export class AuthPageComponent {
           throw new Error(
             'We could not find a profile for this account. Please contact support or sign up again.'
           );
-        }
-
-        const namesMatch =
-          profile.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() &&
-          profile.lastName.trim().toLowerCase() === lastName.trim().toLowerCase();
-
-        if (!namesMatch) {
-          await this.authService.signOut();
-          throw new Error('The first and last name provided do not match this account.');
         }
 
         if (credential.user.emailVerified) {
@@ -141,7 +142,7 @@ export class AuthPageComponent {
         case 'auth/invalid-credential':
         case 'auth/wrong-password':
         case 'auth/user-not-found':
-          return 'The provided credentials are incorrect. Double-check your email, password, and name.';
+          return 'The provided credentials are incorrect. Double-check your email and password.';
         case 'auth/too-many-requests':
           return 'Too many attempts. Please wait a moment and try again.';
         default:
@@ -154,5 +155,27 @@ export class AuthPageComponent {
     }
 
     return 'Something went wrong. Please try again.';
+  }
+
+  private applyModeValidators(mode: 'signup' | 'login') {
+    const firstNameControl = this.authForm.get('firstName');
+    const lastNameControl = this.authForm.get('lastName');
+
+    if (!firstNameControl || !lastNameControl) {
+      return;
+    }
+
+    if (mode === 'signup') {
+      firstNameControl.setValidators([Validators.required, Validators.minLength(2)]);
+      lastNameControl.setValidators([Validators.required, Validators.minLength(2)]);
+    } else {
+      firstNameControl.clearValidators();
+      lastNameControl.clearValidators();
+      firstNameControl.reset('');
+      lastNameControl.reset('');
+    }
+
+    firstNameControl.updateValueAndValidity({ emitEvent: false });
+    lastNameControl.updateValueAndValidity({ emitEvent: false });
   }
 }

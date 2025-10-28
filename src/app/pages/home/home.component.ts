@@ -3,7 +3,8 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { AuthService, UserProfile } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
+import type { UserProfile } from '../../models/user-profile.model';
 
 @Component({
   selector: 'app-home',
@@ -30,6 +31,6 @@ export class HomeComponent {
 
   async signOut() {
     await this.authService.signOut();
-    await this.router.navigate(['/auth']);
+    await this.router.navigate(['/']);
   }
 }
