@@ -58,7 +58,10 @@
     </button>
   </div>
 
-  <section class="relative z-10 mx-auto grid max-w-4xl gap-10 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:grid-cols-[1.1fr_0.9fr] md:p-10">
+  <section
+    *ngIf="mode() === 'signup'; else loginView"
+    class="relative z-10 mx-auto grid max-w-4xl gap-10 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:grid-cols-[1.1fr_0.9fr] md:p-10"
+  >
     <div class="space-y-6">
       <p class="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/70">
         <span class="inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-purple-400 to-pink-400"></span>
@@ -164,10 +167,74 @@
       </button>
     </div>
 
-    <div class="rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-white/50">
+    <div *ngIf="mode() === 'signup'" class="rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-white/50">
       Need help? Check your spam folder for the verification email or contact your Firebase admin to approve the user
       ID.
     </div>
   </form>
   </section>
+
+  <ng-template #loginView>
+    <section class="relative z-10 mx-auto flex max-w-lg flex-col items-stretch">
+      <form
+        [formGroup]="authForm"
+        (ngSubmit)="onSubmit()"
+        class="space-y-6 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl shadow-purple-900/40 backdrop-blur"
+      >
+        <div class="text-center">
+          <h1 class="text-3xl font-semibold">Sign in</h1>
+          <p class="mt-2 text-sm text-white/70">Use your email and password to access Rocket Prompt.</p>
+        </div>
+
+        <label class="block text-sm text-white/80">
+          <span class="mb-1 block font-semibold uppercase tracking-wide text-xs text-white/50">Email</span>
+          <input
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-white outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-400/40"
+          />
+          <span *ngIf="authForm.get('email')?.invalid && authForm.get('email')?.touched" class="mt-1 block text-xs text-rose-300">
+            Please enter a valid email address.
+          </span>
+        </label>
+
+        <label class="block text-sm text-white/80">
+          <span class="mb-1 block font-semibold uppercase tracking-wide text-xs text-white/50">Password</span>
+          <input
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-white outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-400/40"
+          />
+          <span
+            *ngIf="authForm.get('password')?.invalid && authForm.get('password')?.touched"
+            class="mt-1 block text-xs text-rose-300"
+          >
+            Password must be at least 6 characters long.
+          </span>
+        </label>
+
+        <div *ngIf="errorMessage" class="rounded-xl border border-rose-500/50 bg-rose-500/10 p-3 text-sm text-rose-200">
+          {{ errorMessage }}
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="authForm.invalid || isSubmitting"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:from-purple-400 hover:to-pink-400 disabled:cursor-not-allowed disabled:from-white/20 disabled:to-white/10 disabled:text-white/50"
+        >
+          <span class="text-lg" aria-hidden="true">🔐</span>
+          <span>{{ isSubmitting ? 'Working...' : ctaLabel() }}</span>
+        </button>
+
+        <div class="text-center text-sm text-white/70">
+          Don't have an account?
+          <button type="button" class="ml-1 font-semibold text-purple-200 hover:text-purple-100" (click)="switchMode()">
+            Sign up
+          </button>
+        </div>
+      </form>
+    </section>
+  </ng-template>
 </div>
