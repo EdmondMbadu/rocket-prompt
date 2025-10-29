@@ -161,7 +161,7 @@
                   </svg>
                 </button>
                 <button type="button" class="icon-button" aria-label="Share prompt" data-tooltip="Share prompt"
-                  title="Share prompt">
+                  title="Share prompt" (click)="openShareModal(prompt)">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path
                       d="M16 7a3 3 0 10-3-3 3 3 0 003 3zm-8 8a3 3 0 10-3-3 3 3 0 003 3zm8 8a3 3 0 10-3-3 3 3 0 003 3zm-8-6l8 4m0-14l-8 4"
@@ -363,3 +363,54 @@
     <p class="mt-1 text-sm text-slate-500">Please wait.</p>
   </section>
 </ng-template>
+
+<!-- SHARE PROMPT MODAL -->
+<div *ngIf="shareModalOpen()" class="modal-overlay" (click)="closeShareModal()">
+  <div class="modal-card w-96" (click)="$event.stopPropagation()">
+    <button type="button" class="modal-close" aria-label="Close" (click)="closeShareModal()">
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+        <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <header class="pr-8">
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#6B21A8]">Share</p>
+      <h2 class="mt-2 text-2xl font-semibold text-slate-900">Share prompt</h2>
+      <p class="mt-1 text-sm text-slate-500">Open this prompt in a chatbot or copy its URL.</p>
+    </header>
+
+    <div class="mt-6 space-y-4">
+      <div *ngIf="sharePrompt()" class="text-sm text-slate-700">
+        <div class="font-semibold">{{ sharePrompt()?.title }}</div>
+        <div class="mt-2 text-xs text-slate-500">{{ sharePrompt()?.preview }}</div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <button type="button"
+          class="inline-flex items-center justify-center rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
+          (click)="openChatbot(createChatGPTUrl(sharePrompt()?.content || ''), 'ChatGPT')">
+          Open in ChatGPT
+        </button>
+
+        <button type="button"
+          class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+          (click)="openChatbot(createGeminiUrl(sharePrompt()?.content || ''), 'Gemini')">
+          Open in Gemini
+        </button>
+
+        <button type="button"
+          class="inline-flex items-center justify-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700"
+          (click)="openChatbot(createClaudeUrl(sharePrompt()?.content || ''), 'Claude')">
+          Open in Claude
+        </button>
+
+        <button type="button"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          (click)="copyPromptPageUrl()">
+          Copy prompt URL
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

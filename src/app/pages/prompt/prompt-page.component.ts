@@ -21,6 +21,7 @@ export class PromptPageComponent {
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly prompt = signal<Prompt | undefined>(undefined);
+  readonly shareModalOpen = signal(false);
 
   // Provide a small computed short id for sharing (first 8 chars)
   readonly shortId = computed(() => {
@@ -57,6 +58,96 @@ export class PromptPageComponent {
           this.isLoading.set(false);
         }
       });
+  }
+
+  openShareModal() {
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+  }
+
+  createChatGPTUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  createGeminiUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+  }
+
+  createClaudeUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  async openChatbot(url: string, chatbotName: string, promptText?: string) {
+    // For non-ChatGPT providers copy the prompt text first so paste inserts the prompt
+    const text = promptText ?? this.prompt()?.content ?? '';
+
+    if (chatbotName !== 'ChatGPT') {
+      try {
+        if (text) {
+          await navigator.clipboard.writeText(text);
+          this.showCopyMessage(`${chatbotName} prompt copied!`);
+        }
+      } catch (e) {
+        if (text) {
+          this.fallbackCopyTextToClipboard(text);
+          this.showCopyMessage(`${chatbotName} prompt copied!`);
+        }
+      }
+
+      window.open(url, '_blank');
+      return;
+    }
+
+    window.open(url, '_blank');
+  }
+
+  copyPromptPageUrl() {
+    const p = this.prompt();
+    if (!p) return;
+
+    const short = p.id ? p.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const url = p.customUrl ? `${origin}/${p.customUrl}` : `${origin}/prompt/${short}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+    });
+  }
+
+  private showCopyMessage(messageText: string) {
+    const message = document.createElement('div');
+    message.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all';
+    message.textContent = messageText;
+
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
   }
 
   back() {

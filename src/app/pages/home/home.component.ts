@@ -82,6 +82,8 @@ export class HomeComponent {
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
   readonly newPromptModalOpen = signal(false);
+  readonly shareModalOpen = signal(false);
+  readonly sharePrompt = signal<PromptCard | null>(null);
   readonly isEditingPrompt = signal(false);
   readonly editingPromptId = signal<string | null>(null);
   readonly isSavingPrompt = signal(false);
@@ -195,6 +197,115 @@ export class HomeComponent {
 
   constructor() {
     this.observePrompts();
+  }
+
+  openShareModal(prompt: PromptCard) {
+    this.sharePrompt.set(prompt);
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+    this.sharePrompt.set(null);
+  }
+
+  createChatGPTUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  createGeminiUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+  }
+
+  createClaudeUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  async openChatbot(url: string, chatbotName: string) {
+    // For non-ChatGPT providers we copy the prompt text first so that
+    // when the new tab opens and the user pastes, the prompt (not the URL)
+    // is inserted. ChatGPT opens directly.
+    if (chatbotName !== 'ChatGPT') {
+      const promptText = this.extractPromptFromUrl(url);
+
+      try {
+        if (promptText) {
+          await navigator.clipboard.writeText(promptText);
+          this.showCopyMessage(`${chatbotName} prompt copied!`);
+        }
+      } catch (e) {
+        // Fallback to older copy method if clipboard API fails
+        if (promptText) {
+          this.fallbackCopyTextToClipboard(promptText);
+          this.showCopyMessage(`${chatbotName} prompt copied!`);
+        }
+      }
+
+      // open after copying
+      window.open(url, '_blank');
+      return;
+    }
+
+    // ChatGPT: open directly (it accepts query param)
+    window.open(url, '_blank');
+  }
+
+  copyPromptPageUrl() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const short = (prompt.id ?? '').slice(0, 8);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const url = prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+    });
+  }
+
+  private extractPromptFromUrl(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const searchParams = urlObj.searchParams;
+
+      const encodedPrompt = searchParams.get('q') || searchParams.get('prompt') || '';
+      return decodeURIComponent(encodedPrompt);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  private showCopyMessage(messageText: string) {
+    const message = document.createElement('div');
+    message.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all';
+    message.textContent = messageText;
+
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
   }
 
   async signOut() {
