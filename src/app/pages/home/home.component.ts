@@ -81,6 +81,8 @@ export class HomeComponent {
   readonly creationError = signal<string | null>(null);
   readonly isLoadingPrompts = signal(true);
   readonly loadPromptsError = signal<string | null>(null);
+  readonly deleteError = signal<string | null>(null);
+  readonly deletingPromptId = signal<string | null>(null);
 
   readonly createPromptForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
@@ -208,6 +210,32 @@ export class HomeComponent {
     }
   }
 
+  async onDeletePrompt(prompt: PromptCard) {
+    if (this.deletingPromptId() === prompt.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${prompt.title}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingPromptId.set(prompt.id);
+    this.deleteError.set(null);
+
+    try {
+      await this.promptService.deletePrompt(prompt.id);
+    } catch (error) {
+      console.error('Failed to delete prompt', error);
+      this.deleteError.set(
+        error instanceof Error ? error.message : 'Could not delete the prompt. Please try again.'
+      );
+    } finally {
+      this.deletingPromptId.set(null);
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   handleDocumentClick(event: Event) {
     if (!this.menuOpen()) {
@@ -244,6 +272,9 @@ export class HomeComponent {
           this.syncCategories(prompts);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
+          if (this.deleteError()) {
+            this.deleteError.set(null);
+          }
         },
         error: error => {
           console.error('Failed to load prompts', error);

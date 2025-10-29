@@ -110,6 +110,18 @@ export class PromptService {
     };
   }
 
+  async deletePrompt(id: string): Promise<void> {
+    const trimmedId = id?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A prompt id is required to delete a prompt.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+    await firestoreModule.deleteDoc(docRef);
+  }
+
   private toDate(
     value: unknown,
     firestoreModule: typeof import('firebase/firestore')

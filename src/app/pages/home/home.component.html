@@ -102,6 +102,10 @@
         class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
         {{ loadPromptsError() }}
       </div>
+      <div *ngIf="deleteError()"
+        class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+        {{ deleteError() }}
+      </div>
 
       <ng-container *ngIf="isLoadingPrompts(); else promptList">
         <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -112,6 +116,7 @@
             <div class="mt-2 h-4 w-11/12 rounded bg-slate-200/50"></div>
             <div class="mt-6 h-24 rounded-xl bg-slate-100/80"></div>
             <div class="mt-6 flex justify-end gap-2">
+              <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
@@ -169,7 +174,29 @@
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-
+                <button type="button" class="icon-button icon-button--danger" aria-label="Delete"
+                  (click)="onDeletePrompt(prompt)" [disabled]="deletingPromptId() === prompt.id">
+                  <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"
+                        opacity="0.25"></circle>
+                      <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round"></path>
+                    </svg>
+                  </ng-container>
+                  <ng-template #deleteIcon>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                      <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </ng-template>
+                </button>
               </div>
             </article>
           </div>

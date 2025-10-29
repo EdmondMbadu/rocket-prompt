@@ -31,6 +31,24 @@
   transform: translateY(-1px);
 }
 
+.icon-button--danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+
+.icon-button--danger:hover {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.icon-button--danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .avatar-button {
   align-items: center;
   background: rgba(255, 255, 255, 0.18);
