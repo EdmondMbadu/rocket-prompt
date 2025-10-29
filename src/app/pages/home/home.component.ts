@@ -98,6 +98,70 @@ export class HomeComponent {
     content: ['', [Validators.required, Validators.minLength(10)]]
   });
 
+  // Current tag input text mirrored as a signal so suggestions recompute on every keystroke.
+  readonly tagQuery = signal('');
+
+  // Suggestions for tag input based on existing categories (excluding base 'all')
+  readonly tagSuggestions = computed(() => {
+
+    // Use the mirrored tagQuery signal (updated on each input) so this computed
+    // re-runs on every keystroke. Initially empty -> no suggestions.
+    const term = String(this.tagQuery()).trim().toLowerCase();
+
+    if (!term) {
+      return [];
+    }
+
+    // Normalize to letters only for matching (ignore spaces, hyphens, numbers etc.)
+    const termLetters = term.replace(/[^a-z]/gi, '');
+
+    if (!termLetters) {
+      return [];
+    }
+
+    // Use a small fuzzy filter: accept if the letters-only candidate contains the typed letters
+    // or the Levenshtein distance is reasonably small (to allow short fuzzy matches but
+    // exclude long unrelated typed strings).
+    return this.categories().filter(c => {
+      if (c.value === 'all') return false;
+      const candidate = String(c.value).toLowerCase().replace(/[^a-z]/gi, '');
+
+      if (candidate.includes(termLetters)) return true;
+
+      // allow short fuzzy matches: compute distance and accept if small relative to candidate length
+      const distance = this.levenshteinDistance(termLetters, candidate);
+      const threshold = Math.max(1, Math.floor(candidate.length * 0.35));
+      return distance <= threshold;
+    });
+  });
+
+  // Simple iterative Levenshtein distance (small inputs only, acceptable here)
+  private levenshteinDistance(a: string, b: string) {
+    if (a === b) return 0;
+    const al = a.length;
+    const bl = b.length;
+    if (al === 0) return bl;
+    if (bl === 0) return al;
+
+    const v0 = new Array(bl + 1).fill(0);
+    const v1 = new Array(bl + 1).fill(0);
+
+    for (let j = 0; j <= bl; j++) {
+      v0[j] = j;
+    }
+
+    for (let i = 0; i < al; i++) {
+      v1[0] = i + 1;
+      for (let j = 0; j < bl; j++) {
+        const cost = a.charAt(i) === b.charAt(j) ? 0 : 1;
+        v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+      }
+      for (let j = 0; j <= bl; j++) v0[j] = v1[j];
+    }
+
+    return v1[bl];
+  }
+
   readonly filteredPrompts = computed(() => {
     const prompts = this.prompts();
     const term = this.searchTerm().trim().toLowerCase();
@@ -201,6 +265,7 @@ export class HomeComponent {
     this.editingPromptId.set(null);
     this.promptFormError.set(null);
     this.resetCreatePromptForm();
+    this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
   }
 
@@ -217,6 +282,8 @@ export class HomeComponent {
     });
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
+    // Do not enable suggestions immediately when editing a prompt; wait for the user to type
+    this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
   }
 
@@ -258,6 +325,14 @@ export class HomeComponent {
           tag,
           customUrl: trimmedCustomUrl || undefined
         });
+      }
+
+      // If the user entered a new tag that isn't already in categories, add it locally
+      const trimmedTag = (tag ?? '').trim();
+      if (trimmedTag && !this.categories().some(c => c.value === trimmedTag) && !this.baseCategoryValues.has(trimmedTag)) {
+        const next = [...this.categories(), { label: this.formatTagLabel(trimmedTag), value: trimmedTag }];
+        next.sort((a, b) => a.label.localeCompare(b.label));
+        this.categories.set(next);
       }
 
       this.resetCreatePromptForm();
@@ -439,5 +514,16 @@ export class HomeComponent {
     this.promptFormError.set(null);
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
+  }
+
+  selectTagSuggestion(value: string) {
+    this.createPromptForm.controls.tag.setValue(value);
+    // hide suggestions after selecting
+    this.tagQuery.set('');
+  }
+
+  onTagInput(value: string) {
+    const v = String(value ?? '').trim();
+    this.tagQuery.set(String(value ?? ''));
   }
 }
