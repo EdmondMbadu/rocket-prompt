@@ -3,7 +3,7 @@ import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
 import type { Firestore, QueryDocumentSnapshot } from 'firebase/firestore';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environments';
-import type { CreatePromptInput, Prompt } from '../models/prompt.model';
+import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../models/prompt.model';
 
 @Injectable({
   providedIn: 'root'
@@ -80,6 +80,53 @@ export class PromptService {
     const docRef = await firestoreModule.addDoc(firestoreModule.collection(firestore, 'prompts'), payload);
 
     return docRef.id;
+  }
+
+  async updatePrompt(id: string, input: UpdatePromptInput): Promise<void> {
+    const trimmedId = id?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A prompt id is required to update a prompt.');
+    }
+
+    const title = input.title?.trim();
+    const content = input.content?.trim();
+    const tag = input.tag?.trim();
+
+    if (!title) {
+      throw new Error('A title is required to update a prompt.');
+    }
+
+    if (!content) {
+      throw new Error('Content is required to update a prompt.');
+    }
+
+    if (!tag) {
+      throw new Error('A tag is required to update a prompt.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const normalizedTag = tag.toLowerCase();
+    const customUrlRaw = input.customUrl ?? '';
+    const customUrl = customUrlRaw.trim();
+
+    const updatePayload: Record<string, unknown> = {
+      title,
+      content,
+      tag: normalizedTag,
+      updatedAt: firestoreModule.serverTimestamp()
+    };
+
+    if (customUrl) {
+      updatePayload['customUrl'] = customUrl;
+    } else {
+      updatePayload['customUrl'] = firestoreModule.deleteField();
+    }
+
+    await firestoreModule.updateDoc(
+      firestoreModule.doc(firestore, 'prompts', trimmedId),
+      updatePayload
+    );
   }
 
   private mapPrompt(

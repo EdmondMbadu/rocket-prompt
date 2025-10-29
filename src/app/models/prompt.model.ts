@@ -18,3 +18,10 @@ export interface CreatePromptInput {
   readonly views?: number;
   readonly likes?: number;
 }
+
+export interface UpdatePromptInput {
+  readonly title: string;
+  readonly content: string;
+  readonly tag: string;
+  readonly customUrl?: string;
+}

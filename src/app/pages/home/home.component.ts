@@ -77,8 +77,10 @@ export class HomeComponent {
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
   readonly newPromptModalOpen = signal(false);
-  readonly isCreatingPrompt = signal(false);
-  readonly creationError = signal<string | null>(null);
+  readonly isEditingPrompt = signal(false);
+  readonly editingPromptId = signal<string | null>(null);
+  readonly isSavingPrompt = signal(false);
+  readonly promptFormError = signal<string | null>(null);
   readonly isLoadingPrompts = signal(true);
   readonly loadPromptsError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
@@ -168,45 +170,78 @@ export class HomeComponent {
 
   openCreatePromptModal() {
     this.closeMenu();
-    this.creationError.set(null);
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.promptFormError.set(null);
     this.resetCreatePromptForm();
     this.newPromptModalOpen.set(true);
   }
 
+  openEditPromptModal(prompt: PromptCard) {
+    this.closeMenu();
+    this.promptFormError.set(null);
+    this.isEditingPrompt.set(true);
+    this.editingPromptId.set(prompt.id);
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: prompt.customUrl ?? '',
+      content: prompt.content
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.newPromptModalOpen.set(true);
+  }
+
   closeCreatePromptModal() {
-    if (this.isCreatingPrompt()) {
+    if (this.isSavingPrompt()) {
       return;
     }
 
     this.newPromptModalOpen.set(false);
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.promptFormError.set(null);
   }
 
-  async submitCreatePrompt() {
+  async submitPromptForm() {
     if (this.createPromptForm.invalid) {
       this.createPromptForm.markAllAsTouched();
       return;
     }
 
     const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
+    const trimmedCustomUrl = (customUrl ?? '').trim();
 
-    this.isCreatingPrompt.set(true);
-    this.creationError.set(null);
+    this.isSavingPrompt.set(true);
+    this.promptFormError.set(null);
 
     try {
-      await this.promptService.createPrompt({
-        title,
-        content,
-        tag,
-        customUrl: customUrl?.trim() ? customUrl.trim() : undefined
-      });
+      if (this.isEditingPrompt() && this.editingPromptId()) {
+        await this.promptService.updatePrompt(this.editingPromptId()!, {
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl
+        });
+      } else {
+        await this.promptService.createPrompt({
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl || undefined
+        });
+      }
 
       this.resetCreatePromptForm();
+      this.isEditingPrompt.set(false);
+      this.editingPromptId.set(null);
       this.newPromptModalOpen.set(false);
     } catch (error) {
-      console.error('Failed to create prompt', error);
-      this.creationError.set(error instanceof Error ? error.message : 'Could not create prompt. Please try again.');
+      console.error('Failed to save prompt', error);
+      this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
     } finally {
-      this.isCreatingPrompt.set(false);
+      this.isSavingPrompt.set(false);
     }
   }
 
@@ -272,6 +307,9 @@ export class HomeComponent {
           this.syncCategories(prompts);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
+          if (this.promptFormError()) {
+            this.promptFormError.set(null);
+          }
           if (this.deleteError()) {
             this.deleteError.set(null);
           }
@@ -351,5 +389,8 @@ export class HomeComponent {
 
   private resetCreatePromptForm() {
     this.createPromptForm.reset({ ...this.createPromptDefaults });
+    this.promptFormError.set(null);
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
   }
 }

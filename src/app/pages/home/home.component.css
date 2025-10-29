@@ -31,6 +31,24 @@
   transform: translateY(-1px);
 }
 
+.icon-button--primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.icon-button--primary:hover {
+  background: #bfdbfe;
+  color: #1e40af;
+}
+
+.icon-button--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .icon-button--danger {
   background: #fee2e2;
   color: #b91c1c;

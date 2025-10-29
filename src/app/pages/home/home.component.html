@@ -120,6 +120,7 @@
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
               <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
+              <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
             </div>
           </div>
         </div>
@@ -148,7 +149,7 @@
               </div>
 
               <div class="mt-5 flex items-center justify-end gap-2 text-sm text-slate-500">
-                <button type="button" class="icon-button" aria-label="Copy">
+                <button type="button" class="icon-button" aria-label="Copy prompt" title="Copy prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none" stroke="currentColor"
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -156,7 +157,7 @@
                       stroke-width="1.6" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button" aria-label="Share">
+                <button type="button" class="icon-button" aria-label="Share prompt" title="Share prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path
                       d="M16 7a3 3 0 10-3-3 3 3 0 003 3zm-8 8a3 3 0 10-3-3 3 3 0 003 3zm8 8a3 3 0 10-3-3 3 3 0 003 3zm-8-6l8 4m0-14l-8 4"
@@ -164,7 +165,7 @@
                       stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button" aria-label="Open">
+                <button type="button" class="icon-button" aria-label="Open prompt" title="Open prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                       stroke-linejoin="round" />
@@ -174,8 +175,17 @@
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button icon-button--danger" aria-label="Delete"
-                  (click)="onDeletePrompt(prompt)" [disabled]="deletingPromptId() === prompt.id">
+                <button type="button" class="icon-button icon-button--primary" aria-label="Modify prompt"
+                  title="Modify prompt" (click)="openEditPromptModal(prompt)" [disabled]="isSavingPrompt()">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <button type="button" class="icon-button icon-button--danger" aria-label="Delete prompt"
+                  title="Delete prompt" (click)="onDeletePrompt(prompt)" [disabled]="deletingPromptId() === prompt.id">
                   <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
                       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -206,7 +216,7 @@
     <div *ngIf="newPromptModalOpen()" class="modal-overlay" (click)="closeCreatePromptModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <button type="button" class="modal-close" aria-label="Close" (click)="closeCreatePromptModal()"
-          [disabled]="isCreatingPrompt()">
+          [disabled]="isSavingPrompt()">
           <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
             <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" />
@@ -214,14 +224,18 @@
         </button>
 
         <header class="pr-8">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#6B21A8]">Create</p>
-          <h2 class="mt-2 text-2xl font-semibold text-slate-900">New Prompt</h2>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#6B21A8]">
+            {{ isEditingPrompt() ? 'Update' : 'Create' }}
+          </p>
+          <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+            {{ isEditingPrompt() ? 'Edit Prompt' : 'New Prompt' }}
+          </h2>
           <p class="mt-1 text-sm text-slate-500">
-            Capture your best prompt ideas and keep them ready to launch.
+            {{ isEditingPrompt() ? 'Make adjustments and keep your library fresh.' : 'Capture your best prompt ideas and keep them ready to launch.' }}
           </p>
         </header>
 
-        <form class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitCreatePrompt()">
+        <form class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-slate-600" for="prompt-title">Title</label>
@@ -271,21 +285,21 @@
             </p>
           </div>
 
-          <div *ngIf="creationError()"
+          <div *ngIf="promptFormError()"
             class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {{ creationError() }}
+            {{ promptFormError() }}
           </div>
 
           <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
             <button type="button"
               class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-              (click)="closeCreatePromptModal()" [disabled]="isCreatingPrompt()">
+              (click)="closeCreatePromptModal()" [disabled]="isSavingPrompt()">
               Cancel
             </button>
             <button type="submit"
               class="inline-flex items-center justify-center rounded-xl bg-[#6B21A8] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#581C87] disabled:cursor-not-allowed disabled:opacity-60"
-              [disabled]="isCreatingPrompt()">
-              <ng-container *ngIf="isCreatingPrompt(); else createLabel">
+              [disabled]="isSavingPrompt()">
+              <ng-container *ngIf="isSavingPrompt(); else saveLabel">
                 <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
                   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
                   </circle>
@@ -294,8 +308,8 @@
                 </svg>
                 Saving…
               </ng-container>
-              <ng-template #createLabel>
-                Save Prompt
+              <ng-template #saveLabel>
+                {{ isEditingPrompt() ? 'Update Prompt' : 'Save Prompt' }}
               </ng-template>
             </button>
           </div>
