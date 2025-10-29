@@ -60,6 +60,11 @@ export class AuthService {
     return authModule.signInWithEmailAndPassword(auth, email, password);
   }
 
+  async sendPasswordResetEmail(email: string): Promise<void> {
+    const { auth, authModule } = await this.getAuthContext();
+    await authModule.sendPasswordResetEmail(auth, email);
+  }
+
   async signOut(): Promise<void> {
     const { auth, authModule } = await this.getAuthContext();
     await authModule.signOut(auth);

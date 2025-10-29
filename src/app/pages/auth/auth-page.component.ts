@@ -6,6 +6,8 @@ import { FirebaseError } from 'firebase/app';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 
+type AuthMode = 'login' | 'signup' | 'reset';
+
 @Component({
   selector: 'app-auth-page',
   standalone: true,
@@ -19,18 +21,41 @@ export class AuthPageComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly mode = signal<'signup' | 'login'>('signup');
-  readonly heading = computed(() => (this.mode() === 'signup' ? 'Create your account' : 'Welcome back'));
-  readonly ctaLabel = computed(() => (this.mode() === 'signup' ? 'Sign up' : 'Sign in'));
-  readonly toggleLabel = computed(() =>
-    this.mode() === 'signup' ? 'Already have an account?' : "Don't have an account?"
-  );
-  readonly toggleAction = computed(() => (this.mode() === 'signup' ? 'Sign in' : 'Sign up'));
-  readonly mobileMenuOpen = signal(false);
+  readonly mode = signal<AuthMode>('login');
+  readonly heading = computed(() => {
+    switch (this.mode()) {
+      case 'signup':
+        return 'Create your account';
+      case 'reset':
+        return 'Reset your password';
+      default:
+        return 'Welcome back';
+    }
+  });
+  readonly description = computed(() => {
+    switch (this.mode()) {
+      case 'signup':
+        return 'Join Rocket Prompt and save your favourite prompt templates.';
+      case 'reset':
+        return "Enter the email linked to your account and we'll send a reset link.";
+      default:
+        return 'Sign in to access your saved prompts and collections.';
+    }
+  });
+  readonly ctaLabel = computed(() => {
+    switch (this.mode()) {
+      case 'signup':
+        return 'Create account';
+      case 'reset':
+        return 'Send reset link';
+      default:
+        return 'Sign in';
+    }
+  });
 
   readonly authForm = this.fb.group({
-    firstName: ['', [Validators.required, Validators.minLength(2)]],
-    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    firstName: [''],
+    lastName: [''],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
@@ -43,46 +68,63 @@ export class AuthPageComponent {
     this.route.queryParamMap
       .pipe(takeUntilDestroyed())
       .subscribe(params => {
-        const modeParam = params.get('mode') === 'login' ? 'login' : 'signup';
-        this.mode.set(modeParam);
-        this.applyModeValidators(modeParam);
+        const modeParam = params.get('mode');
+        const resolvedMode: AuthMode = modeParam === 'signup' ? 'signup' : modeParam === 'reset' ? 'reset' : 'login';
+        this.setMode(resolvedMode, { skipNavigation: true });
       });
-  }
 
-  switchMode() {
-    this.mode.set(this.mode() === 'signup' ? 'login' : 'signup');
     this.applyModeValidators(this.mode());
-    this.errorMessage = '';
-    this.successMessage = '';
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { mode: this.mode() },
-      replaceUrl: true
-    });
   }
 
-  toggleMobileMenu() {
-    this.mobileMenuOpen.update(open => !open);
-  }
+  setMode(mode: AuthMode, options: { skipNavigation?: boolean } = {}) {
+    if (this.mode() === mode) {
+      return;
+    }
 
-  closeMobileMenu() {
-    this.mobileMenuOpen.set(false);
-  }
-
-  setActiveMode(mode: 'signup' | 'login') {
     this.mode.set(mode);
     this.applyModeValidators(mode);
     this.errorMessage = '';
-    this.successMessage = '';
-    this.closeMobileMenu();
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { mode },
-      replaceUrl: true
-    });
+
+    if (mode !== 'reset') {
+      this.successMessage = '';
+    }
+
+    if (!options.skipNavigation) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { mode },
+        replaceUrl: true
+      });
+    }
   }
 
   async onSubmit() {
+    const mode = this.mode();
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (mode === 'reset') {
+      const email = this.authForm.value.email;
+      if (!email) {
+        this.authForm.get('email')?.markAsTouched();
+        return;
+      }
+
+      this.isSubmitting = true;
+
+      try {
+        await this.authService.sendPasswordResetEmail(email);
+        this.successMessage = 'Password reset link sent! Please check your inbox.';
+      } catch (error) {
+        this.errorMessage = this.mapError(error);
+      } finally {
+        this.isSubmitting = false;
+      }
+
+      return;
+    }
+
     if (this.authForm.invalid) {
       this.authForm.markAllAsTouched();
       return;
@@ -94,19 +136,10 @@ export class AuthPageComponent {
     }
 
     this.isSubmitting = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     try {
-      if (this.mode() === 'signup') {
-        if (!firstName || !lastName) {
-          this.authForm.get('firstName')?.markAsTouched();
-          this.authForm.get('lastName')?.markAsTouched();
-          this.errorMessage = 'Please provide your first and last name to complete sign up.';
-          return;
-        }
-
-        await this.authService.signUp({ firstName, lastName, email, password });
+      if (mode === 'signup') {
+        await this.authService.signUp({ firstName: firstName!, lastName: lastName!, email, password });
         this.successMessage =
           'Account created! We sent a verification link to your email. Please verify before signing in.';
         await this.router.navigate(['/verify-email'], { state: { email } });
@@ -157,11 +190,12 @@ export class AuthPageComponent {
     return 'Something went wrong. Please try again.';
   }
 
-  private applyModeValidators(mode: 'signup' | 'login') {
+  private applyModeValidators(mode: AuthMode) {
     const firstNameControl = this.authForm.get('firstName');
     const lastNameControl = this.authForm.get('lastName');
+    const passwordControl = this.authForm.get('password');
 
-    if (!firstNameControl || !lastNameControl) {
+    if (!firstNameControl || !lastNameControl || !passwordControl) {
       return;
     }
 
@@ -171,11 +205,20 @@ export class AuthPageComponent {
     } else {
       firstNameControl.clearValidators();
       lastNameControl.clearValidators();
-      firstNameControl.reset('');
-      lastNameControl.reset('');
+      firstNameControl.reset('', { emitEvent: false });
+      lastNameControl.reset('', { emitEvent: false });
     }
 
     firstNameControl.updateValueAndValidity({ emitEvent: false });
     lastNameControl.updateValueAndValidity({ emitEvent: false });
+
+    if (mode === 'reset') {
+      passwordControl.clearValidators();
+      passwordControl.reset('', { emitEvent: false });
+    } else {
+      passwordControl.setValidators([Validators.required, Validators.minLength(6)]);
+    }
+
+    passwordControl.updateValueAndValidity({ emitEvent: false });
   }
 }
