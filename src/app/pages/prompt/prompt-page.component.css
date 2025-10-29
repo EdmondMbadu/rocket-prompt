@@ -91,6 +91,37 @@
     font-weight: 700;
 }
 
+/* Like button */
+.btn-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 6px 10px;
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 9999px;
+    border: 0;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.btn-like:hover:not(:disabled) {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.btn-like[aria-pressed="true"] {
+    background: #f5e9ff;
+    /* light mauve */
+    color: #6b21a8;
+}
+
+.btn-like:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .container {
     width: 100%;
     max-width: 900px;

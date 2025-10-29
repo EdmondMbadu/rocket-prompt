@@ -3,6 +3,7 @@ import { Component, DestroyRef, HostListener, computed, inject, signal } from '@
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
+import { AuthService } from '../../services/auth.service';
 import type { Prompt } from '../../models/prompt.model';
 
 @Component({
@@ -16,12 +17,26 @@ export class PromptPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly promptService = inject(PromptService);
+  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly prompt = signal<Prompt | undefined>(undefined);
   readonly shareModalOpen = signal(false);
+
+  // Provide like state
+  readonly liked = signal(false);
+  readonly liking = signal(false);
+  readonly clientId = signal<string>('');
+
+  // computed actor id: `u_<uid>` for signed-in users, `c_<clientId>` for anonymous
+  readonly actorId = computed(() => {
+    const user = this.authService.currentUser;
+    if (user?.uid) return `u_${user.uid}`;
+    const cid = this.clientId();
+    return cid ? `c_${cid}` : '';
+  });
 
   // Provide a small computed short id for sharing (first 8 chars)
   readonly shortId = computed(() => {
@@ -30,6 +45,7 @@ export class PromptPageComponent {
   });
 
   constructor() {
+    this.ensureClientId();
     const idParam = String(this.route.snapshot.paramMap.get('id') ?? '');
 
     this.promptService
@@ -50,12 +66,24 @@ export class PromptPageComponent {
           this.prompt.set(found);
           this.loadError.set(null);
           this.isLoading.set(false);
+          // determine whether current actor already liked this prompt
+          void this.updateLikedState(found.id);
         },
         error: err => {
           console.error('Failed to load prompt', err);
           this.prompt.set(undefined);
           this.loadError.set('Could not load the prompt. Please try again.');
           this.isLoading.set(false);
+        }
+      });
+
+    // re-evaluate liked state when auth changes (login/logout)
+    this.authService.currentUser$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        const p = this.prompt();
+        if (p) {
+          void this.updateLikedState(p.id);
         }
       });
   }
@@ -148,6 +176,57 @@ export class PromptPageComponent {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
+  }
+
+  // --- Likes support ---
+  private ensureClientId() {
+    try {
+      const key = 'rp_client_id';
+      let id = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      if (!id) {
+        id = `c_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+        try { localStorage.setItem(key, id); } catch { /* ignore */ }
+      }
+      this.clientId.set(id ?? '');
+    } catch (e) {
+      this.clientId.set('');
+    }
+  }
+
+  private async updateLikedState(promptId: string) {
+    const actor = this.actorId();
+    if (!actor) {
+      this.liked.set(false);
+      return;
+    }
+
+    try {
+      const has = await this.promptService.hasLiked(promptId, actor);
+      this.liked.set(has);
+    } catch (e) {
+      console.error('Failed to determine liked state', e);
+      this.liked.set(false);
+    }
+  }
+
+  async toggleLike() {
+    const p = this.prompt();
+    if (!p) return;
+    if (this.liking()) return;
+
+    const actor = this.actorId();
+    if (!actor) return;
+
+    this.liking.set(true);
+    try {
+      const res = await this.promptService.toggleLike(p.id, actor);
+      this.liked.set(res.liked);
+      this.prompt.set({ ...p, likes: res.likes } as Prompt);
+    } catch (e) {
+      console.error('Failed to toggle like', e);
+    } finally {
+      this.liking.set(false);
+    }
   }
 
   back() {
