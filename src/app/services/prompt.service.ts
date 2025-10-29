@@ -206,6 +206,58 @@ export class PromptService {
     return this.firestoreModule;
   }
 
+  /**
+   * Check whether an actor (user or client) has liked a prompt.
+   * actorId should be a stable string identifying the actor (for users use `u_<uid>`, for clients `c_<clientId>`).
+   */
+  async hasLiked(promptId: string, actorId: string): Promise<boolean> {
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const likeDocId = `${promptId}_${actorId}`;
+    const likeDocRef = firestoreModule.doc(firestore, 'promptLikes', likeDocId);
+    const snap = await firestoreModule.getDoc(likeDocRef);
+    return snap.exists();
+  }
+
+  /**
+   * Toggle a like for an actor on a prompt. Uses a transaction to ensure likes count stays consistent.
+   * Returns the new liked state and the resulting likes count.
+   */
+  async toggleLike(promptId: string, actorId: string): Promise<{ liked: boolean; likes: number }> {
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    const likeDocId = `${promptId}_${actorId}`;
+    const likeDocRef = firestoreModule.doc(firestore, 'promptLikes', likeDocId);
+    const promptDocRef = firestoreModule.doc(firestore, 'prompts', promptId);
+
+    const result = await firestoreModule.runTransaction(firestore, async (tx) => {
+      const likeSnap = await tx.get(likeDocRef as any);
+      const promptSnap = await tx.get(promptDocRef as any);
+
+      if (!promptSnap.exists()) {
+        throw new Error('Prompt not found');
+      }
+
+  const promptData = promptSnap.data() as Record<string, unknown> | undefined;
+  const likesVal = promptData ? promptData['likes'] : undefined;
+  const currentLikes = typeof likesVal === 'number' ? likesVal : 0;
+
+      if (likeSnap.exists()) {
+        // remove like
+        tx.delete(likeDocRef as any);
+        const newLikes = Math.max(0, currentLikes - 1);
+        tx.update(promptDocRef as any, { likes: firestoreModule.increment ? firestoreModule.increment(-1) : newLikes });
+        return { liked: false, likes: newLikes };
+      } else {
+        // add like
+        tx.set(likeDocRef as any, { promptId, actorId, createdAt: firestoreModule.serverTimestamp() });
+        tx.update(promptDocRef as any, { likes: firestoreModule.increment ? firestoreModule.increment(1) : currentLikes + 1 });
+        return { liked: true, likes: currentLikes + 1 };
+      }
+    });
+
+    return result as { liked: boolean; likes: number };
+  }
+
   private ensureApp(): FirebaseApp {
     if (getApps().length) {
       return getApp();
