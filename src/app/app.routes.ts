@@ -25,6 +25,11 @@ export const routes: Routes = [
       import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'prompt/:id',
+    // single prompt view — accepts full id or short prefix
+    loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
+  },
+  {
     path: '**',
     redirectTo: 'auth'
   }

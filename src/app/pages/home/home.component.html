@@ -170,7 +170,7 @@
                   </svg>
                 </button>
                 <button type="button" class="icon-button" aria-label="Open prompt" data-tooltip="Open prompt"
-                  title="Open prompt">
+                  title="Open prompt" (click)="openPrompt(prompt)">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                       stroke-linejoin="round" />
@@ -266,8 +266,10 @@
                 Add a tag so the prompt can be grouped.
               </p>
 
-              <div *ngIf="tagSuggestions().length > 0"
-                class="mt-2 rounded-md bg-white border border-slate-100 shadow-sm">
+              <div
+                class="mt-2 rounded-md bg-white border border-slate-100 shadow-sm transition-opacity duration-150 ease-in-out overflow-hidden"
+                [class.opacity-0]="tagSuggestions().length === 0" [class.opacity-100]="tagSuggestions().length > 0"
+                [attr.aria-hidden]="tagSuggestions().length === 0">
                 <ul class="max-h-40 overflow-auto">
                   <li *ngFor="let s of tagSuggestions()" (click)="selectTagSuggestion(s.value)"
                     class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">

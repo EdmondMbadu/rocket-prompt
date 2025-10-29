@@ -100,13 +100,15 @@ export class HomeComponent {
 
   // Current tag input text mirrored as a signal so suggestions recompute on every keystroke.
   readonly tagQuery = signal('');
+  // Debounced version of the tag query to avoid rapid recomputation and UI flicker.
+  readonly tagQueryDebounced = signal('');
+  private tagQueryTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Suggestions for tag input based on existing categories (excluding base 'all')
   readonly tagSuggestions = computed(() => {
 
-    // Use the mirrored tagQuery signal (updated on each input) so this computed
-    // re-runs on every keystroke. Initially empty -> no suggestions.
-    const term = String(this.tagQuery()).trim().toLowerCase();
+  // Use the debounced tagQuery to avoid flicker during rapid typing.
+  const term = String(this.tagQueryDebounced()).trim().toLowerCase();
 
     if (!term) {
       return [];
@@ -285,6 +287,15 @@ export class HomeComponent {
     // Do not enable suggestions immediately when editing a prompt; wait for the user to type
     this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
+  }
+
+  /**
+   * Open a prompt using the short id (first 8 chars) so links are shareable.
+   */
+  openPrompt(prompt: PromptCard) {
+    const short = (prompt?.id ?? '').slice(0, 8);
+    if (!short) return;
+    void this.router.navigate(['/prompt', short]);
   }
 
   closeCreatePromptModal() {
@@ -520,10 +531,25 @@ export class HomeComponent {
     this.createPromptForm.controls.tag.setValue(value);
     // hide suggestions after selecting
     this.tagQuery.set('');
+    this.clearDebounce();
+    this.tagQueryDebounced.set('');
   }
 
   onTagInput(value: string) {
-    const v = String(value ?? '').trim();
-    this.tagQuery.set(String(value ?? ''));
+    const raw = String(value ?? '');
+    this.tagQuery.set(raw);
+    // debounce updating the debounced signal
+    this.clearDebounce();
+    this.tagQueryTimer = setTimeout(() => {
+      this.tagQueryDebounced.set(raw);
+      this.tagQueryTimer = null;
+    }, 180);
+  }
+
+  private clearDebounce() {
+    if (this.tagQueryTimer) {
+      clearTimeout(this.tagQueryTimer);
+      this.tagQueryTimer = null;
+    }
   }
 }
