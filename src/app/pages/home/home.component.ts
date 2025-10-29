@@ -62,14 +62,19 @@ export class HomeComponent {
     map(profile => (profile ? profile : undefined))
   );
 
-  readonly categories = signal<PromptCategory[]>([
+  private readonly baseCategories: PromptCategory[] = [
     { label: 'All', value: 'all' },
     { label: 'Creative', value: 'creative' },
     { label: 'Development', value: 'development' },
     { label: 'Marketing', value: 'marketing' },
     { label: 'Analysis', value: 'analysis' },
     { label: 'Productivity', value: 'productivity' }
-  ]);
+  ];
+
+  private readonly baseCategoryValues = new Set(this.baseCategories.map(category => category.value));
+
+  readonly categories = signal<PromptCategory[]>([...this.baseCategories]);
+  readonly hiddenCategories = signal<Set<string>>(new Set());
 
   readonly prompts = signal<PromptCard[]>([]);
 
@@ -134,6 +139,28 @@ export class HomeComponent {
 
   selectCategory(category: PromptCategory['value']) {
     this.selectedCategory.set(category);
+  }
+
+  isInitialCategory(value: string) {
+    return this.baseCategoryValues.has(value);
+  }
+
+  removeCustomCategory(value: string, event: Event) {
+    event.stopPropagation();
+
+    if (this.isInitialCategory(value)) {
+      return;
+    }
+
+    const hidden = new Set(this.hiddenCategories());
+    hidden.add(value);
+    this.hiddenCategories.set(hidden);
+
+    this.categories.set(this.categories().filter(category => category.value !== value));
+
+    if (this.selectedCategory() === value) {
+      this.selectedCategory.set('all');
+    }
   }
 
   onSearch(term: string) {
@@ -303,6 +330,25 @@ export class HomeComponent {
       .subscribe({
         next: prompts => {
           const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
+
+          const hidden = this.hiddenCategories();
+          if (hidden.size) {
+            const nextHidden = new Set(hidden);
+            let hiddenChanged = false;
+
+            hidden.forEach(value => {
+              const stillUsed = prompts.some(prompt => prompt.tag?.trim() === value);
+              if (!stillUsed) {
+                nextHidden.delete(value);
+                hiddenChanged = true;
+              }
+            });
+
+            if (hiddenChanged) {
+              this.hiddenCategories.set(nextHidden);
+            }
+          }
+
           this.prompts.set(cards);
           this.syncCategories(prompts);
           this.isLoadingPrompts.set(false);
@@ -365,12 +411,13 @@ export class HomeComponent {
   private syncCategories(prompts: readonly Prompt[]) {
     const existing = this.categories();
     const existingValues = new Set(existing.map(category => category.value));
+    const hiddenValues = this.hiddenCategories();
     const additions: PromptCategory[] = [];
 
     prompts.forEach(prompt => {
       const tag = prompt.tag?.trim();
 
-      if (!tag || tag === 'all' || existingValues.has(tag)) {
+      if (!tag || tag === 'all' || existingValues.has(tag) || hiddenValues.has(tag)) {
         return;
       }
 

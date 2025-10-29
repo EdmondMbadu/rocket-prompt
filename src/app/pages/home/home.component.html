@@ -84,15 +84,25 @@
     <!-- CATEGORIES -->
     <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div class="flex flex-wrap gap-3">
-        <button type="button" *ngFor="let category of categories()" (click)="selectCategory(category.value)"
-          class="inline-flex items-center rounded-full border px-5 py-2 text-sm font-semibold capitalize transition"
-          [ngClass]="
-            selectedCategory() === category.value
-              ? 'border-transparent bg-[#6B21A8] text-white shadow-sm'
-              : 'border-slate-200 bg-white text-slate-600 hover:text-slate-800'
-          ">
-          {{ category.label }}
-        </button>
+        <div class="category-chip" *ngFor="let category of categories()">
+          <button type="button"
+            class="inline-flex items-center rounded-full border px-5 py-2 text-sm font-semibold capitalize transition category-chip__button"
+            [ngClass]="
+              selectedCategory() === category.value
+                ? 'border-transparent bg-[#6B21A8] text-white shadow-sm'
+                : 'border-slate-200 bg-white text-slate-600 hover:text-slate-800'
+            " (click)="selectCategory(category.value)">
+            {{ category.label }}
+          </button>
+          <button *ngIf="!isInitialCategory(category.value)" type="button" class="category-chip__remove"
+            aria-label="Delete tag" data-tooltip="Delete tag" title="Delete tag"
+            (click)="removeCustomCategory(category.value, $event)">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5">
+              <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -149,7 +159,8 @@
               </div>
 
               <div class="mt-5 flex items-center justify-end gap-2 text-sm text-slate-500">
-                <button type="button" class="icon-button" aria-label="Copy prompt" title="Copy prompt">
+                <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
+                  title="Copy prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none" stroke="currentColor"
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -157,7 +168,8 @@
                       stroke-width="1.6" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button" aria-label="Share prompt" title="Share prompt">
+                <button type="button" class="icon-button" aria-label="Share prompt" data-tooltip="Share prompt"
+                  title="Share prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path
                       d="M16 7a3 3 0 10-3-3 3 3 0 003 3zm-8 8a3 3 0 10-3-3 3 3 0 003 3zm8 8a3 3 0 10-3-3 3 3 0 003 3zm-8-6l8 4m0-14l-8 4"
@@ -165,7 +177,8 @@
                       stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button" aria-label="Open prompt" title="Open prompt">
+                <button type="button" class="icon-button" aria-label="Open prompt" data-tooltip="Open prompt"
+                  title="Open prompt">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                       stroke-linejoin="round" />
@@ -176,7 +189,8 @@
                   </svg>
                 </button>
                 <button type="button" class="icon-button icon-button--primary" aria-label="Modify prompt"
-                  title="Modify prompt" (click)="openEditPromptModal(prompt)" [disabled]="isSavingPrompt()">
+                  data-tooltip="Modify prompt" title="Modify prompt" (click)="openEditPromptModal(prompt)"
+                  [disabled]="isSavingPrompt()">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
                       stroke-linecap="round" stroke-linejoin="round" />
@@ -185,7 +199,8 @@
                   </svg>
                 </button>
                 <button type="button" class="icon-button icon-button--danger" aria-label="Delete prompt"
-                  title="Delete prompt" (click)="onDeletePrompt(prompt)" [disabled]="deletingPromptId() === prompt.id">
+                  data-tooltip="Delete prompt" title="Delete prompt" (click)="onDeletePrompt(prompt)"
+                  [disabled]="deletingPromptId() === prompt.id">
                   <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
                       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"
