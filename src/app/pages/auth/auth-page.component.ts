@@ -155,7 +155,7 @@ export class AuthPageComponent {
         }
 
         if (credential.user.emailVerified) {
-          await this.router.navigate(['/home']);
+          await this.router.navigate(['/home'], { replaceUrl: true });
         } else {
           await this.router.navigate(['/verify-email']);
         }

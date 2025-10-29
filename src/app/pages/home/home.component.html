@@ -160,13 +160,13 @@
                       stroke-width="1.6" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button" aria-label="Share prompt" data-tooltip="Share prompt"
-                  title="Share prompt" (click)="openShareModal(prompt)">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path
-                      d="M16 7a3 3 0 10-3-3 3 3 0 003 3zm-8 8a3 3 0 10-3-3 3 3 0 003 3zm8 8a3 3 0 10-3-3 3 3 0 003 3zm-8-6l8 4m0-14l-8 4"
-                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                      stroke-linejoin="round" />
+                <button type="button" class="icon-button icon-button--share" aria-label="Share prompt"
+                  data-tooltip="Share prompt" title="Share prompt" (click)="openShareModal(prompt)">
+                  <!-- Provided network/share SVG, resized to match other icons -->
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+                    stroke-width="1.6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                   </svg>
                 </button>
                 <button type="button" class="icon-button" aria-label="Open prompt" data-tooltip="Open prompt"
@@ -280,19 +280,7 @@
             </div>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-slate-600" for="prompt-custom-url">Custom URL</label>
-            <div
-              class="mt-1 flex w-full items-center overflow-hidden rounded-xl border border-slate-200 shadow-sm focus-within:border-[#6B21A8] focus-within:ring-2 focus-within:ring-[#6B21A8]/40">
-              <span class="hidden bg-slate-100 px-3 text-sm text-slate-500 sm:block">rocketprompt.io/</span>
-              <input id="prompt-custom-url" type="text" formControlName="customUrl"
-                class="w-full rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none"
-                placeholder="my-growth-sprint" />
-            </div>
-            <p class="mt-1 text-xs text-slate-400">
-              Leave blank to auto-generate later.
-            </p>
-          </div>
+
 
           <div>
             <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content</label>
@@ -358,10 +346,16 @@
 
 <!-- LOADING -->
 <ng-template #loading>
-  <section class="mx-auto max-w-6xl rounded-2xl bg-white px-8 py-10 text-center shadow-sm ring-1 ring-slate-200">
-    <p class="text-lg font-semibold text-slate-800">Loading your library…</p>
-    <p class="mt-1 text-sm text-slate-500">Please wait.</p>
-  </section>
+  <!-- Full-screen loading overlay to avoid awkward intermediary break-up during navigation -->
+  <div role="status" aria-live="polite"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div class="w-full max-w-sm px-6 py-8 text-center">
+      <div class="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent"
+        aria-hidden="true"></div>
+      <p class="text-xl font-semibold">Loading…</p>
+      <p class="mt-2 text-sm opacity-80">Preparing your library</p>
+    </div>
+  </div>
 </ng-template>
 
 <!-- SHARE PROMPT MODAL -->

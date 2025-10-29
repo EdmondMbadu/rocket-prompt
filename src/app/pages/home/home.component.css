@@ -98,6 +98,27 @@
   color: #b91c1c;
 }
 
+/* Mauve share button to emphasize sharing (matches page purple) */
+.icon-button--share {
+  background: #f5e9ff;
+  /* light mauve */
+  color: #6b21a8;
+  /* page purple */
+  box-shadow: inset 0 0 0 1px rgba(107, 33, 168, 0.12);
+}
+
+.icon-button--share:hover {
+  background: #ecd8ff;
+  color: #5b1896;
+}
+
+.icon-button--share:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5e9ff;
+  color: #6b21a8;
+}
+
 .icon-button[data-tooltip],
 .category-chip__remove[data-tooltip] {
   position: relative;
