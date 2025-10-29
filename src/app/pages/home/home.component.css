@@ -110,3 +110,51 @@
   border-color: rgba(124, 58, 237, 0.35);
   color: #6b21a8;
 }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.64);
+  backdrop-filter: blur(9px);
+  z-index: 50;
+}
+
+.modal-card {
+  position: relative;
+  width: min(100%, 40rem);
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 35px 80px -35px rgba(15, 23, 42, 0.65);
+  padding: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.86);
+  color: #475569;
+  transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease;
+}
+
+.modal-close:hover:not(:disabled) {
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(148, 163, 184, 0.55);
+  transform: rotate(3deg);
+}
+
+.modal-close:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

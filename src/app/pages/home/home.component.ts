@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { PromptService } from '../../services/prompt.service';
+import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 
 interface PromptCategory {
@@ -14,24 +18,37 @@ interface PromptCategory {
 interface PromptCard {
   readonly id: string;
   readonly title: string;
-  readonly description: string;
-  readonly snippet: string;
-  readonly category: string;
-  readonly categoryLabel: string;
+  readonly content: string;
+  readonly preview: string;
+  readonly tag: string;
+  readonly tagLabel: string;
+  readonly customUrl?: string;
   readonly views: number;
-  readonly favorites: number;
+  readonly likes: number;
+  readonly createdAt?: Date;
+  readonly updatedAt?: Date;
 }
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
 export class HomeComponent {
   private readonly authService = inject(AuthService);
+  private readonly promptService = inject(PromptService);
   private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly createPromptDefaults = {
+    title: '',
+    tag: '',
+    customUrl: '',
+    content: ''
+  } as const;
 
   readonly currentUser$ = this.authService.currentUser$;
   readonly profile$ = this.currentUser$.pipe(
@@ -45,87 +62,32 @@ export class HomeComponent {
     map(profile => (profile ? profile : undefined))
   );
 
-  readonly categories: readonly PromptCategory[] = [
+  readonly categories = signal<PromptCategory[]>([
     { label: 'All', value: 'all' },
     { label: 'Creative', value: 'creative' },
     { label: 'Development', value: 'development' },
     { label: 'Marketing', value: 'marketing' },
     { label: 'Analysis', value: 'analysis' },
     { label: 'Productivity', value: 'productivity' }
-  ];
-
-  readonly prompts = signal<readonly PromptCard[]>([
-    {
-      id: 'creative-story-writer',
-      title: 'Creative Story Writer',
-      description: 'Generate engaging creative stories with plot twists',
-      snippet:
-        'You are a creative story writer. Write an engaging story about [TOPIC]. Include vivid descriptions, emotional depth, and an unexpected twist in the final act...',
-      category: 'creative',
-      categoryLabel: 'creative',
-      views: 245,
-      favorites: 89
-    },
-    {
-      id: 'code-reviewer',
-      title: 'Code Reviewer',
-      description: 'Get comprehensive code reviews with actionable feedback',
-      snippet:
-        'Review the following code and provide detailed feedback on: 1) Code quality 2) Best practices 3) Potential bugs 4) Suggested improvements 5) Test coverage...',
-      category: 'development',
-      categoryLabel: 'development',
-      views: 512,
-      favorites: 143
-    },
-    {
-      id: 'marketing-copy-expert',
-      title: 'Marketing Copy Expert',
-      description: 'Generate persuasive marketing copy that converts',
-      snippet:
-        'Create compelling marketing copy for [PRODUCT/SERVICE]. Target audience: [AUDIENCE]. Tone: [TONE]. Include a strong hook, benefit-driven bullets, and a clear CTA...',
-      category: 'marketing',
-      categoryLabel: 'marketing',
-      views: 387,
-      favorites: 102
-    },
-    {
-      id: 'data-analysis-assistant',
-      title: 'Data Analysis Assistant',
-      description: 'Extract insights and recommendations from data',
-      snippet:
-        'Analyze the following data and provide: 1) Key insights 2) Trends and patterns 3) Statistical summary 4) Actionable recommendations 5) Risks or anomalies...',
-      category: 'analysis',
-      categoryLabel: 'analysis',
-      views: 408,
-      favorites: 120
-    },
-    {
-      id: 'social-media-manager',
-      title: 'Social Media Manager',
-      description: 'Plan and generate social media content calendars',
-      snippet:
-        'Create a week of social media posts for [BRAND] on [PLATFORM]. Include hashtags, emojis, and engaging CTAs. Maintain a consistent voice that matches the brand...',
-      category: 'marketing',
-      categoryLabel: 'marketing',
-      views: 298,
-      favorites: 87
-    },
-    {
-      id: 'meeting-summarizer',
-      title: 'Meeting Summarizer',
-      description: 'Turn meeting notes into actionable summaries',
-      snippet:
-        'Summarize the following meeting notes into: 1) Key decisions 2) Action items with owners 3) Deadlines 4) Risks or blockers 5) Follow-up questions...',
-      category: 'productivity',
-      categoryLabel: 'productivity',
-      views: 334,
-      favorites: 91
-    }
   ]);
+
+  readonly prompts = signal<PromptCard[]>([]);
 
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
+  readonly newPromptModalOpen = signal(false);
+  readonly isCreatingPrompt = signal(false);
+  readonly creationError = signal<string | null>(null);
+  readonly isLoadingPrompts = signal(true);
+  readonly loadPromptsError = signal<string | null>(null);
+
+  readonly createPromptForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required]],
+    customUrl: [''],
+    content: ['', [Validators.required, Validators.minLength(10)]]
+  });
 
   readonly filteredPrompts = computed(() => {
     const prompts = this.prompts();
@@ -133,7 +95,7 @@ export class HomeComponent {
     const category = this.selectedCategory();
 
     return prompts.filter(prompt => {
-      const matchesCategory = category === 'all' || prompt.category === category;
+      const matchesCategory = category === 'all' || prompt.tag === category;
 
       if (!matchesCategory) {
         return false;
@@ -143,13 +105,22 @@ export class HomeComponent {
         return true;
       }
 
-      const haystack = [prompt.title, prompt.description, prompt.snippet, prompt.categoryLabel]
+      const haystack = [
+        prompt.title,
+        prompt.content,
+        prompt.tag,
+        prompt.customUrl ?? ''
+      ]
         .join(' ')
         .toLowerCase();
 
       return haystack.includes(term);
     });
   });
+
+  constructor() {
+    this.observePrompts();
+  }
 
   async signOut() {
     this.closeMenu();
@@ -170,6 +141,10 @@ export class HomeComponent {
   }
 
   toggleMenu() {
+    if (this.newPromptModalOpen()) {
+      return;
+    }
+
     this.menuOpen.update(open => !open);
   }
 
@@ -189,6 +164,50 @@ export class HomeComponent {
     return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
   }
 
+  openCreatePromptModal() {
+    this.closeMenu();
+    this.creationError.set(null);
+    this.resetCreatePromptForm();
+    this.newPromptModalOpen.set(true);
+  }
+
+  closeCreatePromptModal() {
+    if (this.isCreatingPrompt()) {
+      return;
+    }
+
+    this.newPromptModalOpen.set(false);
+  }
+
+  async submitCreatePrompt() {
+    if (this.createPromptForm.invalid) {
+      this.createPromptForm.markAllAsTouched();
+      return;
+    }
+
+    const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
+
+    this.isCreatingPrompt.set(true);
+    this.creationError.set(null);
+
+    try {
+      await this.promptService.createPrompt({
+        title,
+        content,
+        tag,
+        customUrl: customUrl?.trim() ? customUrl.trim() : undefined
+      });
+
+      this.resetCreatePromptForm();
+      this.newPromptModalOpen.set(false);
+    } catch (error) {
+      console.error('Failed to create prompt', error);
+      this.creationError.set(error instanceof Error ? error.message : 'Could not create prompt. Please try again.');
+    } finally {
+      this.isCreatingPrompt.set(false);
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   handleDocumentClick(event: Event) {
     if (!this.menuOpen()) {
@@ -204,8 +223,102 @@ export class HomeComponent {
 
   @HostListener('document:keydown.escape')
   handleEscape() {
+    if (this.newPromptModalOpen()) {
+      this.closeCreatePromptModal();
+      return;
+    }
+
     if (this.menuOpen()) {
       this.closeMenu();
     }
+  }
+
+  private observePrompts() {
+    this.promptService
+      .prompts$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: prompts => {
+          const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
+          this.prompts.set(cards);
+          this.syncCategories(prompts);
+          this.isLoadingPrompts.set(false);
+          this.loadPromptsError.set(null);
+        },
+        error: error => {
+          console.error('Failed to load prompts', error);
+          this.isLoadingPrompts.set(false);
+          this.loadPromptsError.set('We could not load your prompts. Please try again.');
+        }
+      });
+  }
+
+  private mapPromptToCard(prompt: Prompt): PromptCard {
+    const tag = prompt.tag || 'general';
+
+    return {
+      id: prompt.id,
+      title: prompt.title,
+      content: prompt.content,
+      preview: this.buildPreview(prompt.content),
+      tag,
+      tagLabel: this.formatTagLabel(tag),
+      customUrl: prompt.customUrl,
+      views: prompt.views ?? 0,
+      likes: prompt.likes ?? 0,
+      createdAt: prompt.createdAt,
+      updatedAt: prompt.updatedAt
+    };
+  }
+
+  private buildPreview(content: string) {
+    const normalized = content?.trim() ?? '';
+
+    if (normalized.length <= 240) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, 240).trimEnd()}…`;
+  }
+
+  private formatTagLabel(tag: string) {
+    if (!tag) {
+      return 'General';
+    }
+
+    return tag
+      .split(/[\s_-]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  private syncCategories(prompts: readonly Prompt[]) {
+    const existing = this.categories();
+    const existingValues = new Set(existing.map(category => category.value));
+    const additions: PromptCategory[] = [];
+
+    prompts.forEach(prompt => {
+      const tag = prompt.tag?.trim();
+
+      if (!tag || tag === 'all' || existingValues.has(tag)) {
+        return;
+      }
+
+      existingValues.add(tag);
+      additions.push({
+        label: this.formatTagLabel(tag),
+        value: tag
+      });
+    });
+
+    if (additions.length) {
+      additions.sort((a, b) => a.label.localeCompare(b.label));
+      this.categories.set([...existing, ...additions]);
+    }
+  }
+
+  private resetCreatePromptForm() {
+    this.createPromptForm.reset({ ...this.createPromptDefaults });
   }
 }
