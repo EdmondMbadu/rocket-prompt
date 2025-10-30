@@ -167,7 +167,7 @@
 
               <div class="mt-5 flex items-center justify-end gap-2 text-sm text-slate-500">
                 <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
-                  title="Copy prompt">
+                  title="Copy prompt" (click)="copyPrompt(prompt); $event.stopPropagation()">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none" stroke="currentColor"
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />

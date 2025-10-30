@@ -271,6 +271,21 @@ export class HomeComponent {
     });
   }
 
+  async copyPrompt(prompt: PromptCard) {
+    if (!prompt) return;
+
+    const text = prompt.content ?? '';
+
+    try {
+      await navigator.clipboard.writeText(text);
+      this.showCopyMessage('Prompt copied!');
+    } catch (e) {
+      // Fallback for older browsers
+      this.fallbackCopyTextToClipboard(text);
+      this.showCopyMessage('Prompt copied!');
+    }
+  }
+
   private extractPromptFromUrl(url: string): string {
     try {
       const urlObj = new URL(url);
