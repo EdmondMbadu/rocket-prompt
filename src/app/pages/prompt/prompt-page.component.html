@@ -155,7 +155,12 @@
 
                     <button type="button"
                         class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        (click)="copyPromptPageUrl()">
+                        (click)="copyPrompt()" title="Copy prompt" data-tooltip="Copy prompt">
+                        Copy prompt
+                    </button>
+                    <button type="button"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        (click)="copyPromptPageUrl()" title="Copy prompt URL" data-tooltip="Copy prompt URL">
                         Copy prompt URL
                     </button>
                 </div>
