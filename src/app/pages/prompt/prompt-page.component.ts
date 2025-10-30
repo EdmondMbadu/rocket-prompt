@@ -29,6 +29,9 @@ export class PromptPageComponent {
   readonly liked = signal(false);
   readonly liking = signal(false);
   readonly clientId = signal<string>('');
+  // copied state for the single prompt page (used to show check icon briefly)
+  readonly copied = signal(false);
+  private copyTimer?: ReturnType<typeof setTimeout>;
 
   // computed actor id: `u_<uid>` for signed-in users, `c_<clientId>` for anonymous
   readonly actorId = computed(() => {
@@ -151,6 +154,41 @@ export class PromptPageComponent {
       this.fallbackCopyTextToClipboard(url);
       this.showCopyMessage('Prompt URL copied!');
     });
+  }
+
+  async copyPrompt() {
+    const p = this.prompt();
+    if (!p) return;
+
+    const text = p.content ?? '';
+
+    try {
+      await navigator.clipboard.writeText(text);
+      this.showCopyMessage('Prompt copied!');
+      this.markCopied();
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(text);
+      this.showCopyMessage('Prompt copied!');
+      this.markCopied();
+    }
+  }
+
+  private markCopied() {
+    try {
+      // set copied flag and clear any previous timer
+      this.copied.set(true);
+      if (this.copyTimer) {
+        clearTimeout(this.copyTimer);
+      }
+
+      const DURATION = 2500;
+      this.copyTimer = setTimeout(() => {
+        this.copied.set(false);
+        this.copyTimer = undefined;
+      }, DURATION);
+    } catch (e) {
+      // ignore
+    }
   }
 
   private showCopyMessage(messageText: string) {
