@@ -160,7 +160,8 @@
 
 .title {
     margin: 0;
-    font-size: 1.6rem; /* ~25.6px */
+    font-size: 1.6rem;
+    /* ~25.6px */
     line-height: 1.08;
     /* allow long titles to wrap nicely */
     word-break: break-word;

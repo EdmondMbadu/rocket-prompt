@@ -1,5 +1,6 @@
 <div class="prompt-page-root">
-    <header class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <header
+        class="sticky top-0 z-50 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 ring-1 ring-white/10 shadow-sm">
         <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <!-- Brand -->
@@ -32,6 +33,7 @@
             </div>
         </div>
     </header>
+
 
     <main class="container">
         <section *ngIf="isLoading()" class="empty">Loading...</section>
