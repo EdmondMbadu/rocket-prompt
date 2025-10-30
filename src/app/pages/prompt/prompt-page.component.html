@@ -1,31 +1,31 @@
 <div class="prompt-page-root">
     <header
-        class="sticky top-0 z-50 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 ring-1 ring-white/10 shadow-sm">
+        class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <!-- Brand -->
-                <div class="flex items-center gap-3 text-white">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-2xl">🚀</div>
+                <div class="flex items-center gap-3 text-slate-900">
+                    <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-10 w-auto" />
                     <div class="leading-tight">
-                        <p class="text-lg font-bold">Rocket Prompt</p>
-                        <p class="text-xs opacity-80">AI Prompts Library</p>
+                        <p class="text-lg font-bold text-slate-900">Rocket Prompt</p>
+                        <p class="text-xs opacity-80 text-slate-600">AI Prompts Library</p>
                     </div>
                 </div>
 
                 <!-- Actions (back, id, share) -->
                 <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
                     <button type="button" (click)="back()"
-                        class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-white/10 hover:bg-white/5">
+                        class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-200">
                         <span class="text-base">←</span>
                         Back
                     </button>
 
                     <div class="inline-flex items-center gap-2">
                         <span
-                            class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90">#{{
+                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">#{{
                             shortId() }}</span>
                         <button type="button" (click)="openShareModal()"
-                            class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#6B21A8] shadow-sm ring-1 ring-black/5 hover:bg-slate-50">
+                            class="inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-red-300 hover:bg-[#B91C1C]">
                             Share
                         </button>
                     </div>
@@ -127,7 +127,7 @@
             </button>
 
             <header class="pr-8">
-                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#6B21A8]">Share</p>
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">Share</p>
                 <h2 class="mt-2 text-2xl font-semibold text-slate-900">Share prompt</h2>
                 <p class="mt-1 text-sm text-slate-500">Open this prompt in a chatbot or copy its URL.</p>
             </header>
@@ -159,12 +159,12 @@
                     </button>
 
                     <button type="button"
-                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400"
                         (click)="copyPrompt()" title="Copy prompt" data-tooltip="Copy prompt">
                         Copy prompt
                     </button>
                     <button type="button"
-                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400"
                         (click)="copyPromptPageUrl()" title="Copy prompt URL" data-tooltip="Copy prompt URL">
                         Copy prompt URL
                     </button>

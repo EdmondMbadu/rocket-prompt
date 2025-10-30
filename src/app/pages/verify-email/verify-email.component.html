@@ -1,15 +1,15 @@
 <ng-container *ngIf="user$ | async as user; else loggedOut">
-  <section class="mx-auto max-w-3xl space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 text-white shadow-2xl shadow-purple-900/40 backdrop-blur-xl">
+  <section class="mx-auto max-w-3xl space-y-6 rounded-3xl border border-slate-300 bg-slate-50 p-8 text-slate-900 shadow-2xl">
     <div class="space-y-2">
-      <p class="text-sm font-semibold uppercase tracking-[0.35em] text-purple-200/70">Verify email</p>
-      <h1 class="text-3xl font-bold">Check your inbox, {{ user.displayName || 'friend' }}.</h1>
-      <p class="text-sm text-white/70">
-        We sent a verification link to <span class="font-medium text-purple-200">{{ user.email }}</span>. Click the link and then refresh your status here.
+      <p class="text-sm font-semibold uppercase tracking-[0.35em] text-[#DC2626]">Verify email</p>
+      <h1 class="text-3xl font-bold text-slate-900">Check your inbox, {{ user.displayName || 'friend' }}.</h1>
+      <p class="text-sm text-slate-600">
+        We sent a verification link to <span class="font-medium text-[#DC2626]">{{ user.email }}</span>. Click the link and then refresh your status here.
       </p>
     </div>
 
-    <div class="space-y-4 rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-white/70">
-      <p class="font-semibold text-white">Troubleshooting tips</p>
+    <div class="space-y-4 rounded-2xl border border-slate-300 bg-white p-5 text-sm text-slate-600">
+      <p class="font-semibold text-slate-900">Troubleshooting tips</p>
       <ul class="list-disc space-y-1 pl-5">
         <li>Look in spam, promotions, or updates folders.</li>
         <li>The link expires after a short time—resend if needed.</li>
@@ -44,20 +44,20 @@
       </button>
     </div>
 
-    <p class="text-xs text-white/60">
+    <p class="text-xs text-slate-600">
       Signed in as {{ user.email }} ·
-      <a routerLink="/auth" class="font-semibold text-purple-200 hover:text-purple-100">Use a different account</a>
+      <a routerLink="/auth" class="font-semibold text-[#DC2626] hover:text-[#B91C1C]">Use a different account</a>
     </p>
   </section>
 </ng-container>
 
 <ng-template #loggedOut>
-  <section class="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-white shadow-2xl shadow-purple-900/40 backdrop-blur-xl">
-    <h1 class="text-3xl font-bold">Let’s get you signed in again</h1>
-    <p class="mt-4 text-sm text-white/70">We lost track of your session. Head back to the login screen and we’ll pick up where you left off.</p>
+  <section class="mx-auto max-w-2xl rounded-3xl border border-slate-300 bg-slate-50 p-8 text-center text-slate-900 shadow-2xl">
+    <h1 class="text-3xl font-bold text-slate-900">Let's get you signed in again</h1>
+    <p class="mt-4 text-sm text-slate-600">We lost track of your session. Head back to the login screen and we'll pick up where you left off.</p>
     <a
       routerLink="/auth"
-      class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:from-purple-400 hover:to-pink-400"
+      class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-[#B91C1C]"
     >
       <span aria-hidden="true">↩</span>
       Back to login
