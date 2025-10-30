@@ -143,16 +143,31 @@
 }
 
 .card-header {
+    /* keep header full width and allow inner wrapper to control layout */
+    width: 100%;
+    margin-bottom: 6px;
+}
+
+.card-header-inner {
     display: flex;
+    width: 100%;
+    gap: 12px;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    /* stack by default for small screens */
+    flex-direction: column;
 }
 
 .title {
     margin: 0;
-    font-size: 28px;
+    font-size: 1.6rem; /* ~25.6px */
     line-height: 1.08;
+    /* allow long titles to wrap nicely */
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-align: center;
+    /* constrain width on small screens so tag can sit below without overflowing */
+    width: 100%;
 }
 
 .tag {
@@ -161,6 +176,31 @@
     padding: 6px 10px;
     border-radius: 999px;
     font-weight: 600;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* place tag centered under title on small screens */
+    margin-top: 8px;
+}
+
+/* Larger screens: place title and tag on the same row and left-align the title */
+@media (min-width: 640px) {
+    .card-header-inner {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .title {
+        text-align: left;
+        /* allow title to take remaining space while leaving room for tag */
+        max-width: calc(100% - 140px);
+    }
+
+    .tag {
+        margin-top: 0;
+        flex-shrink: 0;
+    }
 }
 
 .meta {

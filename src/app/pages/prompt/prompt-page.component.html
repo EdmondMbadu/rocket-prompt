@@ -40,8 +40,11 @@
 
         <article *ngIf="!isLoading() && !loadError() && prompt()" class="card">
             <div class="card-header">
-                <h1 class="title">{{ prompt()?.title }}</h1>
-                <div class="tag">{{ prompt()?.tag | titlecase }}</div>
+                <!-- Inner wrapper lets us stack on small screens and align on large -->
+                <div class="card-header-inner">
+                    <h1 class="title">{{ prompt()?.title }}</h1>
+                    <div class="tag">{{ prompt()?.tag | titlecase }}</div>
+                </div>
             </div>
 
             <div class="meta">
