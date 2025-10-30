@@ -92,6 +92,11 @@ export class HomeComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
+  // Track prompt ids that were recently copied so we can show a check icon on the card
+  readonly recentlyCopied = signal<Set<string>>(new Set());
+
+  // Map of timers for each copied prompt so we can clear them if the user copies again
+  private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   readonly createPromptForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
@@ -279,11 +284,43 @@ export class HomeComponent {
     try {
       await navigator.clipboard.writeText(text);
       this.showCopyMessage('Prompt copied!');
+      this.markPromptAsCopied(prompt.id);
     } catch (e) {
       // Fallback for older browsers
       this.fallbackCopyTextToClipboard(text);
       this.showCopyMessage('Prompt copied!');
+      this.markPromptAsCopied(prompt.id);
     }
+  }
+
+  private markPromptAsCopied(id: string) {
+    if (!id) return;
+
+    // add to set (create new instance to trigger signal change)
+    this.recentlyCopied.update(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    // clear any existing timer for this id
+    const existing = this.copyTimers.get(id);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const DURATION = 2500; // ms
+
+    const timer = setTimeout(() => {
+      this.recentlyCopied.update(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      this.copyTimers.delete(id);
+    }, DURATION);
+
+    this.copyTimers.set(id, timer);
   }
 
   private extractPromptFromUrl(url: string): string {
