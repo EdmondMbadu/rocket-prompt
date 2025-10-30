@@ -161,11 +161,11 @@
                 rocketprompt.io/{{ prompt.customUrl }}
               </p>
 
-              <div class="prompt-snippet mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+              <div class="prompt-snippet mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 min-h-[10rem]">
                 {{ prompt.preview }}
               </div>
 
-              <div class="mt-5 flex items-center justify-end gap-2 text-sm text-slate-500">
+              <div class="mt-5 mt-auto flex items-center justify-end gap-2 text-sm text-slate-500">
                 <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
                   title="Copy prompt" (click)="copyPrompt(prompt); $event.stopPropagation()">
                   <ng-container *ngIf="recentlyCopied().has(prompt.id); else copyIcon">
