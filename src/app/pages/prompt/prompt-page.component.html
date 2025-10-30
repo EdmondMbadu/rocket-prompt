@@ -85,33 +85,23 @@
                     </ng-template>
                 </button>
 
-                <button type="button" class="icon-button" aria-label="Open in ChatGPT" data-tooltip="Open in ChatGPT"
-                    title="Open in ChatGPT"
+                <button type="button" class="icon-button icon-button--gpt" aria-label="Open in ChatGPT"
+                    data-tooltip="Open in ChatGPT" title="Open in ChatGPT"
                     (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path
-                            d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9a8.95 8.95 0 01-5.5-1.8L3 21l1.8-5.5A8.95 8.95 0 013 12z"
-                            fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
+                    <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" width="24" height="24" />
                 </button>
 
-                <button type="button" class="icon-button" aria-label="Open in Gemini" data-tooltip="Open in Gemini"
-                    title="Open in Gemini"
+                <button type="button" class="icon-button icon-button--gemini" aria-label="Open in Gemini"
+                    data-tooltip="Open in Gemini" title="Open in Gemini"
                     (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path d="M12 2v20M2 12h20" fill="none" stroke="currentColor" stroke-width="1.6"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <img src="assets/gemini.png" alt="Gemini" class="ai-icon" width="24" height="24" />
                 </button>
 
-                <button type="button" class="icon-button" aria-label="Open in Claude" data-tooltip="Open in Claude"
-                    title="Open in Claude"
+                <button type="button" class="icon-button icon-button--claude" aria-label="Open in Claude"
+                    data-tooltip="Open in Claude" title="Open in Claude"
                     (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" fill="none"
-                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" width="24"
+                        height="24" />
                 </button>
             </div>
 

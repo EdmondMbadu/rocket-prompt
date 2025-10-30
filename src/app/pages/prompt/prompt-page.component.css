@@ -328,6 +328,62 @@
     color: #6b21a8;
 }
 
+/* Brand variants for AI quick-open buttons */
+.icon-button--gpt {
+    background: #ecfdf6;
+    /* very light green */
+    color: #10a37f;
+    /* ChatGPT-like green */
+    box-shadow: inset 0 0 0 1px rgba(16, 163, 127, 0.06);
+}
+
+.icon-button--gpt:hover {
+    background: #d1fae5;
+}
+
+.icon-button--gemini {
+    background: #eef4ff;
+    /* very light blue */
+    color: #1a73e8;
+    /* Google blue */
+    box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.06);
+}
+
+.icon-button--gemini:hover {
+    background: #dbe9ff;
+}
+
+.icon-button--claude {
+    background: #f5e9ff;
+    /* light mauve */
+    color: #7c3aed;
+    /* violet */
+    box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.06);
+}
+
+.icon-button--claude:hover {
+    background: #ecd8ff;
+}
+
+/* Slightly larger hit target for brand buttons */
+.icon-button.icon-button--gpt,
+.icon-button.icon-button--gemini,
+.icon-button.icon-button--claude {
+    height: 2.5rem;
+    width: 2.5rem;
+}
+
+.ai-icon {
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
+    display: block;
+}
+
+.ai-icon--rounded {
+    border-radius: 6px;
+}
+
 .icon-button[data-tooltip],
 .category-chip__remove[data-tooltip] {
     position: relative;
