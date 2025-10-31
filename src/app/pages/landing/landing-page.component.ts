@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, signal } from '@angular/core';
+import { AfterViewInit, Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { take } from 'rxjs/operators';
 
 interface PromptData {
   name: string;
@@ -23,7 +25,7 @@ interface ChatbotLink {
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.css'
 })
-export class LandingPageComponent implements AfterViewInit {
+export class LandingPageComponent implements OnInit, AfterViewInit {
   readonly title = signal('rocket-prompt');
   readonly mobileMenuOpen = signal(false);
 
@@ -32,7 +34,11 @@ export class LandingPageComponent implements AfterViewInit {
   showResults = false;
   characterCount = 0;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.promptForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       content: ['', [Validators.required, Validators.minLength(10)]],
@@ -50,6 +56,15 @@ export class LandingPageComponent implements AfterViewInit {
 
   closeMobileMenu() {
     this.mobileMenuOpen.set(false);
+  }
+
+  ngOnInit() {
+    // Redirect logged-in users to home page
+    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
+      if (user && user.emailVerified) {
+        this.router.navigate(['/home']);
+      }
+    });
   }
 
   ngAfterViewInit() {
