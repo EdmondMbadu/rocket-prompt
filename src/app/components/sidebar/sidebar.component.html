@@ -1,16 +1,54 @@
 <aside
-  class="hidden min-h-screen w-56 shrink-0 border-r border-slate-200 bg-white text-slate-700 sm:flex sm:w-60 lg:w-64"
+  class="hidden min-h-screen shrink-0 border-r border-slate-200 bg-white text-slate-700 transition-all duration-200 sm:flex"
+  [class.w-56]="!collapsed()"
+  [class.w-20]="collapsed()"
 >
-  <div class="flex w-full flex-col gap-6 px-4 py-6">
-    <nav class="flex flex-col gap-1">
+  <div
+    class="flex w-full flex-col px-4 py-6 transition-all duration-200"
+    [class.gap-6]="!collapsed()"
+    [class.gap-4]="collapsed()"
+    [class.items-center]="collapsed()"
+    [class.px-3]="collapsed()"
+  >
+    <header
+      class="flex items-center px-2 transition-all duration-200"
+      [class.justify-center]="collapsed()"
+      [class.px-0]="collapsed()"
+    >
+      <button
+        type="button"
+        class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100"
+        aria-label="Toggle menu"
+        [attr.aria-expanded]="!collapsed()"
+        (click)="toggleCollapsed()"
+      >
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </header>
+
+    <nav
+      class="flex flex-col gap-1 transition-all duration-200"
+      [class.items-center]="collapsed()"
+      [class.w-full]="!collapsed()"
+    >
       <a
         *ngFor="let item of navItems"
         [routerLink]="item.route"
         [routerLinkActiveOptions]="{ exact: item.exact ?? true }"
         routerLinkActive="bg-slate-100 text-slate-900"
-        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        class="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        [class.gap-3]="!collapsed()"
+        [class.justify-center]="collapsed()"
+        [class.w-full]="!collapsed()"
+        [attr.aria-label]="collapsed() ? item.label : null"
       >
-        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+        <span
+          class="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition-all duration-200"
+          [class.h-10]="collapsed()"
+          [class.w-10]="collapsed()"
+        >
           <ng-container [ngSwitch]="item.icon">
             <svg
               *ngSwitchCase="'home'"
@@ -26,7 +64,7 @@
             <span *ngSwitchDefault class="h-5 w-5"></span>
           </ng-container>
         </span>
-        <span>{{ item.label }}</span>
+        <span *ngIf="!collapsed()" class="truncate">{{ item.label }}</span>
       </a>
     </nav>
   </div>
