@@ -17,6 +17,7 @@ interface SidebarNavItem {
 })
 export class SidebarComponent {
   readonly collapsed = signal(false);
+  readonly mobileMenuOpen = signal(false);
   readonly navItems: SidebarNavItem[] = [
     {
       label: 'Home',
@@ -28,6 +29,14 @@ export class SidebarComponent {
 
   toggleCollapsed(): void {
     this.collapsed.update(v => !v);
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
   }
 }
 

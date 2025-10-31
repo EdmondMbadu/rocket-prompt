@@ -1,3 +1,71 @@
+<button
+  type="button"
+  class="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/60 sm:hidden"
+  aria-label="Open navigation"
+  [attr.aria-expanded]="mobileMenuOpen()"
+  (click)="toggleMobileMenu()"
+>
+  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+</button>
+
+<ng-container *ngIf="mobileMenuOpen()">
+  <div class="fixed inset-0 z-40 sm:hidden">
+    <button
+      type="button"
+      class="absolute inset-0 h-full w-full bg-slate-950/50"
+      aria-label="Close navigation"
+      (click)="closeMobileMenu()"
+    ></button>
+
+    <div class="absolute left-0 top-0 h-full w-64 max-w-[80vw] bg-white shadow-xl">
+      <header class="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+        <span class="text-base font-semibold text-slate-900">Menu</span>
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-100"
+          aria-label="Close navigation"
+          (click)="closeMobileMenu()"
+        >
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      <nav class="space-y-1 px-3 py-4">
+        <a
+          *ngFor="let item of navItems"
+          [routerLink]="item.route"
+          [routerLinkActiveOptions]="{ exact: item.exact ?? true }"
+          routerLinkActive="bg-slate-100 text-slate-900"
+          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          (click)="closeMobileMenu()"
+        >
+          <span class="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+            <ng-container [ngSwitch]="item.icon">
+              <svg
+                *ngSwitchCase="'home'"
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+              </svg>
+              <span *ngSwitchDefault class="h-5 w-5"></span>
+            </ng-container>
+          </span>
+          <span>{{ item.label }}</span>
+        </a>
+      </nav>
+    </div>
+  </div>
+</ng-container>
+
 <aside
   class="hidden min-h-screen shrink-0 border-r border-slate-200 bg-white text-slate-700 transition-all duration-200 sm:flex"
   [class.w-56]="!collapsed()"
