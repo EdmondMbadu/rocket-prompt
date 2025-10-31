@@ -3,7 +3,7 @@ import { Component, DestroyRef, HostListener, computed, inject, signal } from '@
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { map, switchMap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CollectionService } from '../../services/collection.service';
@@ -43,16 +43,9 @@ export class CollectionsPageComponent {
     private readonly destroyRef = inject(DestroyRef);
 
     readonly currentUser$ = this.authService.currentUser$;
-    readonly profile$ = this.currentUser$.pipe(
-        switchMap(user => {
-            if (!user) {
-                return of<UserProfile | undefined>(undefined);
-            }
 
-            return this.authService.userProfile$(user.uid);
-        }),
-        map(profile => (profile ? profile : undefined))
-    );
+    readonly profile = signal<UserProfile | null>(null);
+    readonly profileLoaded = signal(false);
 
     readonly collections = signal<CollectionCard[]>([]);
     readonly availablePrompts = signal<PromptOption[]>([]);
@@ -102,9 +95,29 @@ export class CollectionsPageComponent {
     constructor() {
         this.observeCollections();
         this.observePrompts();
+
+        this.currentUser$
+            .pipe(
+                switchMap(user => {
+                    if (!user) {
+                        return of<UserProfile | null>(null);
+                    }
+
+                    return this.authService.userProfile$(user.uid);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe(profile => {
+                this.profile.set(profile ?? null);
+                this.profileLoaded.set(true);
+
+                if (!profile) {
+                    this.menuOpen.set(false);
+                }
+            });
     }
 
-    profileInitials(profile: UserProfile | undefined) {
+    profileInitials(profile: UserProfile | null | undefined) {
         if (!profile) {
             return 'RP';
         }
@@ -117,10 +130,18 @@ export class CollectionsPageComponent {
     }
 
     openMenu() {
+        if (!this.profile()) {
+            return;
+        }
+
         this.menuOpen.set(true);
     }
 
     toggleMenu() {
+        if (!this.profile()) {
+            return;
+        }
+
         this.menuOpen.update(open => !open);
     }
 
@@ -129,6 +150,13 @@ export class CollectionsPageComponent {
     }
 
     async signOut() {
+        if (!this.profile()) {
+            await this.router.navigate(['/auth'], {
+                queryParams: { redirectTo: this.router.url }
+            });
+            return;
+        }
+
         this.closeMenu();
         await this.authService.signOut();
         await this.router.navigate(['/']);
@@ -139,6 +167,11 @@ export class CollectionsPageComponent {
     }
 
     openCreateCollectionModal() {
+        if (!this.profile()) {
+            this.goToAuth();
+            return;
+        }
+
         this.closeMenu();
         this.collectionForm.reset({
             name: '',
@@ -231,6 +264,16 @@ export class CollectionsPageComponent {
         }
 
         void this.router.navigate(['/collections', collection.id]);
+    }
+
+    goToAuth(mode: 'login' | 'signup' = 'login') {
+        const redirect = this.router.url || '/collections';
+        void this.router.navigate(['/auth'], {
+            queryParams: {
+                mode: mode === 'signup' ? 'signup' : 'login',
+                redirectTo: redirect
+            }
+        });
     }
 
     private observeCollections() {

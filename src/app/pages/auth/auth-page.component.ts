@@ -21,6 +21,8 @@ export class AuthPageComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
+  private redirectToTarget: string | null = null;
+
   readonly mode = signal<AuthMode>('login');
   readonly heading = computed(() => {
     switch (this.mode()) {
@@ -71,6 +73,9 @@ export class AuthPageComponent {
         const modeParam = params.get('mode');
         const resolvedMode: AuthMode = modeParam === 'signup' ? 'signup' : modeParam === 'reset' ? 'reset' : 'login';
         this.setMode(resolvedMode, { skipNavigation: true });
+
+        const redirectParam = params.get('redirectTo');
+        this.redirectToTarget = this.normalizeRedirectTarget(redirectParam);
       });
 
     this.applyModeValidators(this.mode());
@@ -93,6 +98,7 @@ export class AuthPageComponent {
       void this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { mode },
+        queryParamsHandling: 'merge',
         replaceUrl: true
       });
     }
@@ -155,7 +161,9 @@ export class AuthPageComponent {
         }
 
         if (credential.user.emailVerified) {
-          await this.router.navigate(['/home'], { replaceUrl: true });
+          const target = this.redirectToTarget ?? '/home';
+          this.redirectToTarget = null;
+          await this.router.navigateByUrl(target, { replaceUrl: true });
         } else {
           await this.router.navigate(['/verify-email']);
         }
@@ -220,5 +228,25 @@ export class AuthPageComponent {
     }
 
     passwordControl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private normalizeRedirectTarget(target: string | null): string | null {
+    if (!target) {
+      return null;
+    }
+
+    if (typeof window === 'undefined') {
+      return target.startsWith('/') ? target : null;
+    }
+
+    try {
+      const url = new URL(target, window.location.origin);
+      if (url.origin !== window.location.origin) {
+        return null;
+      }
+      return url.pathname + url.search + url.hash;
+    } catch {
+      return target.startsWith('/') ? target : null;
+    }
   }
 }

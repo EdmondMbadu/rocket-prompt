@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -13,8 +13,11 @@ import { AuthService } from '../../services/auth.service';
 export class VerifyEmailComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly user$ = this.authService.currentUser$;
+
+  private readonly redirectToTarget = this.normalizeRedirectTarget(this.route.snapshot.queryParamMap.get('redirectTo'));
 
   isReloading = false;
   isResending = false;
@@ -29,7 +32,8 @@ export class VerifyEmailComponent {
       if (this.authService.currentUser?.emailVerified) {
         this.feedbackType = 'success';
         this.feedbackMessage = 'Email verified! Redirecting you to your home screen...';
-        await this.router.navigate(['/home']);
+        const target = this.redirectToTarget ?? '/home';
+        await this.router.navigateByUrl(target, { replaceUrl: true });
       } else {
         this.feedbackType = 'error';
         this.feedbackMessage = 'We still need a verified email. Check your inbox or resend below.';
@@ -51,6 +55,26 @@ export class VerifyEmailComponent {
       this.feedbackMessage = message;
     } finally {
       this.isResending = false;
+    }
+  }
+
+  private normalizeRedirectTarget(target: string | null): string | null {
+    if (!target) {
+      return null;
+    }
+
+    if (typeof window === 'undefined') {
+      return target.startsWith('/') ? target : null;
+    }
+
+    try {
+      const url = new URL(target, window.location.origin);
+      if (url.origin !== window.location.origin) {
+        return null;
+      }
+      return url.pathname + url.search + url.hash;
+    } catch {
+      return target.startsWith('/') ? target : null;
     }
   }
 }

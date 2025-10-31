@@ -26,13 +26,11 @@ export const routes: Routes = [
   },
   {
     path: 'collections',
-    canActivate: [verifiedUserGuard],
     loadComponent: () =>
       import('./pages/collections/collections-page.component').then(m => m.CollectionsPageComponent)
   },
   {
     path: 'collections/:id',
-    canActivate: [verifiedUserGuard],
     loadComponent: () =>
       import('./pages/collection-detail/collection-detail.component').then(m => m.CollectionDetailComponent)
   },

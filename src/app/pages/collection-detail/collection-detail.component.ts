@@ -37,15 +37,8 @@ export class CollectionDetailComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly currentUser$ = this.authService.currentUser$;
-  readonly profile$ = this.currentUser$.pipe(
-    switchMap(user => {
-      if (!user) {
-        return of<UserProfile | undefined>(undefined);
-      }
-
-      return this.authService.userProfile$(user.uid);
-    })
-  );
+  readonly profile = signal<UserProfile | null>(null);
+  readonly profileLoaded = signal(false);
 
   readonly searchTerm = signal('');
   readonly collection = signal<PromptCollection | null>(null);
@@ -90,9 +83,29 @@ export class CollectionDetailComponent {
   constructor() {
     this.observeCollection();
     this.observePrompts();
+
+    this.currentUser$
+      .pipe(
+        switchMap(user => {
+          if (!user) {
+            return of<UserProfile | null>(null);
+          }
+
+          return this.authService.userProfile$(user.uid);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(profile => {
+        this.profile.set(profile ?? null);
+        this.profileLoaded.set(true);
+
+        if (!profile) {
+          this.menuOpen.set(false);
+        }
+      });
   }
 
-  profileInitials(profile: UserProfile | undefined) {
+  profileInitials(profile: UserProfile | null | undefined) {
     if (!profile) {
       return 'RP';
     }
@@ -105,6 +118,10 @@ export class CollectionDetailComponent {
   }
 
   toggleMenu() {
+    if (!this.profile()) {
+      return;
+    }
+
     this.menuOpen.update(open => !open);
   }
 
@@ -113,6 +130,13 @@ export class CollectionDetailComponent {
   }
 
   async signOut() {
+    if (!this.profile()) {
+      await this.router.navigate(['/auth'], {
+        queryParams: { redirectTo: this.router.url }
+      });
+      return;
+    }
+
     this.closeMenu();
     await this.authService.signOut();
     await this.router.navigate(['/']);
@@ -331,6 +355,16 @@ export class CollectionDetailComponent {
     }, 2500);
 
     this.copyTimers.set(id, timer);
+  }
+
+  goToAuth(mode: 'login' | 'signup' = 'login') {
+    const redirect = this.router.url || '/collections';
+    void this.router.navigate(['/auth'], {
+      queryParams: {
+        mode: mode === 'signup' ? 'signup' : 'login',
+        redirectTo: redirect
+      }
+    });
   }
 }
 
