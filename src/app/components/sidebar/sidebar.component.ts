@@ -4,7 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
 interface SidebarNavItem {
   label: string;
-  icon: 'home' | string;
+  icon: 'home' | 'collections' | string;
   route: string;
   exact?: boolean;
 }
@@ -24,6 +24,11 @@ export class SidebarComponent {
       icon: 'home',
       route: '/home',
       exact: true
+    },
+    {
+      label: 'Your Collections',
+      icon: 'collections',
+      route: '/collections'
     }
   ];
 

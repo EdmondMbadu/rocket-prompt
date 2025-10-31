@@ -25,6 +25,18 @@ export const routes: Routes = [
       import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'collections',
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/collections/collections-page.component').then(m => m.CollectionsPageComponent)
+  },
+  {
+    path: 'collections/:id',
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/collection-detail/collection-detail.component').then(m => m.CollectionDetailComponent)
+  },
+  {
     path: 'prompt/:id',
     // single prompt view — accepts full id or short prefix
     loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
