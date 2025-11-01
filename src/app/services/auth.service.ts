@@ -5,7 +5,7 @@ import type { Firestore } from 'firebase/firestore';
 import { Observable, defer, from, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
-import type { UserProfile } from '../models/user-profile.model';
+import type { UserPreferences, UserProfile } from '../models/user-profile.model';
 
 @Injectable({
   providedIn: 'root'
@@ -47,7 +47,10 @@ export class AuthService {
       firstName: input.firstName,
       lastName: input.lastName,
       email: credential.user.email ?? input.email,
-      createdAt: firestoreModule.serverTimestamp()
+      createdAt: firestoreModule.serverTimestamp(),
+      preferences: {
+        sidebarCollapsed: false
+      }
     });
 
     await authModule.sendEmailVerification(credential.user);
@@ -122,6 +125,29 @@ export class AuthService {
       id: snapshot.id,
       ...data
     };
+  }
+
+  async updateUserPreferences(uid: string, preferences: Partial<UserPreferences>): Promise<void> {
+    const trimmedUid = uid?.trim();
+
+    if (!trimmedUid) {
+      throw new Error('A user id is required to update preferences.');
+    }
+
+    if (!preferences || typeof preferences !== 'object' || Object.keys(preferences).length === 0) {
+      return;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'users', trimmedUid);
+
+    await firestoreModule.setDoc(
+      docRef,
+      {
+        preferences
+      },
+      { merge: true }
+    );
   }
 
   get currentUser(): User | null {
