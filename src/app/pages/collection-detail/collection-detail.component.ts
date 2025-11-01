@@ -50,6 +50,19 @@ export class CollectionDetailComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly menuOpen = signal(false);
+  readonly liked = signal(false);
+  readonly liking = signal(false);
+  readonly clientId = signal('');
+
+  readonly actorId = computed(() => {
+    const user = this.authService.currentUser;
+    if (user?.uid) {
+      return `u_${user.uid}`;
+    }
+
+    const cid = this.clientId();
+    return cid ? `c_${cid}` : '';
+  });
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -81,6 +94,7 @@ export class CollectionDetailComponent {
   });
 
   constructor() {
+    this.ensureClientId();
     this.observeCollection();
     this.observePrompts();
 
@@ -101,6 +115,13 @@ export class CollectionDetailComponent {
 
         if (!profile) {
           this.menuOpen.set(false);
+        }
+
+        const current = this.collection();
+        if (current) {
+          void this.updateLikedState(current.id);
+        } else {
+          this.liked.set(false);
         }
       });
   }
@@ -220,6 +241,7 @@ export class CollectionDetailComponent {
             map(collection => {
               if (!collection) {
                 this.collectionNotFound.set(true);
+                this.liked.set(false);
                 return null;
               }
 
@@ -235,6 +257,11 @@ export class CollectionDetailComponent {
           if (collection) {
             this.collection.set(collection);
             this.collectionTagLabel.set(this.formatTagLabel(collection.tag ?? 'general'));
+            void this.updateLikedState(collection.id);
+          } else {
+            this.collection.set(null);
+            this.collectionTagLabel.set('');
+            this.liked.set(false);
           }
 
           this.isLoadingCollection.set(false);
@@ -245,6 +272,7 @@ export class CollectionDetailComponent {
           this.collectionTagLabel.set('');
           this.collectionNotFound.set(true);
           this.isLoadingCollection.set(false);
+          this.liked.set(false);
         }
       });
   }
@@ -365,6 +393,81 @@ export class CollectionDetailComponent {
         redirectTo: redirect
       }
     });
+  }
+
+  async toggleLike(event?: Event) {
+    event?.stopPropagation();
+
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    if (this.liking()) {
+      return;
+    }
+
+    const actor = this.actorId();
+    if (!actor) {
+      return;
+    }
+
+    this.liking.set(true);
+
+    try {
+      const result = await this.collectionService.toggleLike(collection.id, actor);
+      this.liked.set(result.liked);
+      this.collection.set({ ...collection, likes: result.likes });
+    } catch (error) {
+      console.error('Failed to toggle collection like', error);
+    } finally {
+      this.liking.set(false);
+    }
+  }
+
+  private ensureClientId() {
+    try {
+      const key = 'rp_client_id';
+      let id = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+
+      if (!id) {
+        id = `c_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+        try {
+          window.localStorage.setItem(key, id);
+        } catch {
+          // ignore storage write failures
+        }
+      }
+
+      this.clientId.set(id ?? '');
+    } catch (error) {
+      console.error('Failed to resolve client id', error);
+      this.clientId.set('');
+    }
+  }
+
+  private async updateLikedState(collectionId: string | undefined) {
+    const trimmedId = collectionId?.trim();
+
+    if (!trimmedId) {
+      this.liked.set(false);
+      return;
+    }
+
+    const actor = this.actorId();
+
+    if (!actor) {
+      this.liked.set(false);
+      return;
+    }
+
+    try {
+      const has = await this.collectionService.hasLiked(trimmedId, actor);
+      this.liked.set(has);
+    } catch (error) {
+      console.error('Failed to determine collection liked state', error);
+      this.liked.set(false);
+    }
   }
 }
 

@@ -140,3 +140,32 @@
   accent-color: #dc2626;
 }
 
+.collection-like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 0;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.collection-like-button:hover:not(:disabled) {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.collection-like-button[aria-pressed='true'] {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.collection-like-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

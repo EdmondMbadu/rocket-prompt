@@ -90,7 +90,7 @@
 
         <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {{ collectionTagLabel() }}
               </span>
@@ -98,6 +98,25 @@
                 {{ collection()?.promptIds?.length || 0 }}
                 {{ (collection()?.promptIds?.length || 0) === 1 ? 'prompt' : 'prompts' }}
               </span>
+              <button
+                type="button"
+                class="collection-like-button"
+                [attr.aria-pressed]="liked()"
+                [disabled]="liking()"
+                (click)="toggleLike($event)"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                  <path
+                    [attr.fill]="liked() ? '#dc2626' : 'none'"
+                    [attr.stroke]="liked() ? '#dc2626' : 'currentColor'"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 21s-6.32-3.432-8.485-7.17C1.364 10.092 2.493 6 6.11 5.09c1.79-.45 3.63.33 4.89 1.7 1.26-1.37 3.1-2.15 4.89-1.7 3.62.91 4.746 5 2.595 8.74C18.32 17.568 12 21 12 21z"
+                  />
+                </svg>
+                <span>{{ collection()?.likes || 0 }}</span>
+              </button>
             </div>
             <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
               {{ collection()?.name || 'Collection' }}

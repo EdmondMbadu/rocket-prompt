@@ -168,17 +168,39 @@
               </p>
 
               <div class="mt-6 flex items-center justify-between text-sm text-slate-500">
-                <span>View collection</span>
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                  <path
-                    d="M9 5l7 7-7 7"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
+                <button
+                  type="button"
+                  class="collection-like-button"
+                  [attr.aria-pressed]="isCollectionLiked(collection.id)"
+                  [disabled]="isCollectionLiking(collection.id)"
+                  (click)="toggleCollectionLike(collection, $event)"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path
+                      [attr.fill]="isCollectionLiked(collection.id) ? '#dc2626' : 'none'"
+                      [attr.stroke]="isCollectionLiked(collection.id) ? '#dc2626' : 'currentColor'"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 21s-6.32-3.432-8.485-7.17C1.364 10.092 2.493 6 6.11 5.09c1.79-.45 3.63.33 4.89 1.7 1.26-1.37 3.1-2.15 4.89-1.7 3.62.91 4.746 5 2.595 8.74C18.32 17.568 12 21 12 21z"
+                    />
+                  </svg>
+                  <span>{{ collection.likes }}</span>
+                </button>
+
+                <span class="flex items-center gap-2">
+                  <span>View collection</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path
+                      d="M9 5l7 7-7 7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
               </div>
             </article>
           </div>

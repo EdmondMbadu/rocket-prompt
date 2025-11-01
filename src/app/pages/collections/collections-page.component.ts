@@ -18,6 +18,7 @@ interface CollectionCard {
     readonly tag: string;
     readonly tagLabel: string;
     readonly promptCount: number;
+    readonly likes: number;
 }
 
 interface PromptOption {
@@ -58,6 +59,19 @@ export class CollectionsPageComponent {
     readonly isSavingCollection = signal(false);
     readonly collectionFormError = signal<string | null>(null);
     readonly menuOpen = signal(false);
+    readonly clientId = signal('');
+    readonly likedCollections = signal<Set<string>>(new Set());
+    readonly likingCollections = signal<Set<string>>(new Set());
+
+    readonly actorId = computed(() => {
+        const user = this.authService.currentUser;
+        if (user?.uid) {
+            return `u_${user.uid}`;
+        }
+
+        const cid = this.clientId();
+        return cid ? `c_${cid}` : '';
+    });
 
     private readonly promptSelectionValidator: ValidatorFn = (
         control: AbstractControl<string[] | null>
@@ -93,6 +107,7 @@ export class CollectionsPageComponent {
     });
 
     constructor() {
+        this.ensureClientId();
         this.observeCollections();
         this.observePrompts();
 
@@ -114,6 +129,8 @@ export class CollectionsPageComponent {
                 if (!profile) {
                     this.menuOpen.set(false);
                 }
+
+                void this.refreshLikedCollections(this.collections());
             });
     }
 
@@ -286,6 +303,7 @@ export class CollectionsPageComponent {
                     this.collections.set(cards);
                     this.isLoadingCollections.set(false);
                     this.loadCollectionsError.set(null);
+                    void this.refreshLikedCollections(cards);
                 },
                 error: error => {
                     console.error('Failed to load collections', error);
@@ -346,7 +364,8 @@ export class CollectionsPageComponent {
             name: collection.name,
             tag,
             tagLabel: this.formatTagLabel(tag),
-            promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0
+            promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0,
+            likes: collection.likes ?? 0
         };
     }
 
@@ -370,6 +389,122 @@ export class CollectionsPageComponent {
             .filter(Boolean)
             .map(part => part.charAt(0).toUpperCase() + part.slice(1))
             .join(' ');
+    }
+
+    isCollectionLiked(id: string) {
+        return this.likedCollections().has(id);
+    }
+
+    isCollectionLiking(id: string) {
+        return this.likingCollections().has(id);
+    }
+
+    async toggleCollectionLike(collection: CollectionCard, event?: Event) {
+        event?.stopPropagation();
+
+        if (!collection?.id) {
+            return;
+        }
+
+        const actor = this.actorId();
+        if (!actor) {
+            // Unable to identify actor (for example local storage disabled)
+            return;
+        }
+
+        if (this.isCollectionLiking(collection.id)) {
+            return;
+        }
+
+        this.likingCollections.update(prev => {
+            const next = new Set(prev);
+            next.add(collection.id);
+            return next;
+        });
+
+        try {
+            const result = await this.collectionService.toggleLike(collection.id, actor);
+
+            this.likedCollections.update(prev => {
+                const next = new Set(prev);
+                if (result.liked) {
+                    next.add(collection.id);
+                } else {
+                    next.delete(collection.id);
+                }
+                return next;
+            });
+
+            this.collections.update(prev =>
+                prev.map(item => (item.id === collection.id ? { ...item, likes: result.likes } : item))
+            );
+        } catch (error) {
+            console.error('Failed to toggle collection like', error);
+        } finally {
+            this.likingCollections.update(prev => {
+                const next = new Set(prev);
+                next.delete(collection.id);
+                return next;
+            });
+        }
+    }
+
+    private ensureClientId() {
+        try {
+            const key = 'rp_client_id';
+            let id = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+
+            if (!id) {
+                id = `c_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+                try {
+                    window.localStorage.setItem(key, id);
+                } catch {
+                    // ignore storage write failures
+                }
+            }
+
+            this.clientId.set(id ?? '');
+        } catch (error) {
+            console.error('Failed to resolve client id', error);
+            this.clientId.set('');
+        }
+    }
+
+    private async refreshLikedCollections(collections: readonly CollectionCard[]) {
+        const actor = this.actorId();
+
+        if (!actor) {
+            this.likedCollections.set(new Set());
+            return;
+        }
+
+        const ids = collections
+            .map(collection => collection.id)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        if (!ids.length) {
+            this.likedCollections.set(new Set());
+            return;
+        }
+
+        try {
+            const results = await Promise.all(
+                ids.map(async id => {
+                    try {
+                        const liked = await this.collectionService.hasLiked(id, actor);
+                        return liked ? id : null;
+                    } catch (error) {
+                        console.error('Failed to determine like state for collection', id, error);
+                        return null;
+                    }
+                })
+            );
+
+            const likedSet = new Set(results.filter((id): id is string => !!id));
+            this.likedCollections.set(likedSet);
+        } catch (error) {
+            console.error('Failed to refresh collection likes', error);
+        }
     }
 }
 
