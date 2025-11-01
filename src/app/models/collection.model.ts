@@ -3,7 +3,7 @@ export interface PromptCollection {
   readonly name: string;
   readonly tag: string;
   readonly promptIds: readonly string[];
-  readonly likes: number;
+  readonly bookmarkCount: number;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

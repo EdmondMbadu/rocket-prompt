@@ -50,8 +50,8 @@ export class CollectionDetailComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly menuOpen = signal(false);
-  readonly liked = signal(false);
-  readonly liking = signal(false);
+  readonly bookmarked = signal(false);
+  readonly bookmarking = signal(false);
   readonly clientId = signal('');
 
   readonly actorId = computed(() => {
@@ -119,9 +119,9 @@ export class CollectionDetailComponent {
 
         const current = this.collection();
         if (current) {
-          void this.updateLikedState(current.id);
+          void this.updateBookmarkedState(current.id);
         } else {
-          this.liked.set(false);
+          this.bookmarked.set(false);
         }
       });
   }
@@ -241,7 +241,7 @@ export class CollectionDetailComponent {
             map(collection => {
               if (!collection) {
                 this.collectionNotFound.set(true);
-                this.liked.set(false);
+                this.bookmarked.set(false);
                 return null;
               }
 
@@ -257,11 +257,11 @@ export class CollectionDetailComponent {
           if (collection) {
             this.collection.set(collection);
             this.collectionTagLabel.set(this.formatTagLabel(collection.tag ?? 'general'));
-            void this.updateLikedState(collection.id);
+            void this.updateBookmarkedState(collection.id);
           } else {
             this.collection.set(null);
             this.collectionTagLabel.set('');
-            this.liked.set(false);
+            this.bookmarked.set(false);
           }
 
           this.isLoadingCollection.set(false);
@@ -272,7 +272,7 @@ export class CollectionDetailComponent {
           this.collectionTagLabel.set('');
           this.collectionNotFound.set(true);
           this.isLoadingCollection.set(false);
-          this.liked.set(false);
+          this.bookmarked.set(false);
         }
       });
   }
@@ -395,7 +395,7 @@ export class CollectionDetailComponent {
     });
   }
 
-  async toggleLike(event?: Event) {
+  async toggleBookmark(event?: Event) {
     event?.stopPropagation();
 
     const collection = this.collection();
@@ -403,7 +403,7 @@ export class CollectionDetailComponent {
       return;
     }
 
-    if (this.liking()) {
+    if (this.bookmarking()) {
       return;
     }
 
@@ -412,16 +412,16 @@ export class CollectionDetailComponent {
       return;
     }
 
-    this.liking.set(true);
+    this.bookmarking.set(true);
 
     try {
-      const result = await this.collectionService.toggleLike(collection.id, actor);
-      this.liked.set(result.liked);
-      this.collection.set({ ...collection, likes: result.likes });
+      const result = await this.collectionService.toggleBookmark(collection.id, actor);
+      this.bookmarked.set(result.bookmarked);
+      this.collection.set({ ...collection, bookmarkCount: result.bookmarkCount });
     } catch (error) {
-      console.error('Failed to toggle collection like', error);
+      console.error('Failed to toggle collection bookmark', error);
     } finally {
-      this.liking.set(false);
+      this.bookmarking.set(false);
     }
   }
 
@@ -446,27 +446,27 @@ export class CollectionDetailComponent {
     }
   }
 
-  private async updateLikedState(collectionId: string | undefined) {
+  private async updateBookmarkedState(collectionId: string | undefined) {
     const trimmedId = collectionId?.trim();
 
     if (!trimmedId) {
-      this.liked.set(false);
+      this.bookmarked.set(false);
       return;
     }
 
     const actor = this.actorId();
 
     if (!actor) {
-      this.liked.set(false);
+      this.bookmarked.set(false);
       return;
     }
 
     try {
-      const has = await this.collectionService.hasLiked(trimmedId, actor);
-      this.liked.set(has);
+      const has = await this.collectionService.hasBookmarked(trimmedId, actor);
+      this.bookmarked.set(has);
     } catch (error) {
-      console.error('Failed to determine collection liked state', error);
-      this.liked.set(false);
+      console.error('Failed to determine collection bookmarked state', error);
+      this.bookmarked.set(false);
     }
   }
 }

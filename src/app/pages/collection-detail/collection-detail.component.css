@@ -161,7 +161,7 @@
   color: #dc2626;
 }
 
-.collection-like-button {
+.collection-bookmark-button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -175,17 +175,17 @@
   cursor: pointer;
 }
 
-.collection-like-button:hover:not(:disabled) {
+.collection-bookmark-button:hover:not(:disabled) {
   background: #e2e8f0;
   transform: translateY(-1px);
 }
 
-.collection-like-button[aria-pressed='true'] {
+.collection-bookmark-button[aria-pressed='true'] {
   background: #fee2e2;
   color: #dc2626;
 }
 
-.collection-like-button:disabled {
+.collection-bookmark-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

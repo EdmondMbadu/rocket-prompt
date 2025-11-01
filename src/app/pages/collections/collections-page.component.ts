@@ -18,7 +18,7 @@ interface CollectionCard {
     readonly tag: string;
     readonly tagLabel: string;
     readonly promptCount: number;
-    readonly likes: number;
+    readonly bookmarkCount: number;
 }
 
 interface PromptOption {
@@ -60,8 +60,8 @@ export class CollectionsPageComponent {
     readonly collectionFormError = signal<string | null>(null);
     readonly menuOpen = signal(false);
     readonly clientId = signal('');
-    readonly likedCollections = signal<Set<string>>(new Set());
-    readonly likingCollections = signal<Set<string>>(new Set());
+    readonly bookmarkedCollections = signal<Set<string>>(new Set());
+    readonly bookmarkingCollections = signal<Set<string>>(new Set());
 
     readonly actorId = computed(() => {
         const user = this.authService.currentUser;
@@ -130,7 +130,7 @@ export class CollectionsPageComponent {
                     this.menuOpen.set(false);
                 }
 
-                void this.refreshLikedCollections(this.collections());
+                void this.refreshBookmarkedCollections(this.collections());
             });
     }
 
@@ -303,7 +303,7 @@ export class CollectionsPageComponent {
                     this.collections.set(cards);
                     this.isLoadingCollections.set(false);
                     this.loadCollectionsError.set(null);
-                    void this.refreshLikedCollections(cards);
+                    void this.refreshBookmarkedCollections(cards);
                 },
                 error: error => {
                     console.error('Failed to load collections', error);
@@ -365,7 +365,7 @@ export class CollectionsPageComponent {
             tag,
             tagLabel: this.formatTagLabel(tag),
             promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0,
-            likes: collection.likes ?? 0
+            bookmarkCount: collection.bookmarkCount ?? 0
         };
     }
 
@@ -391,15 +391,15 @@ export class CollectionsPageComponent {
             .join(' ');
     }
 
-    isCollectionLiked(id: string) {
-        return this.likedCollections().has(id);
+    isCollectionBookmarked(id: string) {
+        return this.bookmarkedCollections().has(id);
     }
 
-    isCollectionLiking(id: string) {
-        return this.likingCollections().has(id);
+    isCollectionBookmarking(id: string) {
+        return this.bookmarkingCollections().has(id);
     }
 
-    async toggleCollectionLike(collection: CollectionCard, event?: Event) {
+    async toggleCollectionBookmark(collection: CollectionCard, event?: Event) {
         event?.stopPropagation();
 
         if (!collection?.id) {
@@ -412,22 +412,22 @@ export class CollectionsPageComponent {
             return;
         }
 
-        if (this.isCollectionLiking(collection.id)) {
+        if (this.isCollectionBookmarking(collection.id)) {
             return;
         }
 
-        this.likingCollections.update(prev => {
+        this.bookmarkingCollections.update(prev => {
             const next = new Set(prev);
             next.add(collection.id);
             return next;
         });
 
         try {
-            const result = await this.collectionService.toggleLike(collection.id, actor);
+            const result = await this.collectionService.toggleBookmark(collection.id, actor);
 
-            this.likedCollections.update(prev => {
+            this.bookmarkedCollections.update(prev => {
                 const next = new Set(prev);
-                if (result.liked) {
+                if (result.bookmarked) {
                     next.add(collection.id);
                 } else {
                     next.delete(collection.id);
@@ -436,12 +436,16 @@ export class CollectionsPageComponent {
             });
 
             this.collections.update(prev =>
-                prev.map(item => (item.id === collection.id ? { ...item, likes: result.likes } : item))
+                prev.map(item =>
+                    item.id === collection.id
+                        ? { ...item, bookmarkCount: result.bookmarkCount }
+                        : item
+                )
             );
         } catch (error) {
-            console.error('Failed to toggle collection like', error);
+            console.error('Failed to toggle collection bookmark', error);
         } finally {
-            this.likingCollections.update(prev => {
+            this.bookmarkingCollections.update(prev => {
                 const next = new Set(prev);
                 next.delete(collection.id);
                 return next;
@@ -470,11 +474,11 @@ export class CollectionsPageComponent {
         }
     }
 
-    private async refreshLikedCollections(collections: readonly CollectionCard[]) {
+    private async refreshBookmarkedCollections(collections: readonly CollectionCard[]) {
         const actor = this.actorId();
 
         if (!actor) {
-            this.likedCollections.set(new Set());
+            this.bookmarkedCollections.set(new Set());
             return;
         }
 
@@ -483,7 +487,7 @@ export class CollectionsPageComponent {
             .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
         if (!ids.length) {
-            this.likedCollections.set(new Set());
+            this.bookmarkedCollections.set(new Set());
             return;
         }
 
@@ -491,19 +495,19 @@ export class CollectionsPageComponent {
             const results = await Promise.all(
                 ids.map(async id => {
                     try {
-                        const liked = await this.collectionService.hasLiked(id, actor);
-                        return liked ? id : null;
+                        const bookmarked = await this.collectionService.hasBookmarked(id, actor);
+                        return bookmarked ? id : null;
                     } catch (error) {
-                        console.error('Failed to determine like state for collection', id, error);
+                        console.error('Failed to determine bookmark state for collection', id, error);
                         return null;
                     }
                 })
             );
 
-            const likedSet = new Set(results.filter((id): id is string => !!id));
-            this.likedCollections.set(likedSet);
+            const bookmarkedSet = new Set(results.filter((id): id is string => !!id));
+            this.bookmarkedCollections.set(bookmarkedSet);
         } catch (error) {
-            console.error('Failed to refresh collection likes', error);
+            console.error('Failed to refresh collection bookmarks', error);
         }
     }
 }

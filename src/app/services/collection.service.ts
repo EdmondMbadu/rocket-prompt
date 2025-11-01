@@ -106,7 +106,7 @@ export class CollectionService {
       name,
       tag: normalizedTag,
       promptIds: uniquePromptIds,
-      likes: 0,
+      bookmarkCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -202,7 +202,7 @@ export class CollectionService {
     const nameValue = data['name'];
     const tagValue = data['tag'];
     const promptIdsValue = data['promptIds'];
-    const likesValue = data['likes'];
+    const bookmarkCountValue = data['bookmarkCount'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
 
@@ -213,7 +213,7 @@ export class CollectionService {
       promptIds: Array.isArray(promptIdsValue)
         ? (promptIdsValue.filter((item): item is string => typeof item === 'string') as string[])
         : [],
-      likes: typeof likesValue === 'number' ? likesValue : 0,
+      bookmarkCount: typeof bookmarkCountValue === 'number' ? bookmarkCountValue : 0,
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule)
     };
@@ -264,7 +264,7 @@ export class CollectionService {
     return initializeApp(environment.firebase);
   }
 
-  async hasLiked(collectionId: string, actorId: string): Promise<boolean> {
+  async hasBookmarked(collectionId: string, actorId: string): Promise<boolean> {
     const trimmedCollectionId = collectionId?.trim();
     const trimmedActorId = actorId?.trim();
 
@@ -273,28 +273,28 @@ export class CollectionService {
     }
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
-    const likeDocId = `${trimmedCollectionId}_${trimmedActorId}`;
-    const likeDocRef = firestoreModule.doc(firestore, 'collectionLikes', likeDocId);
-    const snap = await firestoreModule.getDoc(likeDocRef);
+    const bookmarkDocId = `${trimmedCollectionId}_${trimmedActorId}`;
+    const bookmarkDocRef = firestoreModule.doc(firestore, 'collectionBookmarks', bookmarkDocId);
+    const snap = await firestoreModule.getDoc(bookmarkDocRef);
     return snap.exists();
   }
 
-  async toggleLike(collectionId: string, actorId: string): Promise<{ liked: boolean; likes: number }> {
+  async toggleBookmark(collectionId: string, actorId: string): Promise<{ bookmarked: boolean; bookmarkCount: number }> {
     const trimmedCollectionId = collectionId?.trim();
     const trimmedActorId = actorId?.trim();
 
     if (!trimmedCollectionId || !trimmedActorId) {
-      throw new Error('Invalid like request.');
+      throw new Error('Invalid bookmark request.');
     }
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
 
-    const likeDocId = `${trimmedCollectionId}_${trimmedActorId}`;
-    const likeDocRef = firestoreModule.doc(firestore, 'collectionLikes', likeDocId);
+    const bookmarkDocId = `${trimmedCollectionId}_${trimmedActorId}`;
+    const bookmarkDocRef = firestoreModule.doc(firestore, 'collectionBookmarks', bookmarkDocId);
     const collectionDocRef = firestoreModule.doc(firestore, 'collections', trimmedCollectionId);
 
     const result = await firestoreModule.runTransaction(firestore, async tx => {
-      const likeSnap = await tx.get(likeDocRef as any);
+      const bookmarkSnap = await tx.get(bookmarkDocRef as any);
       const collectionSnap = await tx.get(collectionDocRef as any);
 
       if (!collectionSnap.exists()) {
@@ -302,30 +302,34 @@ export class CollectionService {
       }
 
       const collectionData = collectionSnap.data() as Record<string, unknown> | undefined;
-      const likesVal = collectionData ? collectionData['likes'] : undefined;
-      const currentLikes = typeof likesVal === 'number' ? likesVal : 0;
+      const bookmarkCountVal = collectionData ? collectionData['bookmarkCount'] : undefined;
+      const currentBookmarkCount = typeof bookmarkCountVal === 'number' ? bookmarkCountVal : 0;
 
-      if (likeSnap.exists()) {
-        tx.delete(likeDocRef as any);
-        const newLikes = Math.max(0, currentLikes - 1);
+      if (bookmarkSnap.exists()) {
+        tx.delete(bookmarkDocRef as any);
+        const newBookmarkCount = Math.max(0, currentBookmarkCount - 1);
         tx.update(collectionDocRef as any, {
-          likes: firestoreModule.increment ? firestoreModule.increment(-1) : newLikes
+          bookmarkCount: firestoreModule.increment
+            ? firestoreModule.increment(-1)
+            : newBookmarkCount
         });
-        return { liked: false, likes: newLikes };
+        return { bookmarked: false, bookmarkCount: newBookmarkCount };
       }
 
-      tx.set(likeDocRef as any, {
+      tx.set(bookmarkDocRef as any, {
         collectionId: trimmedCollectionId,
         actorId: trimmedActorId,
         createdAt: firestoreModule.serverTimestamp()
       });
       tx.update(collectionDocRef as any, {
-        likes: firestoreModule.increment ? firestoreModule.increment(1) : currentLikes + 1
+        bookmarkCount: firestoreModule.increment
+          ? firestoreModule.increment(1)
+          : currentBookmarkCount + 1
       });
-      return { liked: true, likes: currentLikes + 1 };
+      return { bookmarked: true, bookmarkCount: currentBookmarkCount + 1 };
     });
 
-    return result as { liked: boolean; likes: number };
+    return result as { bookmarked: boolean; bookmarkCount: number };
   }
 }
 
