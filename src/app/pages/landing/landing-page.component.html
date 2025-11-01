@@ -17,6 +17,7 @@
 
       <div class="hidden items-center gap-8 text-sm text-slate-600 md:flex">
         <a href="#how-it-works" class="transition hover:text-slate-900">How it works</a>
+        <a href="#collections" class="transition hover:text-slate-900">Collections</a>
         <a href="#signup" class="transition hover:text-slate-900">Get Started</a>
         <!-- <a href="#get-started" class="transition hover:text-slate-900">Demo</a> -->
       </div>
@@ -36,6 +37,7 @@
     <div *ngIf="mobileMenuOpen()"
       class="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-900 md:hidden">
       <a href="#how-it-works" class="transition hover:text-[#DC2626]" (click)="closeMobileMenu()">How it works</a>
+      <a href="#collections" class="transition hover:text-[#DC2626]" (click)="closeMobileMenu()">Collections</a>
       <a routerLink="/auth" [queryParams]="{ mode: 'signup' }" class="transition hover:text-[#DC2626]"
         (click)="closeMobileMenu()">Sign Up</a>
       <a routerLink="/auth" [queryParams]="{ mode: 'login' }" class="transition hover:text-[#DC2626]"
@@ -103,6 +105,53 @@
         <p class="text-slate-600 text-xs md:text-sm">
           Save and edit your most powerful prompts
         </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collections Section -->
+  <div id="collections" class="bg-white text-slate-900">
+    <div class="container mx-auto px-4 md:px-6 py-10 md:py-16 max-w-6xl">
+      <div class="max-w-3xl mx-auto text-center">
+        <p class="text-xs md:text-sm uppercase tracking-[0.3em] text-[#DC2626]">Collections</p>
+        <h2 class="mt-3 text-2xl md:text-4xl font-bold leading-tight text-slate-900">
+          Bundle prompts into a shareable playbook
+        </h2>
+        <p class="mt-4 text-sm md:text-base text-slate-600">
+          Organize your best prompts into themed collections, keep teams in sync, and share one link that lets collaborators browse and launch each prompt instantly.
+        </p>
+      </div>
+
+      <div class="mt-10 grid grid-cols-1 gap-5 md:gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-slate-300 bg-slate-50 p-6 md:p-8 text-left">
+          <div class="text-3xl md:text-4xl mb-3">🗂️</div>
+          <h3 class="text-lg md:text-xl font-semibold text-slate-900">Curate themed bundles</h3>
+          <p class="mt-2 text-sm text-slate-600">
+            Combine multiple prompts into organized collections so your workflows stay tidy and repeatable.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-slate-300 bg-slate-50 p-6 md:p-8 text-left">
+          <div class="text-3xl md:text-4xl mb-3">🤝</div>
+          <h3 class="text-lg md:text-xl font-semibold text-slate-900">Collaborate without friction</h3>
+          <p class="mt-2 text-sm text-slate-600">
+            Share a single collection link with teammates or clients so everyone works from the same best-practice prompts.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-slate-300 bg-slate-50 p-6 md:p-8 text-left">
+          <div class="text-3xl md:text-4xl mb-3">📤</div>
+          <h3 class="text-lg md:text-xl font-semibold text-slate-900">Share once, launch everywhere</h3>
+          <p class="mt-2 text-sm text-slate-600">
+            Every prompt stays launch-ready for ChatGPT, Gemini, and Claude so collaborators can pick up your context instantly.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-12 flex flex-col items-center gap-3 md:flex-row md:justify-center">
+        <a routerLink="/collections"
+          class="inline-flex items-center justify-center rounded-xl bg-[#DC2626] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#B91C1C]">
+          Explore Collections
+        </a>
+        <p class="text-xs md:text-sm text-slate-500">Sign in to start curating and sharing your prompt suites.</p>
       </div>
     </div>
   </div>
