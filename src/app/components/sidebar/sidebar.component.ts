@@ -43,7 +43,7 @@ export class SidebarComponent {
       route: '/collections'
     },
     {
-      label: 'Bookmarked Collections',
+      label: 'Saved Collections',
       icon: 'bookmark',
       route: '/collections/bookmarked'
     }
