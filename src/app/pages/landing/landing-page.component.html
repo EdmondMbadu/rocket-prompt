@@ -18,6 +18,7 @@
       <div class="hidden items-center gap-8 text-sm text-slate-600 md:flex">
         <a href="#how-it-works" class="transition hover:text-slate-900">How it works</a>
         <a href="#collections" class="transition hover:text-slate-900">Collections</a>
+        <a href="#pricing" class="transition hover:text-slate-900">Pricing</a>
         <a href="#signup" class="transition hover:text-slate-900">Get Started</a>
         <!-- <a href="#get-started" class="transition hover:text-slate-900">Demo</a> -->
       </div>
@@ -38,6 +39,7 @@
       class="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-900 md:hidden">
       <a href="#how-it-works" class="transition hover:text-[#DC2626]" (click)="closeMobileMenu()">How it works</a>
       <a href="#collections" class="transition hover:text-[#DC2626]" (click)="closeMobileMenu()">Collections</a>
+      <a href="#pricing" class="transition hover:text-[#DC2626]" (click)="closeMobileMenu()">Pricing</a>
       <a routerLink="/auth" [queryParams]="{ mode: 'signup' }" class="transition hover:text-[#DC2626]"
         (click)="closeMobileMenu()">Sign Up</a>
       <a routerLink="/auth" [queryParams]="{ mode: 'login' }" class="transition hover:text-[#DC2626]"
@@ -273,6 +275,104 @@
           class="bg-slate-600 hover:bg-slate-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
           Create Another Prompt
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Section -->
+  <div id="pricing" class="bg-slate-50 py-12 md:py-16">
+    <div class="container mx-auto px-4 md:px-6 max-w-6xl">
+      <div class="text-center mb-10 md:mb-12">
+        <p class="text-xs md:text-sm uppercase tracking-[0.3em] text-[#DC2626] mb-2">Pricing</p>
+        <h2 class="text-2xl md:text-4xl font-bold text-slate-900">Choose the plan that fits your needs</h2>
+        <p class="mt-4 text-sm md:text-base text-slate-600 max-w-2xl mx-auto">
+          Start free and upgrade when you're ready for unlimited prompts and collections
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+        <!-- Free Plan -->
+        <div class="bg-white rounded-2xl border-2 border-slate-300 p-6 md:p-8 flex flex-col">
+          <div class="mb-6">
+            <h3 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Free</h3>
+            <div class="flex items-baseline mb-4">
+              <span class="text-4xl md:text-5xl font-bold text-slate-900">$0</span>
+              <span class="text-slate-600 ml-2">/month</span>
+            </div>
+            <p class="text-slate-600 text-sm">Perfect for getting started</p>
+          </div>
+
+          <ul class="flex-1 space-y-3 mb-6">
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Up to 35 prompts</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Up to 3 collections</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Launch prompts in ChatGPT, Gemini, and Claude</span>
+            </li>
+          </ul>
+
+          <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
+            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50">
+            Get Started Free
+          </a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="bg-white rounded-2xl border-2 border-[#DC2626] p-6 md:p-8 flex flex-col relative shadow-lg">
+          <div class="absolute top-0 right-6 bg-[#DC2626] text-white px-3 py-1 rounded-b-lg text-xs font-semibold uppercase">
+            Popular
+          </div>
+          <div class="mb-6">
+            <h3 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Pro</h3>
+            <div class="flex items-baseline mb-4">
+              <span class="text-4xl md:text-5xl font-bold text-slate-900">$19.99</span>
+              <span class="text-slate-600 ml-2">/month</span>
+            </div>
+            <p class="text-slate-600 text-sm">For power users and teams</p>
+          </div>
+
+          <ul class="flex-1 space-y-3 mb-6">
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm"><strong>Unlimited prompts</strong></span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm"><strong>Unlimited collections</strong></span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Create and organize collections</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share collections with team members</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Launch prompts in ChatGPT, Gemini, and Claude</span>
+            </li>
+          </ul>
+
+          <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
+            class="w-full text-center rounded-xl bg-[#DC2626] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#B91C1C]">
+            Upgrade to Pro
+          </a>
+        </div>
       </div>
     </div>
   </div>
