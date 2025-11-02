@@ -30,6 +30,14 @@ export const routes: Routes = [
       import('./pages/collections/collections-page.component').then(m => m.CollectionsPageComponent)
   },
   {
+    path: 'collections/bookmarked',
+    loadComponent: () =>
+      import('./pages/collections/collections-page.component').then(m => m.CollectionsPageComponent),
+    data: {
+      view: 'bookmarked'
+    }
+  },
+  {
     path: 'collections/:id',
     loadComponent: () =>
       import('./pages/collection-detail/collection-detail.component').then(m => m.CollectionDetailComponent)

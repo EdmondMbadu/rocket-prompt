@@ -69,6 +69,20 @@
                 <path d="M8 11h8" stroke-linecap="round" />
                 <path d="M8 15h5" stroke-linecap="round" />
               </svg>
+              <svg
+                *ngSwitchCase="'bookmark'"
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              >
+                <path
+                  d="M6 3h12a1 1 0 0 1 1 1v16.382a.5.5 0 0 1-.79.407L12 17.25l-6.21 3.539a.5.5 0 0 1-.79-.407V4a1 1 0 0 1 1-1z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
               <span *ngSwitchDefault class="h-5 w-5"></span>
             </ng-container>
           </span>
@@ -154,6 +168,20 @@
               <path d="M8 5v-1.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5V5" />
               <path d="M8 11h8" stroke-linecap="round" />
               <path d="M8 15h5" stroke-linecap="round" />
+            </svg>
+            <svg
+              *ngSwitchCase="'bookmark'"
+              viewBox="0 0 24 24"
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            >
+              <path
+                d="M6 3h12a1 1 0 0 1 1 1v16.382a.5.5 0 0 1-.79.407L12 17.25l-6.21 3.539a.5.5 0 0 1-.79-.407V4a1 1 0 0 1 1-1z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <span *ngSwitchDefault class="h-5 w-5"></span>
           </ng-container>

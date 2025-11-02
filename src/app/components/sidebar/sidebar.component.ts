@@ -9,7 +9,7 @@ import type { UserPreferences, UserProfile } from '../../models/user-profile.mod
 
 interface SidebarNavItem {
   label: string;
-  icon: 'home' | 'collections' | string;
+  icon: 'home' | 'collections' | 'bookmark' | string;
   route: string;
   exact?: boolean;
 }
@@ -41,6 +41,11 @@ export class SidebarComponent {
       label: 'Your Collections',
       icon: 'collections',
       route: '/collections'
+    },
+    {
+      label: 'Bookmarked Collections',
+      icon: 'bookmark',
+      route: '/collections/bookmarked'
     }
   ];
 

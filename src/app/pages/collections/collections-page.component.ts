@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -39,6 +39,7 @@ export class CollectionsPageComponent {
     private readonly authService = inject(AuthService);
     private readonly collectionService = inject(CollectionService);
     private readonly promptService = inject(PromptService);
+    private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
@@ -47,6 +48,23 @@ export class CollectionsPageComponent {
 
     readonly profile = signal<UserProfile | null>(null);
     readonly profileLoaded = signal(false);
+
+    readonly viewMode = signal<'all' | 'bookmarked'>('all');
+    readonly pageTitle = computed(() =>
+        this.viewMode() === 'bookmarked' ? 'Bookmarked Collections' : 'Collections'
+    );
+    readonly searchPlaceholder = computed(() =>
+        this.viewMode() === 'bookmarked' ? 'Search bookmarked collections…' : 'Search collections…'
+    );
+    readonly emptyStateTitle = computed(() =>
+        this.viewMode() === 'bookmarked' ? 'No bookmarked solutions' : 'No collections yet'
+    );
+    readonly emptyStateDescription = computed(() =>
+        this.viewMode() === 'bookmarked'
+            ? 'Bookmark collections to see them here.'
+            : 'Start by creating a collection to group your saved prompts.'
+    );
+    readonly showCreateButton = computed(() => this.viewMode() === 'all');
 
     readonly collections = signal<CollectionCard[]>([]);
     readonly availablePrompts = signal<PromptOption[]>([]);
@@ -94,7 +112,13 @@ export class CollectionsPageComponent {
 
     readonly filteredCollections = computed(() => {
         const term = this.searchTerm().trim().toLowerCase();
-        const collections = this.collections();
+        const viewMode = this.viewMode();
+        const bookmarked = this.bookmarkedCollections();
+        let collections = this.collections();
+
+        if (viewMode === 'bookmarked') {
+            collections = collections.filter(collection => bookmarked.has(collection.id));
+        }
 
         if (!term) {
             return collections;
@@ -110,6 +134,13 @@ export class CollectionsPageComponent {
         this.ensureClientId();
         this.observeCollections();
         this.observePrompts();
+
+        this.route.data
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(data => {
+                const view = data?.['view'] === 'bookmarked' ? 'bookmarked' : 'all';
+                this.viewMode.set(view);
+            });
 
         this.currentUser$
             .pipe(
@@ -184,6 +215,10 @@ export class CollectionsPageComponent {
     }
 
     openCreateCollectionModal() {
+        if (!this.showCreateButton()) {
+            return;
+        }
+
         if (!this.profile()) {
             this.goToAuth();
             return;

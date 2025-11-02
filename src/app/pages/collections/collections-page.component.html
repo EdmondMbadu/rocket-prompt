@@ -5,23 +5,26 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-3 text-slate-900">
             <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-14 w-auto" />
+            <h1 class="text-xl font-semibold">{{ pageTitle() }}</h1>
           </div>
 
           <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
-            <button
-              type="button"
-              (click)="openCreateCollectionModal()"
-              class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 text-sm font-semibold text-[#DC2626] border border-slate-300 shadow-sm transition hover:bg-slate-50 hover:border-slate-400"
-              [disabled]="profile() && availablePrompts().length === 0"
-            >
-              <span class="text-base">＋</span>
-              <ng-container *ngIf="profile(); else signInToCreate">
-                New Collection
-              </ng-container>
-            </button>
-            <ng-template #signInToCreate>
-              <span>Sign in to create</span>
-            </ng-template>
+            <ng-container *ngIf="showCreateButton()">
+              <button
+                type="button"
+                (click)="openCreateCollectionModal()"
+                class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 text-sm font-semibold text-[#DC2626] border border-slate-300 shadow-sm transition hover:bg-slate-50 hover:border-slate-400"
+                [disabled]="profile() && availablePrompts().length === 0"
+              >
+                <span class="text-base">＋</span>
+                <ng-container *ngIf="profile(); else signInToCreate">
+                  New Collection
+                </ng-container>
+              </button>
+              <ng-template #signInToCreate>
+                <span>Sign in to create</span>
+              </ng-template>
+            </ng-container>
 
             <ng-container *ngIf="profile() as profileUser; else guestActions">
               <div class="relative" data-user-menu>
@@ -100,7 +103,7 @@
             <input
               type="search"
               class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
-              placeholder="Search collections..."
+              [placeholder]="searchPlaceholder()"
               [value]="searchTerm()"
               (input)="onSearch(($any($event.target)).value)"
             />
@@ -123,7 +126,7 @@
           <input
             type="search"
             class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
-            placeholder="Search collections..."
+            [placeholder]="searchPlaceholder()"
             [value]="searchTerm()"
             (input)="onSearch(($any($event.target)).value)"
           />
@@ -348,9 +351,9 @@
 
 <ng-template #emptyState>
   <div class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-300 bg-white px-10 py-16 text-center shadow-sm">
-    <p class="text-lg font-semibold text-slate-800">No collections yet</p>
+    <p class="text-lg font-semibold text-slate-800">{{ emptyStateTitle() }}</p>
     <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
-      Start by creating a collection to group your saved prompts.
+      {{ emptyStateDescription() }}
     </p>
   </div>
 </ng-template>
