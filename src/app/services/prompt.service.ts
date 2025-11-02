@@ -218,6 +218,82 @@ export class PromptService {
     return snap.exists();
   }
 
+  async fetchLikedPrompts(actorId: string): Promise<Prompt[]> {
+    const trimmedActorId = actorId?.trim();
+
+    if (!trimmedActorId) {
+      return [];
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    const likesQuery = firestoreModule.query(
+      firestoreModule.collection(firestore, 'promptLikes'),
+      firestoreModule.where('actorId', '==', trimmedActorId),
+      firestoreModule.orderBy('createdAt', 'desc'),
+      firestoreModule.limit(200)
+    );
+
+    const likeSnapshot = await firestoreModule.getDocs(likesQuery);
+
+    if (likeSnapshot.empty) {
+      return [];
+    }
+
+    const likedEntries = likeSnapshot.docs
+      .map((doc, index) => {
+        const data = doc.data() as Record<string, unknown> | undefined;
+        const promptId = typeof data?.['promptId'] === 'string' ? data?.['promptId'].trim() : undefined;
+
+        if (!promptId) {
+          return null;
+        }
+
+        return { promptId, order: index };
+      })
+      .filter((entry): entry is { promptId: string; order: number } => !!entry);
+
+    if (!likedEntries.length) {
+      return [];
+    }
+
+    const orderMap = new Map<string, number>();
+    const promptIds: string[] = [];
+
+    likedEntries.forEach(entry => {
+      if (!orderMap.has(entry.promptId)) {
+        orderMap.set(entry.promptId, entry.order);
+        promptIds.push(entry.promptId);
+      }
+    });
+
+    const prompts: Prompt[] = [];
+    const chunkSize = 10;
+
+    for (let i = 0; i < promptIds.length; i += chunkSize) {
+      const chunk = promptIds.slice(i, i + chunkSize);
+
+      const promptQuery = firestoreModule.query(
+        firestoreModule.collection(firestore, 'prompts'),
+        firestoreModule.where(firestoreModule.documentId(), 'in', chunk)
+      );
+
+      const promptSnapshot = await firestoreModule.getDocs(promptQuery);
+
+      promptSnapshot.docs.forEach(doc => {
+        prompts.push(this.mapPrompt(doc as QueryDocumentSnapshot, firestoreModule));
+      });
+    }
+
+    prompts.sort((a, b) => {
+      const aOrder = orderMap.get(a.id ?? '') ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = orderMap.get(b.id ?? '') ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
+
+    return prompts;
+  }
+
   /**
    * Toggle a like for an actor on a prompt. Uses a transaction to ensure likes count stays consistent.
    * Returns the new liked state and the resulting likes count.

@@ -1,0 +1,153 @@
+<div class="min-h-screen bg-white text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3 text-slate-900">
+          <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 w-auto" />
+          <h1 class="text-2xl font-semibold">Liked Prompts</h1>
+        </div>
+
+        <div class="flex items-center gap-3 self-end sm:self-auto">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+            (click)="refresh()"
+            [disabled]="isLoading()"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+              <path
+                d="M4 4v6h6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M20 20v-6h-6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M20 9A7 7 0 0 0 7.14 4.88L4 10m16 4-3.14 5.12A7 7 0 0 1 4 15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Refresh</span>
+          </button>
+
+          <button
+            *ngIf="!isAuthenticated()"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+            (click)="goToAuth()"
+          >
+            Sign in
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <label class="group relative flex w-full items-center rounded-2xl border border-slate-300 bg-white shadow-sm">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-5 w-5 text-slate-400">
+            <path
+              d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <input
+            type="search"
+            class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
+            placeholder="Search liked prompts…"
+            [value]="searchTerm()"
+            (input)="onSearch(($any($event.target)).value)"
+          />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+    <div *ngIf="loadError()" class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+      {{ loadError() }}
+    </div>
+
+    <ng-container *ngIf="isLoading(); else likedPromptsContent">
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <div class="h-6 w-24 rounded-full bg-slate-200/70"></div>
+          <div class="mt-4 h-5 w-3/4 rounded bg-slate-200/70"></div>
+          <div class="mt-2 h-4 w-1/2 rounded bg-slate-200/60"></div>
+          <div class="mt-6 h-12 rounded-xl bg-slate-100/80"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #likedPromptsContent>
+      <ng-container *ngIf="filteredPrompts().length > 0; else emptyState">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <article
+            *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+            class="flex flex-col rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <span class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
+              {{ prompt.tagLabel }}
+            </span>
+
+            <h3 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">
+              {{ prompt.title }}
+            </h3>
+
+            <p class="mt-2 text-sm text-slate-500">
+              {{ prompt.likes === 1 ? '1 like' : prompt.likes + ' likes' }}
+            </p>
+
+            <p class="prompt-snippet mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 whitespace-pre-line">
+              {{ prompt.preview }}
+            </p>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                (click)="openPrompt(prompt)"
+              >
+                View prompt
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex items-center justify-center rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                (click)="removeLike(prompt, $event)"
+                [disabled]="isPromptLiking(prompt.id)"
+              >
+                Remove like
+              </button>
+            </div>
+          </article>
+        </div>
+      </ng-container>
+    </ng-template>
+
+    <ng-template #emptyState>
+      <div class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-300 bg-white px-10 py-16 text-center shadow-sm">
+        <p class="text-lg font-semibold text-slate-800">You haven't liked any prompts yet</p>
+        <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
+          Like prompts from the library and they'll appear here for quick access.
+        </p>
+      </div>
+    </ng-template>
+  </main>
+</div>
+

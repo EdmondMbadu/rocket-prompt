@@ -25,6 +25,11 @@ export const routes: Routes = [
       import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'prompts/liked',
+    loadComponent: () =>
+      import('./pages/liked-prompts/liked-prompts-page.component').then(m => m.LikedPromptsPageComponent)
+  },
+  {
     path: 'collections',
     loadComponent: () =>
       import('./pages/collections/collections-page.component').then(m => m.CollectionsPageComponent)
