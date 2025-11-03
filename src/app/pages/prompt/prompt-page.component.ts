@@ -24,6 +24,7 @@ export class PromptPageComponent {
   readonly loadError = signal<string | null>(null);
   readonly prompt = signal<Prompt | undefined>(undefined);
   readonly shareModalOpen = signal(false);
+  readonly currentUser = signal(this.authService.currentUser);
 
   // Provide like state
   readonly liked = signal(false);
@@ -35,10 +36,15 @@ export class PromptPageComponent {
 
   // computed actor id: `u_<uid>` for signed-in users, `c_<clientId>` for anonymous
   readonly actorId = computed(() => {
-    const user = this.authService.currentUser;
+    const user = this.currentUser();
     if (user?.uid) return `u_${user.uid}`;
     const cid = this.clientId();
     return cid ? `c_${cid}` : '';
+  });
+
+  // Check if user is logged in
+  readonly isLoggedIn = computed(() => {
+    return !!this.currentUser();
   });
 
   // Provide a small computed short id for sharing (first 8 chars)
@@ -83,7 +89,8 @@ export class PromptPageComponent {
     // re-evaluate liked state when auth changes (login/logout)
     this.authService.currentUser$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
+      .subscribe(user => {
+        this.currentUser.set(user);
         const p = this.prompt();
         if (p) {
           void this.updateLikedState(p.id);
@@ -283,5 +290,9 @@ export class PromptPageComponent {
   formatDate(date?: Date) {
     if (!date) return '';
     return new Date(date).toLocaleString();
+  }
+
+  navigateToSignUp() {
+    this.router.navigate(['/auth'], { queryParams: { mode: 'signup' } });
   }
 }
