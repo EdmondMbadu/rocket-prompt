@@ -57,7 +57,7 @@ export class CollectionsPageComponent {
         this.viewMode() === 'bookmarked' ? 'Search bookmarked collections…' : 'Search collections…'
     );
     readonly emptyStateTitle = computed(() =>
-        this.viewMode() === 'bookmarked' ? 'No bookmarked solutions' : 'No collections yet'
+        this.viewMode() === 'bookmarked' ? 'No bookmarked prompts' : 'No collections yet'
     );
     readonly emptyStateDescription = computed(() =>
         this.viewMode() === 'bookmarked'

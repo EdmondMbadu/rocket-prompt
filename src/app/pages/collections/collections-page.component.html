@@ -177,6 +177,7 @@
                   [attr.aria-pressed]="isCollectionBookmarked(collection.id)"
                   [disabled]="isCollectionBookmarking(collection.id)"
                   (click)="toggleCollectionBookmark(collection, $event)"
+                  data-tooltip="Add to saved collections"
                 >
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                     <path
