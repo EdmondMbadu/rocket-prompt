@@ -39,7 +39,7 @@ interface PromptCard {
 export class HomeComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -59,7 +59,16 @@ export class HomeComponent {
 
       return this.authService.userProfile$(user.uid);
     }),
-    map(profile => (profile ? profile : undefined))
+    map(profile => {
+      if (profile) {
+        // Debug logging to help troubleshoot
+        console.log('Profile loaded:', profile);
+        console.log('Role:', profile.role);
+        console.log('Admin:', profile.admin);
+        console.log('Is admin?', profile.role === 'admin' || profile.admin);
+      }
+      return profile ? profile : undefined;
+    })
   );
 
   private readonly baseCategories: PromptCategory[] = [

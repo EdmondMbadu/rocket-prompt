@@ -1,0 +1,288 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+          <p class="mt-1 text-sm text-slate-500">Manage users and monitor platform statistics</p>
+        </div>
+        <button
+          type="button"
+          (click)="router.navigate(['/home'])"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Home
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Error Message -->
+    <div *ngIf="error()" class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+      {{ error() }}
+      <button
+        type="button"
+        (click)="loadData()"
+        class="mt-2 text-sm font-semibold underline hover:text-red-800"
+      >
+        Try again
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <ng-container *ngIf="isLoading()">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div *ngFor="let _ of [1, 2, 3, 4]" class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <div class="h-6 w-24 rounded-full bg-slate-200 animate-pulse"></div>
+          <div class="mt-4 h-10 w-16 rounded bg-slate-200 animate-pulse"></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Stats Cards -->
+    <ng-container *ngIf="!isLoading() && stats()">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <!-- Total Users -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-500">Total Users</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalUsers || 0 }}</p>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Prompts -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-500">Total Prompts</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalPrompts || 0 }}</p>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Collections -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-500">Total Collections</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalCollections || 0 }}</p>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" stroke-width="1.6">
+                <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+                <path d="M8 5v-1.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5V5" />
+                <path d="M8 11h8" stroke-linecap="round" />
+                <path d="M8 15h5" stroke-linecap="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Users -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-slate-500">Admin Users</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">
+                {{ adminCount() }}
+              </p>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid gap-6 lg:grid-cols-2 mb-8">
+        <!-- Prompts by Tag Chart -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <h2 class="text-xl font-semibold text-slate-900 mb-4">Prompts by Tag</h2>
+          <div class="space-y-4">
+            <div *ngFor="let item of stats()?.promptsByTag?.slice(0, 10); let i = index" class="flex items-center gap-4">
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium text-slate-700">{{ formatTag(item.tag) }}</span>
+                  <span class="text-sm font-semibold text-slate-900">{{ item.count }}</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600 transition-all duration-500"
+                    [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByTag || []))"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collections by Tag Chart -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <h2 class="text-xl font-semibold text-slate-900 mb-4">Collections by Tag</h2>
+          <div class="space-y-4">
+            <div *ngFor="let item of stats()?.collectionsByTag?.slice(0, 10); let i = index" class="flex items-center gap-4">
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium text-slate-700">{{ formatTag(item.tag) }}</span>
+                  <span class="text-sm font-semibold text-slate-900">{{ item.count }}</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500"
+                    [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.collectionsByTag || []))"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Charts -->
+      <div class="grid gap-6 lg:grid-cols-2 mb-8">
+        <!-- Users Growth Chart -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <h2 class="text-xl font-semibold text-slate-900 mb-4">Users Growth</h2>
+          <div class="flex items-end gap-2 h-64">
+            <div *ngFor="let item of stats()?.usersByMonth" class="flex-1 flex flex-col items-center">
+              <div
+                class="w-full rounded-t bg-gradient-to-t from-blue-500 to-blue-600 transition-all duration-500 hover:from-blue-600 hover:to-blue-700"
+                [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))"
+                [title]="formatMonth(item.month) + ': ' + item.count"
+              ></div>
+              <span class="mt-2 text-xs text-slate-500 transform -rotate-45 origin-bottom-left whitespace-nowrap">
+                {{ formatMonth(item.month) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompts Growth Chart -->
+        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <h2 class="text-xl font-semibold text-slate-900 mb-4">Prompts Growth</h2>
+          <div class="flex items-end gap-2 h-64">
+            <div *ngFor="let item of stats()?.promptsByMonth" class="flex-1 flex flex-col items-center">
+              <div
+                class="w-full rounded-t bg-gradient-to-t from-red-500 to-red-600 transition-all duration-500 hover:from-red-600 hover:to-red-700"
+                [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))"
+                [title]="formatMonth(item.month) + ': ' + item.count"
+              ></div>
+              <span class="mt-2 text-xs text-slate-500 transform -rotate-45 origin-bottom-left whitespace-nowrap">
+                {{ formatMonth(item.month) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Users Table -->
+    <div class="rounded-2xl border border-slate-300 bg-white shadow-sm">
+      <div class="p-6 border-b border-slate-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-slate-900">All Users</h2>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <svg
+                viewBox="0 0 24 24"
+                class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" />
+              </svg>
+              <input
+                type="search"
+                [value]="searchTerm()"
+                (input)="onSearch(($any($event.target)).value)"
+                placeholder="Search users..."
+                class="w-64 rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Role</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Joined</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            <ng-container *ngIf="filteredUsers().length > 0; else noUsers">
+              <tr *ngFor="let user of filteredUsers()" class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white font-semibold">
+                      {{ user.firstName?.charAt(0)?.toUpperCase() || '' }}{{ user.lastName?.charAt(0)?.toUpperCase() || '' }}
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-slate-900">
+                        {{ user.firstName }} {{ user.lastName }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-slate-600">{{ user.email }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    *ngIf="user.role === 'admin' || user.admin"
+                    class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700"
+                  >
+                    Admin
+                  </span>
+                  <span
+                    *ngIf="(user.role !== 'admin' && !user.admin)"
+                    class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+                  >
+                    User
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-slate-600">{{ formatDate(user.createdAt) }}</div>
+                </td>
+              </tr>
+            </ng-container>
+            <ng-template #noUsers>
+              <tr>
+                <td colspan="4" class="px-6 py-12 text-center">
+                  <p class="text-sm text-slate-500">No users found</p>
+                </td>
+              </tr>
+            </ng-template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+

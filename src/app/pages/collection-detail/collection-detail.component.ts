@@ -32,7 +32,7 @@ export class CollectionDetailComponent {
   private readonly authService = inject(AuthService);
   private readonly collectionService = inject(CollectionService);
   private readonly promptService = inject(PromptService);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 

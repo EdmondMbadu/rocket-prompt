@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
+import { adminGuard, requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -51,6 +51,12 @@ export const routes: Routes = [
     path: 'prompt/:id',
     // single prompt view — accepts full id or short prefix
     loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./pages/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
   },
   {
     path: '**',

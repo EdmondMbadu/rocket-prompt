@@ -30,7 +30,28 @@
                 <div class="menu-header">
                   <p class="menu-name">{{ profile.firstName }} {{ profile.lastName }}</p>
                   <p class="menu-email">{{ profile.email }}</p>
+                  <!-- Debug info - remove after fixing -->
+                  <p class="menu-email text-xs">Role: {{ profile.role || 'none' }}, Admin: {{ profile.admin ? 'true' : 'false' }}</p>
                 </div>
+                <button
+                  *ngIf="profile.role === 'admin' || profile.admin"
+                  type="button"
+                  class="menu-item menu-item--admin"
+                  role="menuitem"
+                  (click)="router.navigate(['/admin']); closeMenu()"
+                >
+                  <span>Admin Dashboard</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path
+                      d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
                 <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
                   <span>Log out</span>
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">

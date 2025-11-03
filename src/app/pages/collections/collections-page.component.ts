@@ -40,7 +40,7 @@ export class CollectionsPageComponent {
     private readonly collectionService = inject(CollectionService);
     private readonly promptService = inject(PromptService);
     private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
+    readonly router = inject(Router);
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
 
