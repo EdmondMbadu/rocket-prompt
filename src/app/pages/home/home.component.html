@@ -30,8 +30,6 @@
                 <div class="menu-header">
                   <p class="menu-name">{{ profile.firstName }} {{ profile.lastName }}</p>
                   <p class="menu-email">{{ profile.email }}</p>
-                  <!-- Debug info - remove after fixing -->
-                  <p class="menu-email text-xs">Role: {{ profile.role || 'none' }}, Admin: {{ profile.admin ? 'true' : 'false' }}</p>
                 </div>
                 <button
                   *ngIf="profile.role === 'admin' || profile.admin"
