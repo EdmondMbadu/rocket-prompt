@@ -36,6 +36,7 @@ export class AdminDashboardComponent {
     readonly isLoading = signal(true);
     readonly error = signal<string | null>(null);
     readonly searchTerm = signal('');
+    readonly isUsersExpanded = signal(false);
 
     readonly filteredUsers = computed(() => {
         const users = this.users();
