@@ -56,8 +56,8 @@
       </span>
     </h1>
 
-    <p class="text-base md:text-lg text-slate-600 mb-6 max-w-2xl mx-auto px-4">
-      Transform your long AI prompts into shareable short URLs
+    <p class="text-lg md:text-xl font-bold text-slate-600 mb-6 max-w-2xl mx-auto px-4">
+      🚀 <strong>Transform your long AI prompts into shareable short URLs</strong> 🚀
     </p>
 
     <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4">
@@ -94,7 +94,11 @@
       </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20 text-center">
-        <div class="text-4xl md:text-5xl mb-2 md:mb-3">🚀</div>
+        <div class="flex items-center justify-center gap-3 md:gap-4 mb-2 md:mb-3">
+          <img src="assets/gpt.png" alt="ChatGPT" class="w-8 h-8 md:w-10 md:h-10" />
+          <img src="assets/gemini.png" alt="Gemini" class="w-8 h-8 md:w-10 md:h-10" />
+          <img src="assets/claude.jpeg" alt="Claude" class="w-8 h-8 md:w-10 md:h-10 rounded-full" />
+        </div>
         <h3 class="text-base md:text-lg font-semibold mb-2 md:mb-3">3. Launch</h3>
         <p class="text-slate-600 text-xs md:text-sm">
           Recipients can instantly launch your prompt in their favorite AI tool
@@ -293,7 +297,7 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
         <!-- Free Plan -->
         <div class="bg-white rounded-2xl border-2 border-slate-300 p-6 md:p-8 flex flex-col">
           <div class="mb-6">
@@ -308,25 +312,84 @@
           <ul class="flex-1 space-y-3 mb-6">
             <li class="flex items-start">
               <span class="text-green-600 mr-2">✓</span>
-              <span class="text-slate-700 text-sm">Up to 20 prompts</span>
+              <span class="text-slate-700 text-sm">Up to 100 prompts</span>
             </li>
             <li class="flex items-start">
               <span class="text-green-600 mr-2">✓</span>
-              <span class="text-slate-700 text-sm">Up to 3 collections</span>
+              <span class="text-slate-700 text-sm">Up to 5 collections</span>
             </li>
             <li class="flex items-start">
               <span class="text-green-600 mr-2">✓</span>
               <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
             </li>
-            <li class="flex items-start">
+            <li class="flex items-center">
               <span class="text-green-600 mr-2">✓</span>
-              <span class="text-slate-700 text-sm">Launch prompts in ChatGPT, Gemini, and Claude</span>
+              <span class="text-slate-700 text-sm mr-2">Launch prompts in</span>
+              <div class="flex items-center gap-2">
+                <img src="assets/gpt.png" alt="ChatGPT" class="w-5 h-5" />
+                <img src="assets/gemini.png" alt="Gemini" class="w-5 h-5" />
+                <img src="assets/claude.jpeg" alt="Claude" class="w-5 h-5 rounded-full" />
+                <span class="text-xl">🚀</span>
+              </div>
             </li>
           </ul>
 
           <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
-            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50">
-            Get Started Free
+            class="w-full flex items-center justify-center gap-3 md:gap-4 py-3 px-6 rounded-xl border-2 border-slate-300 bg-slate-50 transition hover:border-slate-400 hover:bg-slate-100 cursor-pointer">
+            <img src="assets/gpt.png" alt="ChatGPT" class="w-10 h-10 md:w-12 md:h-12" />
+            <img src="assets/gemini.png" alt="Gemini" class="w-10 h-10 md:w-12 md:h-12" />
+            <img src="assets/claude.jpeg" alt="Claude" class="w-10 h-10 md:w-12 md:h-12 rounded-full" />
+            <span class="text-3xl md:text-4xl">🚀</span>
+          </a>
+        </div>
+
+        <!-- Plus Plan -->
+        <div class="bg-white rounded-2xl border-2 border-slate-300 p-6 md:p-8 flex flex-col">
+          <div class="mb-6">
+            <h3 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Plus</h3>
+            <div class="flex items-baseline mb-4">
+              <span class="text-4xl md:text-5xl font-bold text-slate-900">$4.99</span>
+              <span class="text-slate-600 ml-2">/month</span>
+            </div>
+            <p class="text-slate-600 text-sm">For power users</p>
+          </div>
+
+          <ul class="flex-1 space-y-3 mb-6">
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm"><strong>Unlimited prompts</strong></span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm"><strong>Unlimited collections</strong></span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Create and organize collections</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share collections with team members</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
+            </li>
+            <li class="flex items-center">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm mr-2">Launch prompts in</span>
+              <div class="flex items-center gap-2">
+                <img src="assets/gpt.png" alt="ChatGPT" class="w-5 h-5" />
+                <img src="assets/gemini.png" alt="Gemini" class="w-5 h-5" />
+                <img src="assets/claude.jpeg" alt="Claude" class="w-5 h-5 rounded-full" />
+                <span class="text-xl">🚀</span>
+              </div>
+            </li>
+          </ul>
+
+          <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
+            class="w-full text-center rounded-xl bg-[#DC2626] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#B91C1C]">
+            Upgrade to Plus
           </a>
         </div>
 
@@ -364,11 +427,25 @@
             </li>
             <li class="flex items-start">
               <span class="text-green-600 mr-2">✓</span>
-              <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
+              <span class="text-slate-700 text-sm"><strong>Team management</strong></span>
             </li>
             <li class="flex items-start">
               <span class="text-green-600 mr-2">✓</span>
-              <span class="text-slate-700 text-sm">Launch prompts in ChatGPT, Gemini, and Claude</span>
+              <span class="text-slate-700 text-sm"><strong>Share private links</strong></span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm">Share prompts via short URLs</span>
+            </li>
+            <li class="flex items-center">
+              <span class="text-green-600 mr-2">✓</span>
+              <span class="text-slate-700 text-sm mr-2">Launch prompts in</span>
+              <div class="flex items-center gap-2">
+                <img src="assets/gpt.png" alt="ChatGPT" class="w-5 h-5" />
+                <img src="assets/gemini.png" alt="Gemini" class="w-5 h-5" />
+                <img src="assets/claude.jpeg" alt="Claude" class="w-5 h-5 rounded-full" />
+                <span class="text-xl">🚀</span>
+              </div>
             </li>
           </ul>
 
