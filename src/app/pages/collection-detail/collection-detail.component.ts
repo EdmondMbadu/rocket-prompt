@@ -64,6 +64,11 @@ export class CollectionDetailComponent {
     return cid ? `c_${cid}` : '';
   });
 
+  // Check if user is logged in
+  readonly isLoggedIn = computed(() => {
+    return !!this.profile();
+  });
+
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   readonly collectionPrompts = computed(() => {
