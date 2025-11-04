@@ -4,20 +4,12 @@
       <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-4 text-slate-900">
-            <button
-              type="button"
+            <button type="button"
               class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
-              (click)="backToCollections()"
-            >
+              (click)="backToCollections()">
               <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                <path
-                  d="M15 18l-6-6 6-6"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+                <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                  stroke-linejoin="round" />
               </svg>
               Collections
             </button>
@@ -28,13 +20,8 @@
           <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
             <ng-container *ngIf="profile() as profileUser; else guestActions">
               <div class="relative" data-user-menu>
-                <button
-                  type="button"
-                  class="avatar-button"
-                  (click)="toggleMenu()"
-                  [attr.aria-expanded]="menuOpen()"
-                  aria-haspopup="true"
-                >
+                <button type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
+                  aria-haspopup="true">
                   <span class="sr-only">Open user menu</span>
                   <span class="avatar-initials">{{ profileInitials(profileUser) }}</span>
                 </button>
@@ -44,63 +31,33 @@
                     <p class="menu-name">{{ profileUser.firstName }} {{ profileUser.lastName }}</p>
                     <p class="menu-email">{{ profileUser.email }}</p>
                   </div>
-                  <button
-                    *ngIf="profileUser.role === 'admin' || profileUser.admin"
-                    type="button"
-                    class="menu-item menu-item--admin"
-                    role="menuitem"
-                    (click)="router.navigate(['/admin']); toggleMenu()"
-                  >
+                  <button *ngIf="profileUser.role === 'admin' || profileUser.admin" type="button"
+                    class="menu-item menu-item--admin" role="menuitem"
+                    (click)="router.navigate(['/admin']); toggleMenu()">
                     <span>Admin Dashboard</span>
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                      <path
-                        d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="none"
+                        stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                   </button>
                   <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
                     <span>Log out</span>
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                      <path
-                        d="M9 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-2"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M13 12H4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M6 9l-3 3 3 3"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                      <path d="M9 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-2" fill="none"
+                        stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M6 9l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                   </button>
                 </div>
               </div>
             </ng-container>
             <ng-template #guestActions>
-              <button
-                type="button"
+              <button type="button"
                 class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
-                (click)="goToAuth()"
-              >
+                (click)="goToAuth()">
                 Sign in
               </button>
             </ng-template>
@@ -108,65 +65,52 @@
         </div>
 
         <!-- Join Banner for non-logged-in users -->
-        <div *ngIf="!isLoggedIn()" 
-            class="mt-6 bg-gradient-to-r from-[#DC2626] via-[#EF4444] to-[#DC2626] text-white shadow-lg rounded-xl border border-red-300/30">
-            <div class="px-4 py-4 sm:px-6">
-                <div class="flex items-center justify-between gap-4 flex-wrap">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-base sm:text-lg font-bold leading-tight">
-                                Join RocketPrompt.io
-                            </h3>
-                            <p class="text-sm sm:text-base text-red-50/90 leading-tight mt-0.5">
-                                Save your favorite prompts and create collections
-                            </p>
-                        </div>
-                    </div>
-                    <button 
-                        type="button"
-                        (click)="goToAuth('signup')"
-                        class="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-white text-[#DC2626] px-5 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-bold shadow-lg hover:shadow-xl hover:bg-red-50 transition-all duration-200 transform hover:scale-105 active:scale-95">
-                        <span>Get Started</span>
-                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                    </button>
+        <div *ngIf="!isLoggedIn()" class="mt-6 bg-white border border-slate-200 shadow-lg rounded-xl">
+          <div class="px-4 py-5 sm:px-6">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <div class="flex-shrink-0">
+                  <span class="text-3xl sm:text-4xl">🚀</span>
                 </div>
+                <div class="flex-1 min-w-0">
+                  <h3
+                    class="text-lg sm:text-xl font-bold leading-tight bg-gradient-to-r from-[#DC2626] to-[#EF4444] bg-clip-text text-transparent">
+                    Join RocketPrompt.io For Free
+                  </h3>
+                  <p class="text-sm sm:text-base text-slate-700 font-medium leading-tight mt-1">
+                    Save your favorite prompts and create collections
+                  </p>
+                </div>
+              </div>
+              <button type="button" (click)="navigateToSignUp()"
+                class="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] text-white px-6 py-3 sm:px-7 sm:py-3.5 text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95">
+                <span>Get Started</span>
+                <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
             </div>
+          </div>
         </div>
 
         <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div class="flex flex-wrap items-center gap-3">
-              <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <span
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {{ collectionTagLabel() }}
               </span>
               <span *ngIf="collection()" class="text-sm text-slate-500">
                 {{ collection()?.promptIds?.length || 0 }}
                 {{ (collection()?.promptIds?.length || 0) === 1 ? 'prompt' : 'prompts' }}
               </span>
-              <button
-                type="button"
-                class="collection-bookmark-button"
-                [attr.aria-pressed]="bookmarked()"
-                [disabled]="bookmarking()"
-                (click)="toggleBookmark($event)"
-                data-tooltip="Add to saved collections"
-              >
+              <button type="button" class="collection-bookmark-button" [attr.aria-pressed]="bookmarked()"
+                [disabled]="bookmarking()" (click)="toggleBookmark($event)" data-tooltip="Add to saved collections">
                 <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                  <path
-                    [attr.fill]="bookmarked() ? '#dc2626' : 'none'"
-                    [attr.stroke]="bookmarked() ? '#dc2626' : 'currentColor'"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
+                  <path [attr.fill]="bookmarked() ? '#dc2626' : 'none'"
+                    [attr.stroke]="bookmarked() ? '#dc2626' : 'currentColor'" stroke-width="1.6" stroke-linecap="round"
                     stroke-linejoin="round"
-                    d="M6 3h12a1 1 0 011 1v16.382a.5.5 0 01-.79.407L12 17.25l-6.21 3.539a.5.5 0 01-.79-.407V4a1 1 0 011-1z"
-                  />
+                    d="M6 3h12a1 1 0 011 1v16.382a.5.5 0 01-.79.407L12 17.25l-6.21 3.539a.5.5 0 01-.79-.407V4a1 1 0 011-1z" />
                 </svg>
                 <span>{{ collection()?.bookmarkCount || 0 }}</span>
               </button>
@@ -177,24 +121,16 @@
           </div>
 
           <div class="w-full max-w-md">
-            <label class="group relative flex w-full items-center rounded-2xl bg-white border border-slate-300 shadow-sm">
+            <label
+              class="group relative flex w-full items-center rounded-2xl bg-white border border-slate-300 shadow-sm">
               <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-5 w-5 text-slate-400">
-                <path
-                  d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              <input
-                type="search"
+              <input type="search"
                 class="w-full rounded-2xl bg-white py-3 pr-4 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
-                placeholder="Search within this collection..."
-                [value]="searchTerm()"
-                (input)="onSearch(($any($event.target)).value)"
-              />
+                placeholder="Search within this collection..." [value]="searchTerm()"
+                (input)="onSearch(($any($event.target)).value)" />
             </label>
           </div>
         </div>
@@ -202,12 +138,14 @@
     </header>
 
     <main class="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-      <div *ngIf="collectionNotFound()" class="rounded-2xl border border-dashed border-red-300 bg-red-50 px-6 py-10 text-center text-red-700">
+      <div *ngIf="collectionNotFound()"
+        class="rounded-2xl border border-dashed border-red-300 bg-red-50 px-6 py-10 text-center text-red-700">
         This collection could not be found.
       </div>
 
       <ng-container *ngIf="!collectionNotFound()">
-        <div *ngIf="loadPromptsError()" class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+        <div *ngIf="loadPromptsError()"
+          class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
           {{ loadPromptsError() }}
         </div>
 
@@ -230,11 +168,10 @@
         <ng-template #promptList>
           <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              <article
-                *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-                class="flex h-full flex-col rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md"
-              >
-                <span class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
+              <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+                class="flex h-full flex-col rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+                <span
+                  class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
                   {{ prompt.tagLabel }}
                 </span>
 
@@ -251,82 +188,32 @@
                 </div>
 
                 <div class="mt-5 mt-auto flex items-center justify-end gap-2 text-sm text-slate-500">
-                  <button
-                    type="button"
-                    class="icon-button"
-                    aria-label="Copy prompt"
-                    data-tooltip="Copy prompt"
-                    title="Copy prompt"
-                    (click)="copyPrompt(prompt)"
-                  >
+                  <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
+                    title="Copy prompt" (click)="copyPrompt(prompt)">
                     <ng-container *ngIf="recentlyCopied().has(prompt.id); else copyIcon">
                       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-green-500">
-                        <path
-                          d="M20 6L9 17l-5-5"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.8"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
+                        <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                          stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </ng-container>
                     <ng-template #copyIcon>
                       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path
-                          d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                        <rect
-                          x="3"
-                          y="9"
-                          width="10"
-                          height="12"
-                          rx="2"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                        />
+                        <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none" stroke="currentColor"
+                          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <rect x="3" y="9" width="10" height="12" rx="2" fill="none" stroke="currentColor"
+                          stroke-width="1.6" />
                       </svg>
                     </ng-template>
                   </button>
-                  <button
-                    type="button"
-                    class="icon-button icon-button--primary"
-                    aria-label="Open prompt"
-                    data-tooltip="Open prompt"
-                    title="Open prompt"
-                    (click)="openPrompt(prompt)"
-                  >
+                  <button type="button" class="icon-button icon-button--primary" aria-label="Open prompt"
+                    data-tooltip="Open prompt" title="Open prompt" (click)="openPrompt(prompt)">
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                      <path
-                        d="M14 3h7v7"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M21 3l-9 9"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M19 13v5a3 3 0 01-3 3H7a3 3 0 01-3-3V8a3 3 0 013-3h5"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                      <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M21 3l-9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M19 13v5a3 3 0 01-3 3H7a3 3 0 01-3-3V8a3 3 0 013-3h5" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                   </button>
                 </div>
@@ -336,7 +223,8 @@
         </ng-template>
 
         <ng-template #noPrompts>
-          <div class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-300 bg-white px-10 py-16 text-center shadow-sm">
+          <div
+            class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-300 bg-white px-10 py-16 text-center shadow-sm">
             <p class="text-lg font-semibold text-slate-800">No prompts in this collection yet</p>
             <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
               Add prompts to this collection from the collections page.
@@ -349,7 +237,8 @@
 </ng-container>
 
 <ng-template #loading>
-  <div role="status" aria-live="polite" class="fixed inset-0 z-50 flex items-center justify-center bg-white text-slate-900">
+  <div role="status" aria-live="polite"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-white text-slate-900">
     <div class="w-full max-w-sm px-6 py-8 text-center">
       <div class="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#DC2626]"></div>
       <p class="text-xl font-semibold">Loading…</p>
@@ -357,4 +246,3 @@
     </div>
   </div>
 </ng-template>
-

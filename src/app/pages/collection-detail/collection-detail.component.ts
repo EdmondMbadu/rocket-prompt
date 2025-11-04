@@ -390,6 +390,10 @@ export class CollectionDetailComponent {
     this.copyTimers.set(id, timer);
   }
 
+  navigateToSignUp() {
+    this.router.navigate(['/auth'], { queryParams: { mode: 'signup' } });
+  }
+
   goToAuth(mode: 'login' | 'signup' = 'login') {
     const redirect = this.router.url || '/collections';
     void this.router.navigate(['/auth'], {

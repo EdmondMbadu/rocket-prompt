@@ -91,6 +91,11 @@ export class CollectionsPageComponent {
         return cid ? `c_${cid}` : '';
     });
 
+    // Check if user is logged in
+    readonly isLoggedIn = computed(() => {
+        return !!this.authService.currentUser;
+    });
+
     private readonly promptSelectionValidator: ValidatorFn = (
         control: AbstractControl<string[] | null>
     ): ValidationErrors | null => {
@@ -316,6 +321,10 @@ export class CollectionsPageComponent {
         }
 
         void this.router.navigate(['/collections', collection.id]);
+    }
+
+    navigateToSignUp() {
+        this.router.navigate(['/auth'], { queryParams: { mode: 'signup' } });
     }
 
     goToAuth(mode: 'login' | 'signup' = 'login') {

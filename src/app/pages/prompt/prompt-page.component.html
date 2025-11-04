@@ -1,6 +1,5 @@
 <div class="prompt-page-root">
-    <header
-        class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+    <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <!-- Brand -->
@@ -31,32 +30,29 @@
     </header>
 
     <!-- Join Banner for non-logged-in users -->
-    <div *ngIf="!isLoggedIn()" 
-        class="bg-gradient-to-r from-[#DC2626] via-[#EF4444] to-[#DC2626] text-white shadow-lg border-b border-red-300/30">
-        <div class="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
+    <div *ngIf="!isLoggedIn()" class="bg-white border-b border-slate-200 shadow-lg">
+        <div class="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between gap-4 flex-wrap">
-                <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="flex items-center gap-4 flex-1 min-w-0">
                     <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 sm:h-8 sm:w-8 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                        <span class="text-3xl sm:text-4xl">🚀</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h3 class="text-base sm:text-lg font-bold leading-tight">
-                            Join RocketPrompt.io
+                        <h3
+                            class="text-lg sm:text-xl font-bold leading-tight bg-gradient-to-r from-[#DC2626] to-[#EF4444] bg-clip-text text-transparent">
+                            Join RocketPrompt.io For Free
                         </h3>
-                        <p class="text-sm sm:text-base text-red-50/90 leading-tight mt-0.5">
+                        <p class="text-sm sm:text-base text-slate-700 font-medium leading-tight mt-1">
                             Save your favorite prompts and create collections
                         </p>
                     </div>
                 </div>
-                <button 
-                    type="button"
-                    (click)="navigateToSignUp()"
-                    class="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-white text-[#DC2626] px-5 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-bold shadow-lg hover:shadow-xl hover:bg-red-50 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                <button type="button" (click)="navigateToSignUp()"
+                    class="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] text-white px-6 py-3 sm:px-7 sm:py-3.5 text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95">
                     <span>Get Started</span>
                     <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                 </button>
             </div>
@@ -95,8 +91,8 @@
 
             <!-- ACTIONS: copy + open in AI (Top) -->
             <div class="mt-5 flex items-center justify-between gap-3 text-sm text-slate-500">
-                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt" data-tooltip="Copy prompt"
-                    title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
+                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt"
+                    data-tooltip="Copy prompt" title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
                     <ng-container *ngIf="copied(); else copyIcon">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
                             <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -145,8 +141,8 @@
 
             <!-- ACTIONS: copy + open in AI (Bottom) -->
             <div class="mt-5 flex items-center justify-between gap-3 text-sm text-slate-500">
-                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt" data-tooltip="Copy prompt"
-                    title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
+                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt"
+                    data-tooltip="Copy prompt" title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
                     <ng-container *ngIf="copied(); else copyIconBottom">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
                             <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
