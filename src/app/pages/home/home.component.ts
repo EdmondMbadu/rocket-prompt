@@ -230,8 +230,9 @@ export class HomeComponent {
   }
 
   createGeminiUrl(prompt: string): string {
-    const encodedPrompt = encodeURIComponent(prompt);
-    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+    // Gemini doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://gemini.google.com/app';
   }
 
   createClaudeUrl(prompt: string): string {
@@ -240,31 +241,31 @@ export class HomeComponent {
   }
 
   async openChatbot(url: string, chatbotName: string) {
-    // For non-ChatGPT providers we copy the prompt text first so that
-    // when the new tab opens and the user pastes, the prompt (not the URL)
-    // is inserted. ChatGPT opens directly.
-    if (chatbotName !== 'ChatGPT') {
-      const promptText = this.extractPromptFromUrl(url);
-
-      try {
-        if (promptText) {
-          await navigator.clipboard.writeText(promptText);
-          this.showCopyMessage(`${chatbotName} prompt copied!`);
-        }
-      } catch (e) {
-        // Fallback to older copy method if clipboard API fails
-        if (promptText) {
-          this.fallbackCopyTextToClipboard(promptText);
-          this.showCopyMessage(`${chatbotName} prompt copied!`);
-        }
-      }
-
-      // open after copying
+    // ChatGPT supports URL parameters for pre-filling prompts
+    // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
+    if (chatbotName === 'ChatGPT') {
+      // ChatGPT: open directly (it accepts query param)
       window.open(url, '_blank');
       return;
     }
 
-    // ChatGPT: open directly (it accepts query param)
+    // Gemini and other providers: copy to clipboard first
+    const promptText = this.extractPromptFromUrl(url);
+
+    try {
+      if (promptText) {
+        await navigator.clipboard.writeText(promptText);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
+    } catch (e) {
+      // Fallback to older copy method if clipboard API fails
+      if (promptText) {
+        this.fallbackCopyTextToClipboard(promptText);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
+    }
+
+    // open after copying
     window.open(url, '_blank');
   }
 

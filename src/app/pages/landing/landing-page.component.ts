@@ -180,8 +180,9 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   }
 
   private createGeminiUrl(prompt: string): string {
-    const encodedPrompt = encodeURIComponent(prompt);
-    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+    // Gemini doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://gemini.google.com/app';
   }
 
   private createClaudeUrl(prompt: string): string {

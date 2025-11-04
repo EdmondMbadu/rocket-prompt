@@ -113,8 +113,9 @@ export class PromptPageComponent {
   }
 
   createGeminiUrl(prompt: string): string {
-    const encodedPrompt = encodeURIComponent(prompt);
-    return `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+    // Gemini doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://gemini.google.com/app';
   }
 
   createClaudeUrl(prompt: string): string {
@@ -123,24 +124,27 @@ export class PromptPageComponent {
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // For non-ChatGPT providers copy the prompt text first so paste inserts the prompt
+    // ChatGPT supports URL parameters for pre-filling prompts
+    // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
     const text = promptText ?? this.prompt()?.content ?? '';
 
-    if (chatbotName !== 'ChatGPT') {
-      try {
-        if (text) {
-          await navigator.clipboard.writeText(text);
-          this.showCopyMessage(`${chatbotName} prompt copied!`);
-        }
-      } catch (e) {
-        if (text) {
-          this.fallbackCopyTextToClipboard(text);
-          this.showCopyMessage(`${chatbotName} prompt copied!`);
-        }
-      }
-
+    if (chatbotName === 'ChatGPT') {
+      // ChatGPT: open directly (it accepts query param)
       window.open(url, '_blank');
       return;
+    }
+
+    // Gemini and other providers: copy to clipboard first
+    try {
+      if (text) {
+        await navigator.clipboard.writeText(text);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
+    } catch (e) {
+      if (text) {
+        this.fallbackCopyTextToClipboard(text);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
     }
 
     window.open(url, '_blank');
