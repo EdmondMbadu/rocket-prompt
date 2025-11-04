@@ -413,16 +413,17 @@
 .icon-button.icon-button--gpt,
 .icon-button.icon-button--gemini,
 .icon-button.icon-button--claude {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 3rem;
+    width: 3rem;
 }
 
 .ai-icon {
-    height: 20px;
-    width: 20px;
+    height: 28px;
+    width: 28px;
     object-fit: contain;
     display: block;
 }
+
 
 .ai-icon--rounded {
     border-radius: 6px;

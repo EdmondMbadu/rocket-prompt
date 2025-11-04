@@ -98,7 +98,7 @@
             </div>
 
             <!-- ACTIONS: copy + open in AI -->
-            <div class="mt-5 flex items-center justify-end gap-2 text-sm text-slate-500">
+            <div class="mt-5 flex items-center justify-between gap-3 text-sm text-slate-500">
                 <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
                     title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
                     <ng-container *ngIf="copied(); else copyIcon">
@@ -118,24 +118,29 @@
                     </ng-template>
                 </button>
 
-                <button type="button" class="icon-button icon-button--gpt" aria-label="Open in ChatGPT"
-                    data-tooltip="Open in ChatGPT" title="Open in ChatGPT"
-                    (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
-                    <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" width="24" height="24" />
-                </button>
+                <div class="flex items-center gap-3 flex-1 justify-end flex-wrap">
+                    <span class="text-base font-semibold text-slate-700 whitespace-nowrap">Launch this prompt</span>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-2xl">🚀</span>
+                        <button type="button" class="icon-button icon-button--gpt" aria-label="Open in ChatGPT"
+                            data-tooltip="Open in ChatGPT" title="Open in ChatGPT"
+                            (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
+                            <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" />
+                        </button>
 
-                <button type="button" class="icon-button icon-button--gemini" aria-label="Open in Gemini"
-                    data-tooltip="Open in Gemini" title="Open in Gemini"
-                    (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
-                    <img src="assets/gemini.png" alt="Gemini" class="ai-icon" width="24" height="24" />
-                </button>
+                        <button type="button" class="icon-button icon-button--gemini" aria-label="Open in Gemini"
+                            data-tooltip="Open in Gemini" title="Open in Gemini"
+                            (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
+                            <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
+                        </button>
 
-                <button type="button" class="icon-button icon-button--claude" aria-label="Open in Claude"
-                    data-tooltip="Open in Claude" title="Open in Claude"
-                    (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
-                    <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" width="24"
-                        height="24" />
-                </button>
+                        <button type="button" class="icon-button icon-button--claude" aria-label="Open in Claude"
+                            data-tooltip="Open in Claude" title="Open in Claude"
+                            (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
+                            <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <footer class="card-footer">
