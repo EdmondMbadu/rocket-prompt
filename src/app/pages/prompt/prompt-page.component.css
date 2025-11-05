@@ -497,3 +497,123 @@
     opacity: 1;
     transform: translate(-50%, 0);
 }
+
+/* Social sharing buttons - elegant and beautiful */
+.social-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.75rem;
+    width: 2.75rem;
+    border-radius: 0.75rem;
+    background: #f1f5f9;
+    color: #334155;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    border: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.social-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.social-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.social-button--copy {
+    background: #f8fafc;
+    color: #475569;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+.social-button--copy:hover {
+    background: #f1f5f9;
+    color: #334155;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(148, 163, 184, 0.3);
+}
+
+.social-button--facebook {
+    background: #1877f2;
+    color: white;
+    box-shadow: 0 1px 3px rgba(24, 119, 242, 0.3), inset 0 0 0 1px rgba(24, 119, 242, 0.2);
+}
+
+.social-button--facebook:hover {
+    background: #166fe5;
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.4), inset 0 0 0 1px rgba(24, 119, 242, 0.3);
+}
+
+.social-button--twitter {
+    background: #000000;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.social-button--twitter:hover {
+    background: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.social-button--linkedin {
+    background: #0077b5;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 119, 181, 0.3), inset 0 0 0 1px rgba(0, 119, 181, 0.2);
+}
+
+.social-button--linkedin:hover {
+    background: #006399;
+    box-shadow: 0 4px 12px rgba(0, 119, 181, 0.4), inset 0 0 0 1px rgba(0, 119, 181, 0.3);
+}
+
+/* Tooltip support for social buttons */
+.social-button[data-tooltip] {
+    position: relative;
+}
+
+.social-button[data-tooltip]::before,
+.social-button[data-tooltip]::after {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.social-button[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 0.35rem);
+    left: 50%;
+    transform: translate(-50%, 6px);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+}
+
+.social-button[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 0.75rem);
+    left: 50%;
+    transform: translate(-50%, 6px);
+    background: rgba(15, 23, 42, 0.9);
+    color: #f8fafc;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    z-index: 30;
+    box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
+}
+
+.social-button[data-tooltip]:hover::before,
+.social-button[data-tooltip]:hover::after,
+.social-button[data-tooltip]:focus-visible::before,
+.social-button[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}

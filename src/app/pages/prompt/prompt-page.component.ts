@@ -161,9 +161,11 @@ export class PromptPageComponent {
 
     navigator.clipboard.writeText(url).then(() => {
       this.showCopyMessage('Prompt URL copied!');
+      this.markCopied();
     }).catch(() => {
       this.fallbackCopyTextToClipboard(url);
       this.showCopyMessage('Prompt URL copied!');
+      this.markCopied();
     });
   }
 
@@ -298,5 +300,35 @@ export class PromptPageComponent {
 
   navigateToSignUp() {
     this.router.navigate(['/auth'], { queryParams: { mode: 'signup' } });
+  }
+
+  getPromptUrl(): string {
+    const p = this.prompt();
+    if (!p) return '';
+    const short = p.id ? p.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return p.customUrl ? `${origin}/${p.customUrl}` : `${origin}/prompt/${short}`;
+  }
+
+  shareToFacebook() {
+    const url = encodeURIComponent(this.getPromptUrl());
+    const title = encodeURIComponent(this.prompt()?.title || 'Check out this prompt');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${title}`, '_blank', 'width=600,height=400');
+  }
+
+  shareToTwitter() {
+    const url = encodeURIComponent(this.getPromptUrl());
+    const title = encodeURIComponent(this.prompt()?.title || 'Check out this prompt');
+    const text = encodeURIComponent(`${title} - ${this.getPromptUrl()}`);
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank', 'width=600,height=400');
+  }
+
+  shareToLinkedIn() {
+    const url = encodeURIComponent(this.getPromptUrl());
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400');
+  }
+
+  sharePromptUrl() {
+    this.copyPromptPageUrl();
   }
 }

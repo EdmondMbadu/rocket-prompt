@@ -89,29 +89,10 @@
                 <div class="meta-right">{{ formatDate(prompt()?.createdAt) }}</div>
             </div>
 
-            <!-- ACTIONS: copy + open in AI (Top) -->
+            <!-- ACTIONS: Launch this prompt (Top) -->
             <div class="mt-5 flex items-center justify-between gap-3 text-sm text-slate-500">
-                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt"
-                    data-tooltip="Copy prompt" title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
-                    <ng-container *ngIf="copied(); else copyIcon">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
-                            <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </ng-container>
-                    <ng-template #copyIcon>
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
-                            <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none"
-                                stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                            <rect x="3" y="9" width="10" height="12" rx="2" fill="none" stroke="currentColor"
-                                stroke-width="1.6" />
-                        </svg>
-                    </ng-template>
-                </button>
-
-                <div class="flex items-center gap-3 flex-1 justify-end flex-wrap">
-                    <span class="launch-text whitespace-nowrap">Launch this prompt</span>
+                <div class="flex items-center gap-3 flex-1 flex-wrap">
+                    <span class="launch-text whitespace-nowrap">Launch this RocketPrompt</span>
                     <div class="flex items-center gap-2.5">
                         <span class="text-2xl">🚀</span>
                         <button type="button" class="icon-button icon-button--gpt" aria-label="Open in ChatGPT"
@@ -135,33 +116,71 @@
                 </div>
             </div>
 
+            <!-- ACTIONS: Share this RocketPrompt (Top) -->
+            <div class="mt-6 flex items-center justify-between gap-3 text-sm text-slate-500">
+                <div class="flex items-center gap-3 flex-1 flex-wrap">
+                    <span class="launch-text whitespace-nowrap">Share this RocketPrompt</span>
+                    <div class="flex items-center gap-2.5">
+                        <button type="button" class="social-button social-button--copy" aria-label="Copy link"
+                            data-tooltip="Copy link" title="Copy link"
+                            (click)="sharePromptUrl(); $event.stopPropagation()">
+                            <ng-container *ngIf="copied(); else copyIconShare">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
+                                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </ng-container>
+                            <ng-template #copyIconShare>
+                                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+                                    <path
+                                        d="M8 5.00005C7.01165 5.00005 6.49359 5.00005 6.09202 5.21799C5.71569 5.40973 5.40973 5.71569 5.21799 6.09202C5 6.49359 5 7.01165 5 8.00005V16C5 16.9884 5 17.5065 5.21799 17.908C5.40973 18.2843 5.71569 18.5903 6.09202 18.782C6.49359 19 7.01165 19 8 19H16C16.9884 19 17.5065 19 17.908 18.782C18.2843 18.5903 18.5903 18.2843 18.782 17.908C19 17.5065 19 16.9884 19 16V8.00005C19 7.01165 19 6.49359 18.782 6.09202C18.5903 5.71569 18.2843 5.40973 17.908 5.21799C17.5065 5.00005 16.9884 5.00005 16 5.00005H8Z"
+                                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path
+                                        d="M15 5V4C15 3.05719 15 2.58579 14.7071 2.29289C14.4142 2 13.9428 2 13 2H11C10.0572 2 9.58579 2 9.29289 2.29289C9 2.58579 9 3.05719 9 4V5"
+                                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </ng-template>
+                        </button>
+
+                        <button type="button" class="social-button social-button--facebook"
+                            aria-label="Share on Facebook" data-tooltip="Share on Facebook" title="Share on Facebook"
+                            (click)="shareToFacebook()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="social-button social-button--twitter" aria-label="Share on X"
+                            data-tooltip="Share on X" title="Share on X" (click)="shareToTwitter()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="social-button social-button--linkedin"
+                            aria-label="Share on LinkedIn" data-tooltip="Share on LinkedIn" title="Share on LinkedIn"
+                            (click)="shareToLinkedIn()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="content">
                 <pre>{{ prompt()?.content }}</pre>
             </div>
 
-            <!-- ACTIONS: copy + open in AI (Bottom) -->
+            <!-- ACTIONS: Launch this prompt (Bottom) -->
             <div class="mt-5 flex items-center justify-between gap-3 text-sm text-slate-500">
-                <button type="button" class="icon-button icon-button--copy" aria-label="Copy prompt"
-                    data-tooltip="Copy prompt" title="Copy prompt" (click)="copyPrompt(); $event.stopPropagation()">
-                    <ng-container *ngIf="copied(); else copyIconBottom">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
-                            <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </ng-container>
-                    <ng-template #copyIconBottom>
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
-                            <path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4" fill="none"
-                                stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                            <rect x="3" y="9" width="10" height="12" rx="2" fill="none" stroke="currentColor"
-                                stroke-width="1.6" />
-                        </svg>
-                    </ng-template>
-                </button>
-
-                <div class="flex items-center gap-3 flex-1 justify-end flex-wrap">
-                    <span class="launch-text whitespace-nowrap">Launch this prompt</span>
+                <div class="flex items-center gap-3 flex-1 flex-wrap">
+                    <span class="launch-text whitespace-nowrap">Launch this RocketPrompt</span>
                     <div class="flex items-center gap-2.5">
                         <span class="text-2xl">🚀</span>
                         <button type="button" class="icon-button icon-button--gpt" aria-label="Open in ChatGPT"
@@ -180,6 +199,63 @@
                             data-tooltip="Open in Claude" title="Open in Claude"
                             (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
                             <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIONS: Share this RocketPrompt (Bottom) -->
+            <div class="mt-6 flex items-center justify-between gap-3 text-sm text-slate-500">
+                <div class="flex items-center gap-3 flex-1 flex-wrap">
+                    <span class="launch-text whitespace-nowrap">Share this RocketPrompt</span>
+                    <div class="flex items-center gap-2.5">
+                        <button type="button" class="social-button social-button--copy" aria-label="Copy link"
+                            data-tooltip="Copy link" title="Copy link"
+                            (click)="sharePromptUrl(); $event.stopPropagation()">
+                            <ng-container *ngIf="copied(); else copyIconShareBottom">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-green-500">
+                                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </ng-container>
+                            <ng-template #copyIconShareBottom>
+                                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+                                    <path
+                                        d="M8 5.00005C7.01165 5.00005 6.49359 5.00005 6.09202 5.21799C5.71569 5.40973 5.40973 5.71569 5.21799 6.09202C5 6.49359 5 7.01165 5 8.00005V16C5 16.9884 5 17.5065 5.21799 17.908C5.40973 18.2843 5.71569 18.5903 6.09202 18.782C6.49359 19 7.01165 19 8 19H16C16.9884 19 17.5065 19 17.908 18.782C18.2843 18.5903 18.5903 18.2843 18.782 17.908C19 17.5065 19 16.9884 19 16V8.00005C19 7.01165 19 6.49359 18.782 6.09202C18.5903 5.71569 18.2843 5.40973 17.908 5.21799C17.5065 5.00005 16.9884 5.00005 16 5.00005H8Z"
+                                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path
+                                        d="M15 5V4C15 3.05719 15 2.58579 14.7071 2.29289C14.4142 2 13.9428 2 13 2H11C10.0572 2 9.58579 2 9.29289 2.29289C9 2.58579 9 3.05719 9 4V5"
+                                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </ng-template>
+                        </button>
+
+                        <button type="button" class="social-button social-button--facebook"
+                            aria-label="Share on Facebook" data-tooltip="Share on Facebook" title="Share on Facebook"
+                            (click)="shareToFacebook()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="social-button social-button--twitter" aria-label="Share on X"
+                            data-tooltip="Share on X" title="Share on X" (click)="shareToTwitter()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="social-button social-button--linkedin"
+                            aria-label="Share on LinkedIn" data-tooltip="Share on LinkedIn" title="Share on LinkedIn"
+                            (click)="shareToLinkedIn()">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                                <path
+                                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
                         </button>
                     </div>
                 </div>
