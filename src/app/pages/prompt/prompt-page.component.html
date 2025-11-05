@@ -96,7 +96,7 @@
                         <span class="action-section__emoji">🚀</span>
                     </div>
                     <div class="action-section__content">
-                        <h3 class="action-section__title">Launch RocketPrompt</h3>
+                        <h3 class="action-section__title">Launch this RocketPrompt</h3>
                         <p class="action-section__description">Open this prompt in your favorite AI chatbot</p>
                     </div>
                 </div>
@@ -131,8 +131,9 @@
             </div>
 
             <!-- ACTIONS: Share this RocketPrompt (Top) -->
-            <div class="action-section action-section--share">
-                <div class="action-section__header">
+            <div class="action-section action-section--share"
+                [class.action-section--collapsed]="!shareSectionExpanded()">
+                <div class="action-section__header" (click)="toggleShareSection()">
                     <div class="action-section__icon-wrapper">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__svg-icon" fill="none"
                             stroke="currentColor" stroke-width="2">
@@ -142,11 +143,19 @@
                         </svg>
                     </div>
                     <div class="action-section__content">
-                        <h3 class="action-section__title">Share RocketPrompt</h3>
-                        <p class="action-section__description">Spread the word and help others discover this prompt</p>
+                        <h3 class="action-section__title">Share this RocketPrompt</h3>
+                        <p class="action-section__description" *ngIf="shareSectionExpanded()">Spread the word and help
+                            others discover this prompt</p>
                     </div>
+                    <button type="button" class="action-section__toggle" aria-label="Toggle section"
+                        (click)="toggleShareSection(); $event.stopPropagation()">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__chevron" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
                 </div>
-                <div class="action-section__actions">
+                <div class="action-section__actions" *ngIf="shareSectionExpanded()" (click)="$event.stopPropagation()">
                     <button type="button" class="social-share-button social-share-button--copy" aria-label="Copy link"
                         data-tooltip="Copy link" title="Copy link" (click)="sharePromptUrl(); $event.stopPropagation()">
                         <ng-container *ngIf="copied(); else copyIconShare">
@@ -212,7 +221,7 @@
                         <span class="action-section__emoji">🚀</span>
                     </div>
                     <div class="action-section__content">
-                        <h3 class="action-section__title">Launch RocketPrompt</h3>
+                        <h3 class="action-section__title">Launch this RocketPrompt</h3>
                         <p class="action-section__description">Open this prompt in your favorite AI chatbot</p>
                     </div>
                 </div>
@@ -247,8 +256,9 @@
             </div>
 
             <!-- ACTIONS: Share this RocketPrompt (Bottom) -->
-            <div class="action-section action-section--share">
-                <div class="action-section__header">
+            <div class="action-section action-section--share"
+                [class.action-section--collapsed]="!shareSectionExpanded()">
+                <div class="action-section__header" (click)="toggleShareSection()">
                     <div class="action-section__icon-wrapper">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__svg-icon" fill="none"
                             stroke="currentColor" stroke-width="2">
@@ -258,11 +268,19 @@
                         </svg>
                     </div>
                     <div class="action-section__content">
-                        <h3 class="action-section__title">Share RocketPrompt</h3>
-                        <p class="action-section__description">Spread the word and help others discover this prompt</p>
+                        <h3 class="action-section__title">Share this RocketPrompt</h3>
+                        <p class="action-section__description" *ngIf="shareSectionExpanded()">Spread the word and help
+                            others discover this prompt</p>
                     </div>
+                    <button type="button" class="action-section__toggle" aria-label="Toggle section"
+                        (click)="toggleShareSection(); $event.stopPropagation()">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__chevron" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
                 </div>
-                <div class="action-section__actions">
+                <div class="action-section__actions" *ngIf="shareSectionExpanded()" (click)="$event.stopPropagation()">
                     <button type="button" class="social-share-button social-share-button--copy" aria-label="Copy link"
                         data-tooltip="Copy link" title="Copy link" (click)="sharePromptUrl(); $event.stopPropagation()">
                         <ng-container *ngIf="copied(); else copyIconShareBottom">

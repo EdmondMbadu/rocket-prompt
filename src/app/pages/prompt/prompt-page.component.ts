@@ -33,6 +33,10 @@ export class PromptPageComponent {
   // copied state for the single prompt page (used to show check icon briefly)
   readonly copied = signal(false);
   private copyTimer?: ReturnType<typeof setTimeout>;
+  
+  // Collapsible sections state - launch stays open, share starts collapsed
+  readonly launchSectionExpanded = signal(true);
+  readonly shareSectionExpanded = signal(false);
 
   // computed actor id: `u_<uid>` for signed-in users, `c_<clientId>` for anonymous
   readonly actorId = computed(() => {
@@ -329,5 +333,9 @@ export class PromptPageComponent {
 
   sharePromptUrl() {
     this.copyPromptPageUrl();
+  }
+
+  toggleShareSection() {
+    this.shareSectionExpanded.update(v => !v);
   }
 }
