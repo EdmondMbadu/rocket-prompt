@@ -103,9 +103,12 @@ export class HomeComponent {
   readonly deletingPromptId = signal<string | null>(null);
   // Track prompt ids that were recently copied so we can show a check icon on the card
   readonly recentlyCopied = signal<Set<string>>(new Set());
+  // Track prompt ids that were recently copied (for URL copying)
+  readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
 
   // Map of timers for each copied prompt so we can clear them if the user copies again
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   readonly createPromptForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
@@ -293,6 +296,66 @@ export class HomeComponent {
       this.fallbackCopyTextToClipboard(url);
       this.showCopyMessage('Prompt URL copied!');
     });
+  }
+
+  getPromptUrl(prompt: PromptCard): string {
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+  }
+
+  getPromptDisplayUrl(prompt: PromptCard): string {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
+  }
+
+  async copyPromptUrl(prompt: PromptCard) {
+    if (!prompt) return;
+
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    }
+  }
+
+  private markPromptUrlAsCopied(id: string) {
+    if (!id) return;
+
+    // add to set (create new instance to trigger signal change)
+    this.recentlyCopiedUrl.update(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    // clear any existing timer for this id
+    const existing = this.copyUrlTimers.get(id);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const DURATION = 2500; // ms
+
+    const timer = setTimeout(() => {
+      this.recentlyCopiedUrl.update(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      this.copyUrlTimers.delete(id);
+    }, DURATION);
+
+    this.copyUrlTimers.set(id, timer);
   }
 
   async copyPrompt(prompt: PromptCard) {
