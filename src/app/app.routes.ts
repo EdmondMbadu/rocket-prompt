@@ -59,6 +59,11 @@ export const routes: Routes = [
       import('./pages/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
   },
   {
+    path: 'community-guidelines',
+    loadComponent: () =>
+      import('./pages/community-guidelines/community-guidelines.component').then(m => m.CommunityGuidelinesComponent)
+  },
+  {
     path: '**',
     redirectTo: 'auth'
   }
