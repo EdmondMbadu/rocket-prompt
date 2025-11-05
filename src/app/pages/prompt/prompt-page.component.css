@@ -1140,25 +1140,51 @@
     transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.ai-platform-button[data-tooltip]::before,
+.ai-platform-button[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 50%;
+    transform: translate(-50%, -6px);
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
+}
+
+.ai-platform-button[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 50%;
+    transform: translate(-50%, -6px);
+    background: rgba(15, 23, 42, 0.9);
+    color: #f8fafc;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    z-index: 30;
+    box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
+}
+
 .social-share-button[data-tooltip]::before {
     content: '';
     position: absolute;
-    bottom: calc(100% + 0.35rem);
+    top: calc(100% + 0.35rem);
     left: 50%;
-    transform: translate(-50%, 6px);
+    transform: translate(-50%, -6px);
     border-width: 6px;
     border-style: solid;
-    border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+    border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
 }
 
-.ai-platform-button[data-tooltip]::after,
 .social-share-button[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: calc(100% + 0.75rem);
+    top: calc(100% + 0.75rem);
     left: 50%;
-    transform: translate(-50%, 6px);
+    transform: translate(-50%, -6px);
     background: rgba(15, 23, 42, 0.9);
     color: #f8fafc;
     padding: 0.2rem 0.55rem;
@@ -1173,7 +1199,11 @@
 .ai-platform-button[data-tooltip]:hover::before,
 .ai-platform-button[data-tooltip]:hover::after,
 .ai-platform-button[data-tooltip]:focus-visible::before,
-.ai-platform-button[data-tooltip]:focus-visible::after,
+.ai-platform-button[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 .social-share-button[data-tooltip]:hover::before,
 .social-share-button[data-tooltip]:hover::after,
 .social-share-button[data-tooltip]:focus-visible::before,
