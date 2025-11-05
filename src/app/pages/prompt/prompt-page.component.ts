@@ -312,14 +312,13 @@ export class PromptPageComponent {
 
   shareToFacebook() {
     const url = encodeURIComponent(this.getPromptUrl());
-    const title = encodeURIComponent(this.prompt()?.title || 'Check out this prompt');
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${title}`, '_blank', 'width=600,height=400');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
   }
 
   shareToTwitter() {
     const url = encodeURIComponent(this.getPromptUrl());
-    const title = encodeURIComponent(this.prompt()?.title || 'Check out this prompt');
-    const text = encodeURIComponent(`${title} - ${this.getPromptUrl()}`);
+    const title = this.prompt()?.title || 'Check out this prompt';
+    const text = encodeURIComponent(title);
     window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank', 'width=600,height=400');
   }
 
