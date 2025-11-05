@@ -335,6 +335,74 @@ export class PromptService {
   }
 
   /**
+   * Get a prompt by its custom URL. This is efficient and works for public access.
+   * @param customUrl The custom URL to look up
+   * @returns The prompt if found, undefined otherwise
+   */
+  async getPromptByCustomUrl(customUrl: string): Promise<Prompt | undefined> {
+    const trimmed = customUrl?.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // Query for prompt with this custom URL
+    const queryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'prompts'),
+      firestoreModule.where('customUrl', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+
+    if (snapshot.empty) {
+      return undefined;
+    }
+
+    const doc = snapshot.docs[0];
+    return this.mapPrompt(doc, firestoreModule);
+  }
+
+  /**
+   * Get a prompt by its ID. Supports full ID or short prefix match.
+   * @param id The prompt ID or short prefix
+   * @returns The prompt if found, undefined otherwise
+   */
+  async getPromptById(id: string): Promise<Prompt | undefined> {
+    const trimmed = id?.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // First try exact match
+    try {
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmed);
+      const docSnap = await firestoreModule.getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return this.mapPrompt(docSnap as QueryDocumentSnapshot, firestoreModule);
+      }
+    } catch (error) {
+      // If exact match fails, try prefix match
+    }
+
+    // If exact match not found, try prefix match by querying all prompts
+    // This is less efficient but necessary for short ID prefixes
+    // In production, you might want to store a shortId field for better performance
+    const collectionRef = firestoreModule.collection(firestore, 'prompts');
+    const snapshot = await firestoreModule.getDocs(collectionRef);
+    
+    const found = snapshot.docs
+      .map(doc => this.mapPrompt(doc, firestoreModule))
+      .find(p => p.id === trimmed || p.id.startsWith(trimmed));
+
+    return found;
+  }
+
+  /**
    * Check if a custom URL is already taken by another prompt.
    * This uses a Firestore query which should be fast with a proper index on customUrl.
    * @param customUrl The custom URL to check (should already be trimmed and normalized)

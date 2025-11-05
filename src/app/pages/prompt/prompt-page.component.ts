@@ -68,41 +68,22 @@ export class PromptPageComponent {
 
   constructor() {
     this.ensureClientId();
-    // Support both 'id' (for /prompt/:id) and 'customUrl' (for /:customUrl) route parameters
-    const idParam = String(this.route.snapshot.paramMap.get('id') ?? this.route.snapshot.paramMap.get('customUrl') ?? '');
 
-    this.promptService
-      .prompts$()
+    // Load prompt when route parameter changes (supports navigation between prompts)
+    this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: prompts => {
-          // First, try to find by customUrl (exact match)
-          let found = prompts.find(p => p.customUrl === idParam);
-          
-          // If not found by customUrl, try exact ID match, then prefix match to support shortened ids
-          if (!found) {
-            found = prompts.find(p => p.id === idParam) ?? prompts.find(p => p.id.startsWith(idParam));
-          }
+      .subscribe(paramMap => {
+        // Support both 'id' (for /prompt/:id) and 'customUrl' (for /:customUrl) route parameters
+        const idParam = String(paramMap.get('id') ?? paramMap.get('customUrl') ?? '');
 
-          if (!found) {
-            this.prompt.set(undefined);
-            this.loadError.set('Prompt not found.');
-            this.isLoading.set(false);
-            return;
-          }
-
-          this.prompt.set(found);
-          this.loadError.set(null);
+        if (!idParam) {
           this.isLoading.set(false);
-          // determine whether current actor already liked this prompt
-          void this.updateLikedState(found.id);
-        },
-        error: err => {
-          console.error('Failed to load prompt', err);
-          this.prompt.set(undefined);
-          this.loadError.set('Could not load the prompt. Please try again.');
-          this.isLoading.set(false);
+          this.loadError.set('Invalid prompt URL.');
+          return;
         }
+
+        // Load the prompt directly - this works for both authenticated and unauthenticated users
+        void this.loadPrompt(idParam);
       });
 
     // re-evaluate liked state when auth changes (login/logout)
@@ -260,6 +241,51 @@ export class PromptPageComponent {
       this.clientId.set(id ?? '');
     } catch (e) {
       this.clientId.set('');
+    }
+  }
+
+  private async loadPrompt(identifier: string) {
+    // Reset state
+    this.isLoading.set(true);
+    this.loadError.set(null);
+    this.prompt.set(undefined);
+
+    try {
+      // First, try to find by customUrl (most efficient for custom URLs)
+      let found = await this.promptService.getPromptByCustomUrl(identifier);
+      
+      // If not found by customUrl, try by ID (supports full ID or short prefix)
+      if (!found) {
+        found = await this.promptService.getPromptById(identifier);
+      }
+
+      if (!found) {
+        // Prompt not found - show error but don't redirect
+        this.prompt.set(undefined);
+        this.loadError.set('Prompt not found.');
+        this.isLoading.set(false);
+        return;
+      }
+
+      // Successfully found the prompt
+      this.prompt.set(found);
+      this.loadError.set(null);
+      this.isLoading.set(false);
+      
+      // determine whether current actor already liked this prompt
+      void this.updateLikedState(found.id);
+    } catch (error) {
+      // Handle errors gracefully - show error message but don't redirect
+      console.error('Failed to load prompt', error);
+      this.prompt.set(undefined);
+      
+      // Provide more specific error messages
+      const errorMessage = error instanceof Error 
+        ? `Could not load the prompt: ${error.message}` 
+        : 'Could not load the prompt. Please try again.';
+      
+      this.loadError.set(errorMessage);
+      this.isLoading.set(false);
     }
   }
 
