@@ -17,8 +17,8 @@
 
                     <div class="inline-flex items-center gap-2">
                         <span
-                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">#{{
-                            shortId() }}</span>
+                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">{{
+                            fullPath() }}</span>
                         <button type="button" (click)="openShareModal()"
                             class="inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-red-300 hover:bg-[#B91C1C]">
                             Share
@@ -94,7 +94,7 @@
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                             </svg>
-                            <span class="prompt-link-text">{{ shortId() }}</span>
+                            <span class="prompt-link-text">{{ fullPath() }}</span>
                         </a>
                         <button type="button" class="btn-copy-link" (click)="copyPromptPageUrl()"
                             title="Copy prompt link">
@@ -366,7 +366,7 @@
             </div>
 
             <footer class="card-footer">
-                <small class="muted">Shared id: <code>{{ prompt()?.id!.slice(0,8) }}</code></small>
+                <small class="muted">Shared id: <code>{{ fullPath() }}</code></small>
             </footer>
         </article>
     </main>

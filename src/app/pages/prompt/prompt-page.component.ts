@@ -57,6 +57,15 @@ export class PromptPageComponent {
     return p?.id ? p.id.slice(0, 8) : '';
   });
 
+  // Provide full path for display (e.g., "rocketprompt.io/prompt/abc12345")
+  readonly fullPath = computed(() => {
+    const p = this.prompt();
+    if (!p) return '';
+    const short = p.id ? p.id.slice(0, 8) : '';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
+    return p.customUrl ? `${hostname}/${p.customUrl}` : `${hostname}/prompt/${short}`;
+  });
+
   constructor() {
     this.ensureClientId();
     const idParam = String(this.route.snapshot.paramMap.get('id') ?? '');
