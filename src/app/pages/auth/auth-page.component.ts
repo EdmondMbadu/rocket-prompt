@@ -175,6 +175,37 @@ export class AuthPageComponent {
     }
   }
 
+  async onGoogleSignIn() {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isSubmitting = true;
+
+    try {
+      const credential = await this.authService.signInWithGoogle();
+      const profile = await this.authService.fetchUserProfile(credential.user.uid);
+
+      if (!profile) {
+        await this.authService.signOut();
+        throw new Error(
+          'We could not find a profile for this account. Please contact support or sign up again.'
+        );
+      }
+
+      // Google accounts are typically already verified, but we check anyway
+      if (credential.user.emailVerified) {
+        const target = this.redirectToTarget ?? '/home';
+        this.redirectToTarget = null;
+        await this.router.navigateByUrl(target, { replaceUrl: true });
+      } else {
+        await this.router.navigate(['/verify-email']);
+      }
+    } catch (error) {
+      this.errorMessage = this.mapError(error);
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
   private mapError(error: unknown): string {
     if (error instanceof FirebaseError) {
       switch (error.code) {
@@ -186,6 +217,12 @@ export class AuthPageComponent {
           return 'The provided credentials are incorrect. Double-check your email and password.';
         case 'auth/too-many-requests':
           return 'Too many attempts. Please wait a moment and try again.';
+        case 'auth/popup-closed-by-user':
+          return 'Sign-in was cancelled. Please try again.';
+        case 'auth/popup-blocked':
+          return 'Popup was blocked by your browser. Please allow popups and try again.';
+        case 'auth/cancelled-popup-request':
+          return 'Only one popup request is allowed at a time. Please try again.';
         default:
           return error.message;
       }

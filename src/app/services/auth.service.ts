@@ -63,6 +63,37 @@ export class AuthService {
     return authModule.signInWithEmailAndPassword(auth, email, password);
   }
 
+  async signInWithGoogle(): Promise<UserCredential> {
+    const { auth, authModule } = await this.getAuthContext();
+    const provider = new authModule.GoogleAuthProvider();
+    const credential = await authModule.signInWithPopup(auth, provider);
+
+    // Check if user profile exists, if not create one
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const userDocRef = firestoreModule.doc(firestore, 'users', credential.user.uid);
+    const userDoc = await firestoreModule.getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      // Extract first and last name from display name
+      const displayName = credential.user.displayName || '';
+      const nameParts = displayName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      await firestoreModule.setDoc(userDocRef, {
+        firstName,
+        lastName,
+        email: credential.user.email ?? '',
+        createdAt: firestoreModule.serverTimestamp(),
+        preferences: {
+          sidebarCollapsed: false
+        }
+      });
+    }
+
+    return credential;
+  }
+
   async sendPasswordResetEmail(email: string): Promise<void> {
     const { auth, authModule } = await this.getAuthContext();
     await authModule.sendPasswordResetEmail(auth, email);
