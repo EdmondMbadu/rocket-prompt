@@ -209,6 +209,10 @@ export class HomeComponent {
     });
   });
 
+  readonly userPromptCount = computed(() => {
+    return this.prompts().length;
+  });
+
   constructor() {
     this.observePrompts();
   }

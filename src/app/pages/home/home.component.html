@@ -96,6 +96,13 @@
       </div>
     </header>
 
+    <!-- PROMPT COUNT -->
+    <section class="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div class="mb-4 text-sm text-slate-600">
+        <span class="font-medium">You have {{ userPromptCount() }} prompt{{ userPromptCount() === 1 ? '' : 's' }}</span>
+      </div>
+    </section>
+
     <!-- CATEGORIES -->
     <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div class="flex flex-wrap gap-3">
