@@ -92,8 +92,12 @@ export class LikedPromptsPageComponent {
       return;
     }
 
-    const short = prompt.id.slice(0, 8) || prompt.id;
-    await this.router.navigate(['/prompt', short]);
+    if (prompt.customUrl) {
+      await this.router.navigate([`/${prompt.customUrl}`]);
+    } else {
+      const short = prompt.id.slice(0, 8) || prompt.id;
+      await this.router.navigate(['/prompt', short]);
+    }
   }
 
   async removeLike(prompt: LikedPromptCard, event?: Event) {

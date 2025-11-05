@@ -334,6 +334,43 @@ export class PromptService {
     return result as { liked: boolean; likes: number };
   }
 
+  /**
+   * Check if a custom URL is already taken by another prompt.
+   * This uses a Firestore query which should be fast with a proper index on customUrl.
+   * @param customUrl The custom URL to check (should already be trimmed and normalized)
+   * @param excludePromptId Optional prompt ID to exclude from the check (useful when editing)
+   * @returns true if the custom URL is taken, false otherwise
+   */
+  async isCustomUrlTaken(customUrl: string, excludePromptId?: string | null): Promise<boolean> {
+    const trimmed = customUrl?.trim();
+    if (!trimmed) {
+      return false;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // Query for prompts with this custom URL
+    const queryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'prompts'),
+      firestoreModule.where('customUrl', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+
+    if (snapshot.empty) {
+      return false;
+    }
+
+    // If we're editing a prompt, check if the found prompt is the one being edited
+    if (excludePromptId) {
+      const foundDoc = snapshot.docs[0];
+      return foundDoc.id !== excludePromptId;
+    }
+
+    return true;
+  }
+
   private ensureApp(): FirebaseApp {
     if (getApps().length) {
       return getApp();

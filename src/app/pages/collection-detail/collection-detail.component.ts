@@ -189,12 +189,15 @@ export class CollectionDetailComponent {
   }
 
   openPrompt(prompt: PromptCard) {
-    const short = (prompt?.id ?? '').slice(0, 8);
-    if (!short) {
-      return;
+    if (prompt.customUrl) {
+      void this.router.navigate([`/${prompt.customUrl}`]);
+    } else {
+      const short = (prompt?.id ?? '').slice(0, 8);
+      if (!short) {
+        return;
+      }
+      void this.router.navigate(['/prompt', short]);
     }
-
-    void this.router.navigate(['/prompt', short]);
   }
 
   backToCollections() {

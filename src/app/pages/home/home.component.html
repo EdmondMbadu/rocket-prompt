@@ -326,7 +326,37 @@
             </div>
           </div>
 
-
+          <div>
+            <label class="block text-sm font-medium text-slate-600" for="prompt-custom-url">Custom Short URL (optional)</label>
+            <div class="mt-1 flex items-center gap-2">
+              <span class="text-sm text-slate-500">rocketprompt.io/</span>
+              <div class="flex-1 relative">
+                <input id="prompt-custom-url" type="text" formControlName="customUrl" 
+                  (input)="onCustomUrlInput(($any($event.target)).value)"
+                  class="w-full rounded-xl border px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                  [ngClass]="{
+                    'border-red-300': customUrlError(),
+                    'border-slate-300': !customUrlError()
+                  }"
+                  placeholder="my-custom-url" />
+                <div *ngIf="isCheckingCustomUrl()" class="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin text-slate-400">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
+                    <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <p *ngIf="customUrlError()" class="mt-1 text-xs text-red-600">
+              {{ customUrlError() }}
+            </p>
+            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && createPromptForm.controls.customUrl.value" class="mt-1 text-xs text-slate-500">
+              Your prompt will be available at: rocketprompt.io/{{ createPromptForm.controls.customUrl.value }}
+            </p>
+            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+              Checking availability...
+            </p>
+          </div>
 
           <div>
             <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content</label>

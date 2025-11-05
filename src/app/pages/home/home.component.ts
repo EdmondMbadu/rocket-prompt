@@ -120,6 +120,11 @@ export class HomeComponent {
   readonly tagQueryDebounced = signal('');
   private tagQueryTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Custom URL validation
+  readonly customUrlError = signal<string | null>(null);
+  readonly isCheckingCustomUrl = signal(false);
+  private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Suggestions for tag input based on existing categories (excluding base 'all')
   readonly tagSuggestions = computed(() => {
 
@@ -443,6 +448,8 @@ export class HomeComponent {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
     this.resetCreatePromptForm();
     this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
@@ -451,6 +458,8 @@ export class HomeComponent {
   openEditPromptModal(prompt: PromptCard) {
     this.closeMenu();
     this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
     this.isEditingPrompt.set(true);
     this.editingPromptId.set(prompt.id);
     this.createPromptForm.setValue({
@@ -467,12 +476,16 @@ export class HomeComponent {
   }
 
   /**
-   * Open a prompt using the short id (first 8 chars) so links are shareable.
+   * Open a prompt using the custom URL if available, otherwise the short id (first 8 chars).
    */
   openPrompt(prompt: PromptCard) {
-    const short = (prompt?.id ?? '').slice(0, 8);
-    if (!short) return;
-    void this.router.navigate(['/prompt', short]);
+    if (prompt.customUrl) {
+      void this.router.navigate([`/${prompt.customUrl}`]);
+    } else {
+      const short = (prompt?.id ?? '').slice(0, 8);
+      if (!short) return;
+      void this.router.navigate(['/prompt', short]);
+    }
   }
 
   closeCreatePromptModal() {
@@ -484,6 +497,8 @@ export class HomeComponent {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
   }
 
   async submitPromptForm() {
@@ -495,8 +510,39 @@ export class HomeComponent {
     const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
     const trimmedCustomUrl = (customUrl ?? '').trim();
 
+    // Validate custom URL if provided
+    if (trimmedCustomUrl) {
+      // Check format
+      const urlPattern = /^[a-z0-9-]+$/i;
+      if (!urlPattern.test(trimmedCustomUrl)) {
+        this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+        return;
+      }
+
+      // Check reserved paths
+      const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines'];
+      if (reservedPaths.includes(trimmedCustomUrl.toLowerCase())) {
+        this.customUrlError.set('This URL is reserved. Please choose a different one.');
+        return;
+      }
+
+      // Final uniqueness check before submitting
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, this.editingPromptId());
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to verify custom URL', error);
+        this.promptFormError.set('Unable to verify custom URL availability. Please try again.');
+        return;
+      }
+    }
+
     this.isSavingPrompt.set(true);
     this.promptFormError.set(null);
+    this.customUrlError.set(null);
 
     try {
       if (this.isEditingPrompt() && this.editingPromptId()) {
@@ -700,6 +746,8 @@ export class HomeComponent {
   private resetCreatePromptForm() {
     this.createPromptForm.reset({ ...this.createPromptDefaults });
     this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
   }
@@ -727,6 +775,66 @@ export class HomeComponent {
     if (this.tagQueryTimer) {
       clearTimeout(this.tagQueryTimer);
       this.tagQueryTimer = null;
+    }
+  }
+
+  onCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+    
+    // Clear any existing timer
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+    }
+
+    // Clear error if empty
+    if (!trimmed) {
+      this.customUrlError.set(null);
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Validate format first
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Check for reserved paths
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.customUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Debounce the uniqueness check
+    this.isCheckingCustomUrl.set(true);
+    this.customUrlError.set(null);
+    
+    this.customUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmed, this.editingPromptId());
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.customUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.customUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCustomUrl.set(false);
+      }
+    }, 500); // 500ms debounce
+  }
+
+  private clearCustomUrlDebounce() {
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+      this.customUrlTimer = null;
     }
   }
 }

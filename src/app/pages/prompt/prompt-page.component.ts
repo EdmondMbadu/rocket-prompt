@@ -68,15 +68,21 @@ export class PromptPageComponent {
 
   constructor() {
     this.ensureClientId();
-    const idParam = String(this.route.snapshot.paramMap.get('id') ?? '');
+    // Support both 'id' (for /prompt/:id) and 'customUrl' (for /:customUrl) route parameters
+    const idParam = String(this.route.snapshot.paramMap.get('id') ?? this.route.snapshot.paramMap.get('customUrl') ?? '');
 
     this.promptService
       .prompts$()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: prompts => {
-          // try exact match first, then prefix match to support shortened ids
-          const found = prompts.find(p => p.id === idParam) ?? prompts.find(p => p.id.startsWith(idParam));
+          // First, try to find by customUrl (exact match)
+          let found = prompts.find(p => p.customUrl === idParam);
+          
+          // If not found by customUrl, try exact ID match, then prefix match to support shortened ids
+          if (!found) {
+            found = prompts.find(p => p.id === idParam) ?? prompts.find(p => p.id.startsWith(idParam));
+          }
 
           if (!found) {
             this.prompt.set(undefined);

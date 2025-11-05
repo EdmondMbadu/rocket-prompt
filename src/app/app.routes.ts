@@ -49,7 +49,7 @@ export const routes: Routes = [
   },
   {
     path: 'prompt/:id',
-    // single prompt view — accepts full id or short prefix
+    // single prompt view — accepts full id, short prefix, or custom URL
     loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
   },
   {
@@ -62,6 +62,12 @@ export const routes: Routes = [
     path: 'community-guidelines',
     loadComponent: () =>
       import('./pages/community-guidelines/community-guidelines.component').then(m => m.CommunityGuidelinesComponent)
+  },
+  {
+    path: ':customUrl',
+    // Catch-all for custom URLs (e.g., /my-custom-url)
+    // This route must come after all specific routes but before the final ** catch-all
+    loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
   },
   {
     path: '**',
