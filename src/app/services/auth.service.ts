@@ -44,6 +44,7 @@ export class AuthService {
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
     await firestoreModule.setDoc(firestoreModule.doc(firestore, 'users', credential.user.uid), {
+      userId: credential.user.uid,
       firstName: input.firstName,
       lastName: input.lastName,
       email: credential.user.email ?? input.email,
@@ -81,6 +82,7 @@ export class AuthService {
       const lastName = nameParts.slice(1).join(' ') || '';
 
       await firestoreModule.setDoc(userDocRef, {
+        userId: credential.user.uid,
         firstName,
         lastName,
         email: credential.user.email ?? '',

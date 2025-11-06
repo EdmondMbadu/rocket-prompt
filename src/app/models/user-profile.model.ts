@@ -4,6 +4,7 @@ export interface UserPreferences {
 
 export interface UserProfile {
   id: string;
+  userId: string;
   firstName: string;
   lastName: string;
   email: string;
