@@ -104,38 +104,56 @@
 
 .modal-card {
   position: relative;
-  width: min(100%, 40rem);
+  width: min(100%, 42rem);
   border-radius: 1.5rem;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 35px 80px -35px rgba(15, 23, 42, 0.65);
-  padding: clamp(1.75rem, 3vw, 2.5rem);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: clamp(2rem, 4vw, 2.75rem);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 1.25rem;
+  right: 1.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.25rem;
-  width: 2.25rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(248, 250, 252, 0.86);
-  color: #475569;
-  transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease;
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  color: #64748b;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .modal-close:hover:not(:disabled) {
-  background: rgba(241, 245, 249, 0.95);
-  border-color: rgba(148, 163, 184, 0.55);
-  transform: rotate(3deg);
+  background: rgba(241, 245, 249, 1);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #475569;
+  transform: scale(1.05);
+}
+
+.modal-close:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .modal-close:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -226,4 +244,80 @@
 .collection-bookmark-button[data-tooltip]:focus-visible::after {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+/* Prompt Selection Styles */
+.prompt-option {
+  position: relative;
+}
+
+.prompt-option:hover {
+  background: #f8fafc;
+}
+
+.prompt-option-selected {
+  background: linear-gradient(to right, #fef2f2 0%, #fee2e2 100%);
+  border-left: 3px solid #dc2626;
+}
+
+.prompt-option-selected:hover {
+  background: linear-gradient(to right, #fee2e2 0%, #fecaca 100%);
+}
+
+.prompt-checkbox-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prompt-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  margin: 0;
+}
+
+.prompt-checkbox:checked {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.prompt-check-icon {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  color: white;
+  pointer-events: none;
+  animation: checkmark 0.2s ease-in-out;
+}
+
+@keyframes checkmark {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom Scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

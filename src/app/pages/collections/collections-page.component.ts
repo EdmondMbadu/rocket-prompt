@@ -69,6 +69,7 @@ export class CollectionsPageComponent {
     readonly collections = signal<CollectionCard[]>([]);
     readonly availablePrompts = signal<PromptOption[]>([]);
     readonly searchTerm = signal('');
+    readonly promptSearchTerm = signal('');
     readonly isLoadingCollections = signal(true);
     readonly loadCollectionsError = signal<string | null>(null);
     readonly isLoadingPrompts = signal(true);
@@ -131,6 +132,20 @@ export class CollectionsPageComponent {
 
         return collections.filter(collection => {
             const haystack = [collection.name, collection.tag, collection.tagLabel].join(' ').toLowerCase();
+            return haystack.includes(term);
+        });
+    });
+
+    readonly filteredPrompts = computed(() => {
+        const term = this.promptSearchTerm().trim().toLowerCase();
+        const prompts = this.availablePrompts();
+
+        if (!term) {
+            return prompts;
+        }
+
+        return prompts.filter(prompt => {
+            const haystack = [prompt.title, prompt.tag, prompt.tagLabel].join(' ').toLowerCase();
             return haystack.includes(term);
         });
     });
@@ -219,6 +234,10 @@ export class CollectionsPageComponent {
         this.searchTerm.set(value);
     }
 
+    onPromptSearch(value: string) {
+        this.promptSearchTerm.set(value);
+    }
+
     openCreateCollectionModal() {
         if (!this.showCreateButton()) {
             return;
@@ -238,6 +257,7 @@ export class CollectionsPageComponent {
         this.collectionForm.markAsPristine();
         this.collectionForm.markAsUntouched();
         this.collectionFormError.set(null);
+        this.promptSearchTerm.set(''); // Reset prompt search when opening modal
         this.newCollectionModalOpen.set(true);
     }
 

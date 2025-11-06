@@ -195,44 +195,80 @@
         <button type="button" class="modal-close" aria-label="Close" (click)="closeCreateCollectionModal()"
           [disabled]="isSavingCollection()">
           <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-            <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" />
           </svg>
         </button>
 
-        <header class="pr-8">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">Create</p>
-          <h2 class="mt-2 text-2xl font-semibold text-slate-900">New Collection</h2>
-          <p class="mt-1 text-sm text-slate-500">Group your favorite prompts into a reusable set.</p>
+        <header class="pr-10">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#DC2626] to-[#EF4444] shadow-lg">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-white">
+                <rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M8 5v-1.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5V5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M8 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M8 15h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#DC2626]">Create</p>
+              <h2 class="mt-1 text-2xl font-bold text-slate-900">New Collection</h2>
+            </div>
+          </div>
+          <p class="text-sm text-slate-600 leading-relaxed">Group your favorite prompts into a reusable set.</p>
         </header>
 
         <form class="mt-6 space-y-5" [formGroup]="collectionForm" (ngSubmit)="submitCollectionForm()">
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="grid gap-5 md:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-slate-600" for="collection-name">Collection name</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-name">Collection name</label>
               <input id="collection-name" type="text" formControlName="name"
-                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
                 placeholder="e.g. Launch Campaign Toolkit" />
               <p *ngIf="collectionForm.controls.name.invalid && collectionForm.controls.name.touched"
-                class="mt-1 text-xs text-red-600">
+                class="mt-2 text-xs text-red-600 font-medium">
                 A collection name with at least 3 characters is required.
               </p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-600" for="collection-tag">Collection tag</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-tag">Collection tag</label>
               <input id="collection-tag" type="text" formControlName="tag"
-                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
                 placeholder="e.g. marketing" />
               <p *ngIf="collectionForm.controls.tag.invalid && collectionForm.controls.tag.touched"
-                class="mt-1 text-xs text-red-600">
+                class="mt-2 text-xs text-red-600 font-medium">
                 Add a tag so the collection can be grouped.
               </p>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-600">Select prompts</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-3">Select prompts</label>
+
+            <!-- Prompt Search -->
+            <div *ngIf="!isLoadingPrompts() && !loadPromptsError() && availablePrompts().length > 0" class="mb-4">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
+                    <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <input type="search"
+                  class="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
+                  placeholder="Search prompts by title or tag..."
+                  [value]="promptSearchTerm()"
+                  (input)="onPromptSearch(($any($event.target)).value)" />
+                <button *ngIf="promptSearchTerm()" type="button" (click)="promptSearchTerm.set('')"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
             <div *ngIf="isLoadingPrompts()"
               class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
@@ -245,34 +281,62 @@
             </div>
 
             <div *ngIf="!isLoadingPrompts() && !loadPromptsError()"
-              class="mt-3 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-inner">
-              <ng-container *ngIf="availablePrompts().length > 0; else noPrompts">
-                <label *ngFor="let prompt of availablePrompts(); trackBy: trackPromptOptionById"
-                  class="flex cursor-pointer items-start gap-3 border-b border-slate-100 px-4 py-3 text-sm last:border-b-0">
-                  <input type="checkbox"
-                    class="mt-1 h-4 w-4 rounded border-slate-300 text-[#DC2626] focus:ring-[#DC2626]"
-                    [checked]="isPromptSelected(prompt.id)" (change)="togglePromptSelection(prompt.id)" />
-                  <span>
-                    <span class="block font-semibold text-slate-800">{{ prompt.title }}</span>
+              class="mt-3 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+              <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
+                <label *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptOptionById"
+                  [class.prompt-option-selected]="isPromptSelected(prompt.id)"
+                  class="prompt-option flex cursor-pointer items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0 transition-all duration-200">
+                  <div class="flex-shrink-0">
+                    <div class="prompt-checkbox-wrapper">
+                      <input type="checkbox"
+                        class="prompt-checkbox h-5 w-5 rounded border-2 border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-0 cursor-pointer transition-all"
+                        [checked]="isPromptSelected(prompt.id)" (change)="togglePromptSelection(prompt.id)" />
+                      <svg *ngIf="isPromptSelected(prompt.id)" class="prompt-check-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <span class="block font-semibold text-slate-900 leading-snug">{{ prompt.title }}</span>
                     <span
-                      class="mt-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      class="mt-1.5 inline-flex items-center rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 border border-slate-200">
                       {{ prompt.tagLabel }}
                     </span>
-                  </span>
+                  </div>
                 </label>
               </ng-container>
             </div>
 
             <ng-template #noPrompts>
-              <ng-container *ngIf="profile(); else guestNoPrompts">
-                <div class="px-4 py-6 text-sm text-slate-500">
-                  You have no prompts yet. Create prompts first to build a collection.
+              <ng-container *ngIf="promptSearchTerm().trim(); else noPromptsFound">
+                <div class="px-4 py-8 text-center">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
+                    <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <p class="mt-3 text-sm font-medium text-slate-700">No prompts found</p>
+                  <p class="mt-1 text-xs text-slate-500">Try a different search term</p>
                 </div>
               </ng-container>
-              <ng-template #guestNoPrompts>
-                <div class="px-4 py-6 text-sm text-slate-500">
-                  Sign in to create prompts and build your first collection.
-                </div>
+              <ng-template #noPromptsFound>
+                <ng-container *ngIf="profile(); else guestNoPrompts">
+                  <div class="px-4 py-8 text-center">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="mt-3 text-sm font-medium text-slate-700">You have no prompts yet</p>
+                    <p class="mt-1 text-xs text-slate-500">Create prompts first to build a collection</p>
+                  </div>
+                </ng-container>
+                <ng-template #guestNoPrompts>
+                  <div class="px-4 py-8 text-center">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
+                      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="mt-3 text-sm font-medium text-slate-700">Sign in to create prompts</p>
+                    <p class="mt-1 text-xs text-slate-500">Build your first collection</p>
+                  </div>
+                </ng-template>
               </ng-template>
             </ng-template>
 
@@ -287,25 +351,28 @@
             {{ collectionFormError() }}
           </div>
 
-          <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+          <div class="flex flex-col gap-3 pt-4 border-t border-slate-200 sm:flex-row sm:justify-end">
             <button type="button"
-              class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex items-center justify-center rounded-xl border-2 border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               (click)="closeCreateCollectionModal()" [disabled]="isSavingCollection()">
               Cancel
             </button>
             <button type="submit"
-              class="inline-flex items-center justify-center rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               [disabled]="isSavingCollection() || availablePrompts().length === 0">
               <ng-container *ngIf="isSavingCollection(); else saveLabel">
                 <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25">
                   </circle>
-                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round"></path>
                 </svg>
                 Saving…
               </ng-container>
               <ng-template #saveLabel>
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4">
+                  <path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 Save Collection
               </ng-template>
             </button>
