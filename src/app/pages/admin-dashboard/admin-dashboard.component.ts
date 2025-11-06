@@ -6,7 +6,9 @@ import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AdminService, type AdminStats } from '../../services/admin.service';
+import { PromptService } from '../../services/prompt.service';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { Prompt } from '../../models/prompt.model';
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -18,6 +20,7 @@ import type { UserProfile } from '../../models/user-profile.model';
 export class AdminDashboardComponent {
     private readonly authService = inject(AuthService);
     private readonly adminService = inject(AdminService);
+    private readonly promptService = inject(PromptService);
     readonly router = inject(Router);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -37,6 +40,14 @@ export class AdminDashboardComponent {
     readonly error = signal<string | null>(null);
     readonly searchTerm = signal('');
     readonly isUsersExpanded = signal(false);
+
+    // Prompts management
+    readonly prompts = signal<Prompt[]>([]);
+    readonly selectedPromptIds = signal<Set<string>>(new Set());
+    readonly isPromptsExpanded = signal(false);
+    readonly assignedAuthorId = signal('');
+    readonly isProcessingBulkAction = signal(false);
+    readonly promptsError = signal<string | null>(null);
 
     readonly filteredUsers = computed(() => {
         const users = this.users();
@@ -60,6 +71,7 @@ export class AdminDashboardComponent {
     constructor() {
         this.loadData();
         this.observeUsers();
+        this.observePrompts();
     }
 
     loadData() {
@@ -94,6 +106,134 @@ export class AdminDashboardComponent {
                     console.error('Failed to observe users', error);
                 }
             });
+    }
+
+    private observePrompts() {
+        this.promptService
+            .allPrompts$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: prompts => {
+                    this.prompts.set(prompts);
+                },
+                error: error => {
+                    console.error('Failed to observe prompts', error);
+                    this.promptsError.set('Failed to load prompts.');
+                }
+            });
+    }
+
+    togglePromptSelection(promptId: string) {
+        const selected = new Set(this.selectedPromptIds());
+        if (selected.has(promptId)) {
+            selected.delete(promptId);
+        } else {
+            selected.add(promptId);
+        }
+        this.selectedPromptIds.set(selected);
+    }
+
+    toggleSelectAll() {
+        const selected = this.selectedPromptIds();
+        const prompts = this.prompts();
+        
+        if (selected.size === prompts.length) {
+            this.selectedPromptIds.set(new Set());
+        } else {
+            this.selectedPromptIds.set(new Set(prompts.map(p => p.id)));
+        }
+    }
+
+    get allSelected(): boolean {
+        const prompts = this.prompts();
+        const selected = this.selectedPromptIds();
+        return prompts.length > 0 && selected.size === prompts.length;
+    }
+
+    get someSelected(): boolean {
+        const selected = this.selectedPromptIds();
+        return selected.size > 0 && selected.size < this.prompts().length;
+    }
+
+    async onBulkAssignAuthor() {
+        const selectedIds = Array.from(this.selectedPromptIds());
+        const authorId = this.assignedAuthorId().trim();
+
+        if (selectedIds.length === 0) {
+            this.promptsError.set('Please select at least one prompt.');
+            return;
+        }
+
+        if (!authorId) {
+            this.promptsError.set('Please enter an author ID.');
+            return;
+        }
+
+        this.isProcessingBulkAction.set(true);
+        this.promptsError.set(null);
+
+        try {
+            await this.promptService.bulkAssignAuthor(selectedIds, authorId);
+            this.selectedPromptIds.set(new Set());
+            this.assignedAuthorId.set('');
+        } catch (error) {
+            console.error('Failed to assign author', error);
+            this.promptsError.set(error instanceof Error ? error.message : 'Failed to assign author.');
+        } finally {
+            this.isProcessingBulkAction.set(false);
+        }
+    }
+
+    async onBulkDelete() {
+        const selectedIds = Array.from(this.selectedPromptIds());
+
+        if (selectedIds.length === 0) {
+            this.promptsError.set('Please select at least one prompt.');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete ${selectedIds.length} prompt(s)? This action cannot be undone.`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        this.isProcessingBulkAction.set(true);
+        this.promptsError.set(null);
+
+        try {
+            await this.promptService.bulkDeletePrompts(selectedIds);
+            this.selectedPromptIds.set(new Set());
+        } catch (error) {
+            console.error('Failed to delete prompts', error);
+            this.promptsError.set(error instanceof Error ? error.message : 'Failed to delete prompts.');
+        } finally {
+            this.isProcessingBulkAction.set(false);
+        }
+    }
+
+    async onBulkToggleVisibility(isInvisible: boolean) {
+        const selectedIds = Array.from(this.selectedPromptIds());
+
+        if (selectedIds.length === 0) {
+            this.promptsError.set('Please select at least one prompt.');
+            return;
+        }
+
+        this.isProcessingBulkAction.set(true);
+        this.promptsError.set(null);
+
+        try {
+            await this.promptService.bulkToggleVisibility(selectedIds, isInvisible);
+            this.selectedPromptIds.set(new Set());
+        } catch (error) {
+            console.error('Failed to toggle visibility', error);
+            this.promptsError.set(error instanceof Error ? error.message : 'Failed to toggle visibility.');
+        } finally {
+            this.isProcessingBulkAction.set(false);
+        }
     }
 
     onSearch(term: string) {

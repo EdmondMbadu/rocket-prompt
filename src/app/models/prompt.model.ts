@@ -7,6 +7,7 @@ export interface Prompt {
   readonly customUrl?: string;
   readonly views: number;
   readonly likes: number;
+  readonly isInvisible?: boolean;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

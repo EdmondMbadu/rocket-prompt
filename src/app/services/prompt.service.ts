@@ -26,6 +26,35 @@ export class PromptService {
           unsubscribe = firestoreModule.onSnapshot(
             queryRef,
             (snapshot) => {
+              const prompts = snapshot.docs
+                .map((doc) => this.mapPrompt(doc, firestoreModule))
+                .filter((prompt) => !prompt.isInvisible); // Filter out invisible prompts
+              subscriber.next(prompts);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
+   * Get all prompts including invisible ones (for admin use)
+   */
+  allPrompts$(): Observable<Prompt[]> {
+    return new Observable<Prompt[]>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(collectionRef, firestoreModule.orderBy('createdAt', 'desc'));
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
               const prompts = snapshot.docs.map((doc) => this.mapPrompt(doc, firestoreModule));
               subscriber.next(prompts);
             },
@@ -172,6 +201,7 @@ export class PromptService {
     const customUrlValue = data['customUrl'];
     const viewsValue = data['views'];
     const likesValue = data['likes'];
+    const isInvisibleValue = data['isInvisible'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
 
@@ -184,6 +214,7 @@ export class PromptService {
       customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,
       views: typeof viewsValue === 'number' ? viewsValue : 0,
       likes: typeof likesValue === 'number' ? likesValue : 0,
+      isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule)
     };
@@ -334,7 +365,11 @@ export class PromptService {
       const promptSnapshot = await firestoreModule.getDocs(promptQuery);
 
       promptSnapshot.docs.forEach(doc => {
-        prompts.push(this.mapPrompt(doc as QueryDocumentSnapshot, firestoreModule));
+        const prompt = this.mapPrompt(doc as QueryDocumentSnapshot, firestoreModule);
+        // Filter out invisible prompts
+        if (!prompt.isInvisible) {
+          prompts.push(prompt);
+        }
       });
     }
 
@@ -414,7 +449,12 @@ export class PromptService {
     }
 
     const doc = snapshot.docs[0];
-    return this.mapPrompt(doc, firestoreModule);
+    const prompt = this.mapPrompt(doc, firestoreModule);
+    // Filter out invisible prompts
+    if (prompt.isInvisible) {
+      return undefined;
+    }
+    return prompt;
   }
 
   /**
@@ -436,7 +476,12 @@ export class PromptService {
       const docSnap = await firestoreModule.getDoc(docRef);
       
       if (docSnap.exists()) {
-        return this.mapPrompt(docSnap as QueryDocumentSnapshot, firestoreModule);
+        const prompt = this.mapPrompt(docSnap as QueryDocumentSnapshot, firestoreModule);
+        // Filter out invisible prompts
+        if (prompt.isInvisible) {
+          return undefined;
+        }
+        return prompt;
       }
     } catch (error) {
       // If exact match fails, try prefix match
@@ -450,7 +495,7 @@ export class PromptService {
     
     const found = snapshot.docs
       .map(doc => this.mapPrompt(doc, firestoreModule))
-      .find(p => p.id === trimmed || p.id.startsWith(trimmed));
+      .find(p => (p.id === trimmed || p.id.startsWith(trimmed)) && !p.isInvisible);
 
     return found;
   }
@@ -490,6 +535,77 @@ export class PromptService {
     }
 
     return true;
+  }
+
+  /**
+   * Bulk assign authorId to multiple prompts (admin only)
+   */
+  async bulkAssignAuthor(promptIds: string[], authorId: string): Promise<void> {
+    const trimmedAuthorId = authorId?.trim();
+    if (!trimmedAuthorId) {
+      throw new Error('An author ID is required.');
+    }
+
+    if (!Array.isArray(promptIds) || promptIds.length === 0) {
+      throw new Error('At least one prompt ID is required.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const batch = firestoreModule.writeBatch(firestore);
+
+    for (const promptId of promptIds) {
+      const trimmedId = promptId?.trim();
+      if (!trimmedId) continue;
+
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+      batch.update(docRef, { authorId: trimmedAuthorId });
+    }
+
+    await batch.commit();
+  }
+
+  /**
+   * Bulk delete multiple prompts (admin only)
+   */
+  async bulkDeletePrompts(promptIds: string[]): Promise<void> {
+    if (!Array.isArray(promptIds) || promptIds.length === 0) {
+      throw new Error('At least one prompt ID is required.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const batch = firestoreModule.writeBatch(firestore);
+
+    for (const promptId of promptIds) {
+      const trimmedId = promptId?.trim();
+      if (!trimmedId) continue;
+
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+      batch.delete(docRef);
+    }
+
+    await batch.commit();
+  }
+
+  /**
+   * Bulk toggle visibility of multiple prompts (admin only)
+   */
+  async bulkToggleVisibility(promptIds: string[], isInvisible: boolean): Promise<void> {
+    if (!Array.isArray(promptIds) || promptIds.length === 0) {
+      throw new Error('At least one prompt ID is required.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const batch = firestoreModule.writeBatch(firestore);
+
+    for (const promptId of promptIds) {
+      const trimmedId = promptId?.trim();
+      if (!trimmedId) continue;
+
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+      batch.update(docRef, { isInvisible });
+    }
+
+    await batch.commit();
   }
 
   private ensureApp(): FirebaseApp {
