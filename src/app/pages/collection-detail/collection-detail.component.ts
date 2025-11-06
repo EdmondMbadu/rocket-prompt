@@ -53,6 +53,7 @@ export class CollectionDetailComponent {
   readonly bookmarked = signal(false);
   readonly bookmarking = signal(false);
   readonly clientId = signal('');
+  readonly copiedPromptUrl = signal<Set<string>>(new Set());
 
   readonly actorId = computed(() => {
     const user = this.authService.currentUser;
@@ -70,6 +71,7 @@ export class CollectionDetailComponent {
   });
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly promptUrlCopyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   readonly collectionPrompts = computed(() => {
     const collection = this.collection();
@@ -206,6 +208,75 @@ export class CollectionDetailComponent {
 
   trackPromptById(_: number, prompt: PromptCard) {
     return prompt.id;
+  }
+
+  getPromptUrl(prompt: PromptCard): string {
+    if (!prompt) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    if (prompt.customUrl) {
+      return `${origin}/${prompt.customUrl}`;
+    } else {
+      const short = prompt.id ? prompt.id.slice(0, 8) : '';
+      return `${origin}/prompt/${short}`;
+    }
+  }
+
+  fullPath(prompt: PromptCard): string {
+    if (!prompt) return '';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
+    if (prompt.customUrl) {
+      return `${hostname}/${prompt.customUrl}`;
+    } else {
+      const short = prompt.id ? prompt.id.slice(0, 8) : '';
+      return `${hostname}/prompt/${short}`;
+    }
+  }
+
+  copyPromptPageUrl(prompt: PromptCard) {
+    if (!prompt) return;
+
+    const url = this.getPromptUrl(prompt);
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    });
+  }
+
+  isPromptUrlCopied(promptId: string): boolean {
+    return this.copiedPromptUrl().has(promptId);
+  }
+
+  private markPromptUrlAsCopied(id: string) {
+    if (!id) {
+      return;
+    }
+
+    this.copiedPromptUrl.update(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    const existing = this.promptUrlCopyTimers.get(id);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const timer = setTimeout(() => {
+      this.copiedPromptUrl.update(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      this.promptUrlCopyTimers.delete(id);
+    }, 2500);
+
+    this.promptUrlCopyTimers.set(id, timer);
   }
 
   @HostListener('document:click', ['$event'])

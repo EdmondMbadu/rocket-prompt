@@ -249,3 +249,82 @@
   transform: translate(-50%, 0);
 }
 
+/* Prompt Link Wrapper - Small and Sweet */
+.prompt-link-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  transition: all 0.15s ease;
+}
+
+.prompt-link-wrapper:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.prompt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #334155;
+  font-weight: 600;
+  font-size: 12px;
+  transition: color 0.15s ease;
+}
+
+.prompt-link:hover {
+  color: #1e40af;
+}
+
+.prompt-link-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.prompt-link-text {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  letter-spacing: 0.02em;
+  color: #475569;
+}
+
+.prompt-link:hover .prompt-link-text {
+  color: #1e40af;
+}
+
+.btn-copy-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-copy-link:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+}
+
+.btn-copy-link:active {
+  transform: scale(0.95);
+}
+
+.copy-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
