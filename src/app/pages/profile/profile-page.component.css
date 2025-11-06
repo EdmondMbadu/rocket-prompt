@@ -289,6 +289,37 @@
   display: block;
 }
 
+.btn-copy-profile-url {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-copy-profile-url:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+}
+
+.btn-copy-profile-url:active {
+  transform: scale(0.95);
+}
+
+.copy-icon-profile {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
 .icon-button--primary {
   background: #dbeafe;
   color: #1d4ed8;

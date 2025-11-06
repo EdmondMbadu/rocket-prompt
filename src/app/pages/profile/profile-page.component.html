@@ -107,7 +107,30 @@
           </div>
           <div>
             <h1 class="text-3xl font-bold text-slate-900">{{ profile.firstName }} {{ profile.lastName }}</h1>
-            <p class="text-slate-600 mt-1">{{ getDisplayUsername(profile) }}</p>
+            <div class="flex items-center gap-2 mt-1">
+              <p class="text-slate-600">{{ getDisplayUsername(profile) }}</p>
+              <button 
+                type="button" 
+                class="btn-copy-profile-url" 
+                (click)="copyProfileUrl(profile)"
+                title="Copy profile URL">
+                <ng-container *ngIf="profileUrlCopied(); else copyIconProfile">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-profile" fill="none"
+                    stroke="currentColor" stroke-width="2.2">
+                    <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </ng-container>
+                <ng-template #copyIconProfile>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-profile" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </ng-template>
+              </button>
+            </div>
           </div>
         </div>
         <div class="ml-auto">

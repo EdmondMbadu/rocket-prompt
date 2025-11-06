@@ -71,6 +71,7 @@ export class ProfilePageComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
+  readonly profileUrlCopied = signal(false);
   readonly newPromptModalOpen = signal(false);
   readonly isEditingPrompt = signal(false);
   readonly editingPromptId = signal<string | null>(null);
@@ -457,6 +458,42 @@ export class ProfilePageComponent {
     
     const userId = profile.userId || profile.id || '';
     return generateDisplayUsername(profile.firstName, profile.lastName, userId);
+  }
+
+  getProfileUrl(profile: UserProfile | undefined): string {
+    if (!profile) {
+      return '';
+    }
+    
+    const username = profile.username || this.getDisplayUsername(profile);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/profile/${username}`;
+  }
+
+  async copyProfileUrl(profile: UserProfile | undefined) {
+    if (!profile) return;
+
+    const url = this.getProfileUrl(profile);
+
+    try {
+      await navigator.clipboard.writeText(url);
+      this.showCopyMessage('Profile URL copied!');
+      this.markProfileUrlAsCopied();
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Profile URL copied!');
+      this.markProfileUrlAsCopied();
+    }
+  }
+
+  private markProfileUrlAsCopied() {
+    this.profileUrlCopied.set(true);
+
+    const DURATION = 2500;
+
+    setTimeout(() => {
+      this.profileUrlCopied.set(false);
+    }, DURATION);
   }
 
   async navigateToAuthorProfile(authorId: string, event: Event) {
