@@ -8,6 +8,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
+  username?: string; // Display username for URLs (e.g., "JohnDoeA3b")
   createdAt?: unknown;
   preferences?: UserPreferences;
   admin?: boolean; // Deprecated, use role instead

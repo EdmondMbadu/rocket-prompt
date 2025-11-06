@@ -30,6 +30,11 @@ export const routes: Routes = [
       import('./pages/profile/profile-page.component').then(m => m.ProfilePageComponent)
   },
   {
+    path: 'profile/:username',
+    loadComponent: () =>
+      import('./pages/profile/profile-page.component').then(m => m.ProfilePageComponent)
+  },
+  {
     path: 'prompts/liked',
     loadComponent: () =>
       import('./pages/liked-prompts/liked-prompts-page.component').then(m => m.LikedPromptsPageComponent)

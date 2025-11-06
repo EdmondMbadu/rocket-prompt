@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, combineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import { generateDisplayUsername } from '../../utils/username.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -111,21 +112,83 @@ export class ProfilePageComponent {
     return currentUser && (viewingId === null || viewingId === currentUser.uid);
   });
 
-  readonly profile$ = this.route.queryParams.pipe(
-    switchMap(params => {
-      const userId = params['userId'];
-      this.viewingUserId.set(userId || null);
-      if (userId) {
-        // Viewing another user's profile
-        return this.authService.userProfile$(userId);
+  readonly profile$ = combineLatest([this.route.params, this.route.queryParams]).pipe(
+    switchMap(([params, queryParams]) => {
+      const username = params['username'];
+      const userId = queryParams['userId'];
+      
+      if (username) {
+        // Viewing profile by username
+        return this.authService.userProfileByUsername$(username).pipe(
+          switchMap(profile => {
+            if (profile) {
+              this.viewingUserId.set(profile.userId || profile.id || null);
+              return of(profile);
+            }
+            // If username not found, fall back to own profile
+            return this.currentUser$.pipe(
+              switchMap(user => {
+                if (!user) {
+                  return of<UserProfile | undefined>(undefined);
+                }
+                this.viewingUserId.set(null);
+                return this.authService.userProfile$(user.uid);
+              })
+            );
+          })
+        );
       }
+      
+      if (userId) {
+        // Viewing profile by userId - redirect to username URL
+        this.viewingUserId.set(userId);
+        return this.authService.userProfile$(userId).pipe(
+          switchMap(profile => {
+            if (profile?.username) {
+              // Redirect to username-based URL
+              this.router.navigate(['/profile', profile.username], { replaceUrl: true });
+              return of(profile);
+            }
+            // If no username yet, generate it and redirect
+            if (profile) {
+              return from(this.authService.fetchUserProfile(userId)).pipe(
+                switchMap(updatedProfile => {
+                  if (updatedProfile?.username) {
+                    this.router.navigate(['/profile', updatedProfile.username], { replaceUrl: true });
+                    return of(updatedProfile);
+                  }
+                  return of(profile);
+                })
+              );
+            }
+            return of(profile);
+          })
+        );
+      }
+      
       // Viewing own profile
+      this.viewingUserId.set(null);
       return this.currentUser$.pipe(
         switchMap(user => {
           if (!user) {
             return of<UserProfile | undefined>(undefined);
           }
-          return this.authService.userProfile$(user.uid);
+          return this.authService.userProfile$(user.uid).pipe(
+            switchMap(profile => {
+              // Ensure username exists and redirect if needed
+              if (profile && !profile.username) {
+                return from(this.authService.fetchUserProfile(user.uid)).pipe(
+                  switchMap(updatedProfile => {
+                    if (updatedProfile?.username) {
+                      this.router.navigate(['/profile', updatedProfile.username], { replaceUrl: true });
+                    }
+                    return of(updatedProfile || profile);
+                  })
+                );
+              }
+              return of(profile);
+            })
+          );
         })
       );
     }),
@@ -382,10 +445,31 @@ export class ProfilePageComponent {
     return this.profileInitials(profile);
   }
 
-  navigateToAuthorProfile(authorId: string, event: Event) {
+  getDisplayUsername(profile: UserProfile | undefined): string {
+    if (!profile) {
+      return 'User';
+    }
+    
+    // Use stored username if available, otherwise generate it
+    if (profile.username) {
+      return profile.username;
+    }
+    
+    const userId = profile.userId || profile.id || '';
+    return generateDisplayUsername(profile.firstName, profile.lastName, userId);
+  }
+
+  async navigateToAuthorProfile(authorId: string, event: Event) {
     event.stopPropagation();
     if (authorId) {
-      void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      // Try to get the profile to get the username
+      const profile = await this.authService.fetchUserProfile(authorId);
+      if (profile?.username) {
+        void this.router.navigate(['/profile', profile.username]);
+      } else {
+        // Fallback to userId if username not available
+        void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      }
     }
   }
 
@@ -686,13 +770,37 @@ export class ProfilePageComponent {
   }
 
   private observePrompts() {
-    this.route.queryParams.pipe(
-      switchMap(params => {
-        const userId = params['userId'];
+    combineLatest([this.route.params, this.route.queryParams]).pipe(
+      switchMap(([params, queryParams]) => {
+        const username = params['username'];
+        const userId = queryParams['userId'];
+        
+        if (username) {
+          // Viewing profile by username - find user first
+          return this.authService.userProfileByUsername$(username).pipe(
+            switchMap(profile => {
+              if (profile && profile.userId) {
+                return this.promptService.promptsByAuthor$(profile.userId);
+              }
+              // If username not found, show own prompts
+              return this.currentUser$.pipe(
+                switchMap(user => {
+                  if (!user) {
+                    this.isLoadingPrompts.set(false);
+                    return of<Prompt[]>([]);
+                  }
+                  return this.promptService.promptsByAuthor$(user.uid);
+                })
+              );
+            })
+          );
+        }
+        
         if (userId) {
-          // Viewing another user's profile - show their prompts
+          // Viewing profile by userId (backward compatibility)
           return this.promptService.promptsByAuthor$(userId);
         }
+        
         // Viewing own profile - show own prompts
         return this.currentUser$.pipe(
           switchMap(user => {

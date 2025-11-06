@@ -6,6 +6,7 @@ import { Observable, defer, from, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
 import type { UserPreferences, UserProfile } from '../models/user-profile.model';
+import { generateDisplayUsername } from '../utils/username.util';
 
 @Injectable({
   providedIn: 'root'
@@ -43,11 +44,13 @@ export class AuthService {
     });
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const username = generateDisplayUsername(input.firstName, input.lastName, credential.user.uid);
     await firestoreModule.setDoc(firestoreModule.doc(firestore, 'users', credential.user.uid), {
       userId: credential.user.uid,
       firstName: input.firstName,
       lastName: input.lastName,
       email: credential.user.email ?? input.email,
+      username,
       createdAt: firestoreModule.serverTimestamp(),
       preferences: {
         sidebarCollapsed: false
@@ -80,17 +83,26 @@ export class AuthService {
       const nameParts = displayName.trim().split(/\s+/);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
+      const username = generateDisplayUsername(firstName, lastName, credential.user.uid);
 
       await firestoreModule.setDoc(userDocRef, {
         userId: credential.user.uid,
         firstName,
         lastName,
         email: credential.user.email ?? '',
+        username,
         createdAt: firestoreModule.serverTimestamp(),
         preferences: {
           sidebarCollapsed: false
         }
       });
+    } else {
+      // Update username if missing (for existing users)
+      const userData = userDoc.data() as Omit<UserProfile, 'id'>;
+      if (!userData.username) {
+        const username = generateDisplayUsername(userData.firstName, userData.lastName, credential.user.uid);
+        await firestoreModule.updateDoc(userDocRef, { username });
+      }
     }
 
     return credential;
@@ -129,18 +141,31 @@ export class AuthService {
   userProfile$(uid: string) {
     return defer(() => this.getFirestoreContext()).pipe(
       switchMap(({ firestore, firestoreModule }) =>
-        from(firestoreModule.getDoc(firestoreModule.doc(firestore, 'users', uid)))
-      ),
-      map(snapshot => {
-        if (!snapshot.exists()) {
-          return undefined;
-        }
+        from(firestoreModule.getDoc(firestoreModule.doc(firestore, 'users', uid))).pipe(
+          switchMap(snapshot => {
+            if (!snapshot.exists()) {
+              return of(undefined);
+            }
 
-        return {
-          id: snapshot.id,
-          ...(snapshot.data() as Omit<UserProfile, 'id'>)
-        };
-      }),
+            const data = snapshot.data() as Omit<UserProfile, 'id'>;
+            const profile = {
+              id: snapshot.id,
+              ...data
+            };
+
+            // Ensure username exists - generate and store if missing
+            if (!profile.username && profile.firstName && profile.lastName) {
+              const username = generateDisplayUsername(profile.firstName, profile.lastName, profile.userId || profile.id);
+              const docRef = firestoreModule.doc(firestore, 'users', uid);
+              return from(firestoreModule.updateDoc(docRef, { username })).pipe(
+                map(() => ({ ...profile, username }))
+              );
+            }
+
+            return of(profile);
+          })
+        )
+      ),
       catchError(() => of(undefined))
     );
   }
@@ -154,10 +179,53 @@ export class AuthService {
     }
 
     const data = snapshot.data() as Omit<UserProfile, 'id'>;
-    return {
+    const profile = {
       id: snapshot.id,
       ...data
     };
+
+    // Ensure username exists - generate and store if missing
+    if (!profile.username && profile.firstName && profile.lastName) {
+      const username = generateDisplayUsername(profile.firstName, profile.lastName, profile.userId || profile.id);
+      const docRef = firestoreModule.doc(firestore, 'users', uid);
+      await firestoreModule.updateDoc(docRef, { username });
+      profile.username = username;
+    }
+
+    return profile;
+  }
+
+  async findUserByUsername(username: string): Promise<UserProfile | undefined> {
+    const trimmed = username?.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    
+    // Query for user with this username
+    const queryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'users'),
+      firestoreModule.where('username', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+
+    if (snapshot.empty) {
+      return undefined;
+    }
+
+    const doc = snapshot.docs[0];
+    const data = doc.data() as Omit<UserProfile, 'id'>;
+    return {
+      id: doc.id,
+      ...data
+    };
+  }
+
+  userProfileByUsername$(username: string) {
+    return defer(() => this.findUserByUsername(username));
   }
 
   async updateUserPreferences(uid: string, preferences: Partial<UserPreferences>): Promise<void> {

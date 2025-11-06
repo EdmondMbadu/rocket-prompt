@@ -518,10 +518,17 @@ export class HomeComponent {
     return this.profileInitials(profile);
   }
 
-  navigateToAuthorProfile(authorId: string, event: Event) {
+  async navigateToAuthorProfile(authorId: string, event: Event) {
     event.stopPropagation();
     if (authorId) {
-      void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      // Try to get the profile to get the username
+      const profile = await this.authService.fetchUserProfile(authorId);
+      if (profile?.username) {
+        void this.router.navigate(['/profile', profile.username]);
+      } else {
+        // Fallback to userId if username not available
+        void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      }
     }
   }
 
