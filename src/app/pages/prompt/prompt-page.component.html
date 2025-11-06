@@ -265,8 +265,8 @@
                 <pre>{{ prompt()?.content }}</pre>
             </div>
 
-            <!-- ACTIONS: Launch this prompt (Bottom) -->
-            <div class="action-section action-section--launch">
+            <!-- ACTIONS: Launch this prompt (Bottom) - only show if prompt is longer than 100 words -->
+            <div class="action-section action-section--launch" *ngIf="!isShortPrompt()">
                 <div class="action-section__header">
                     <div class="action-section__icon-wrapper">
                         <span class="action-section__emoji">🚀</span>
@@ -327,9 +327,10 @@
                 </div>
             </div>
 
-            <!-- ACTIONS: Share this RocketPrompt (Bottom) -->
+            <!-- ACTIONS: Share this RocketPrompt (Bottom) - only show if prompt is longer than 100 words -->
             <div class="action-section action-section--share"
-                [class.action-section--collapsed]="!shareSectionExpanded()">
+                [class.action-section--collapsed]="!shareSectionExpanded()"
+                *ngIf="!isShortPrompt()">
                 <div class="action-section__header" (click)="toggleShareSection()">
                     <div class="action-section__icon-wrapper">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__svg-icon" fill="none"

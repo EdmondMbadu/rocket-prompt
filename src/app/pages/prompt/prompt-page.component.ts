@@ -66,6 +66,14 @@ export class PromptPageComponent {
     return p.customUrl ? `${hostname}/${p.customUrl}` : `${hostname}/prompt/${short}`;
   });
 
+  // Check if prompt is 100 words or less
+  readonly isShortPrompt = computed(() => {
+    const p = this.prompt();
+    if (!p || !p.content) return false;
+    const wordCount = p.content.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return wordCount <= 100;
+  });
+
   constructor() {
     this.ensureClientId();
 
