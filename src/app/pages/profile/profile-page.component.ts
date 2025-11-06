@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -41,6 +41,7 @@ export class ProfilePageComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
   readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
 
@@ -101,12 +102,30 @@ export class ProfilePageComponent {
   private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly currentUser$ = this.authService.currentUser$;
-  readonly profile$ = this.currentUser$.pipe(
-    switchMap(user => {
-      if (!user) {
-        return of<UserProfile | undefined>(undefined);
+  readonly viewingUserId = signal<string | null>(null);
+  readonly isViewingOwnProfile = computed(() => {
+    const currentUser = this.authService.currentUser;
+    const viewingId = this.viewingUserId();
+    return currentUser && (viewingId === null || viewingId === currentUser.uid);
+  });
+
+  readonly profile$ = this.route.queryParams.pipe(
+    switchMap(params => {
+      const userId = params['userId'];
+      this.viewingUserId.set(userId || null);
+      if (userId) {
+        // Viewing another user's profile
+        return this.authService.userProfile$(userId);
       }
-      return this.authService.userProfile$(user.uid);
+      // Viewing own profile
+      return this.currentUser$.pipe(
+        switchMap(user => {
+          if (!user) {
+            return of<UserProfile | undefined>(undefined);
+          }
+          return this.authService.userProfile$(user.uid);
+        })
+      );
     }),
     map(profile => profile ? profile : undefined)
   );
@@ -649,13 +668,23 @@ export class ProfilePageComponent {
   }
 
   private observePrompts() {
-    this.currentUser$.pipe(
-      switchMap(user => {
-        if (!user) {
-          this.isLoadingPrompts.set(false);
-          return of<Prompt[]>([]);
+    this.route.queryParams.pipe(
+      switchMap(params => {
+        const userId = params['userId'];
+        if (userId) {
+          // Viewing another user's profile - show their prompts
+          return this.promptService.promptsByAuthor$(userId);
         }
-        return this.promptService.promptsByAuthor$(user.uid);
+        // Viewing own profile - show own prompts
+        return this.currentUser$.pipe(
+          switchMap(user => {
+            if (!user) {
+              this.isLoadingPrompts.set(false);
+              return of<Prompt[]>([]);
+            }
+            return this.promptService.promptsByAuthor$(user.uid);
+          })
+        );
       }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
