@@ -251,7 +251,7 @@
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button icon-button--primary" aria-label="Modify prompt"
+                <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--primary" aria-label="Modify prompt"
                   data-tooltip="Modify prompt" title="Modify prompt" (click)="openEditPromptModal(prompt)"
                   [disabled]="isSavingPrompt()">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
@@ -261,7 +261,7 @@
                       stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="icon-button icon-button--danger" aria-label="Delete prompt"
+                <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--danger" aria-label="Delete prompt"
                   data-tooltip="Delete prompt" title="Delete prompt" (click)="onDeletePrompt(prompt)"
                   [disabled]="deletingPromptId() === prompt.id">
                   <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">

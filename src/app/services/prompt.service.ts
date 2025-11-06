@@ -42,6 +42,7 @@ export class PromptService {
     const title = input.title?.trim();
     const content = input.content?.trim();
     const tag = input.tag?.trim();
+    const authorId = input.authorId?.trim();
 
     if (!title) {
       throw new Error('A title is required to create a prompt.');
@@ -55,6 +56,10 @@ export class PromptService {
       throw new Error('A tag is required to create a prompt.');
     }
 
+    if (!authorId) {
+      throw new Error('An author ID is required to create a prompt.');
+    }
+
     const { firestore, firestoreModule } = await this.getFirestoreContext();
 
     const customUrl = input.customUrl?.trim() || undefined;
@@ -64,6 +69,7 @@ export class PromptService {
     const timestamp = firestoreModule.serverTimestamp();
 
     const payload: Record<string, unknown> = {
+      authorId,
       title,
       content,
       tag: normalizedTag,
@@ -82,11 +88,16 @@ export class PromptService {
     return docRef.id;
   }
 
-  async updatePrompt(id: string, input: UpdatePromptInput): Promise<void> {
+  async updatePrompt(id: string, input: UpdatePromptInput, authorId: string): Promise<void> {
     const trimmedId = id?.trim();
+    const trimmedAuthorId = authorId?.trim();
 
     if (!trimmedId) {
       throw new Error('A prompt id is required to update a prompt.');
+    }
+
+    if (!trimmedAuthorId) {
+      throw new Error('An author ID is required to update a prompt.');
     }
 
     const title = input.title?.trim();
@@ -106,6 +117,23 @@ export class PromptService {
     }
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
+    
+    // Fetch the existing prompt to check ownership and authorId
+    const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Prompt not found.');
+    }
+
+    const existingData = docSnap.data() as Record<string, unknown>;
+    const existingAuthorId = typeof existingData['authorId'] === 'string' ? existingData['authorId'] : '';
+
+    // Check if user is the author
+    if (existingAuthorId && existingAuthorId !== trimmedAuthorId) {
+      throw new Error('You do not have permission to edit this prompt. Only the author can edit it.');
+    }
+
     const normalizedTag = tag.toLowerCase();
     const customUrlRaw = input.customUrl ?? '';
     const customUrl = customUrlRaw.trim();
@@ -117,16 +145,18 @@ export class PromptService {
       updatedAt: firestoreModule.serverTimestamp()
     };
 
+    // If authorId wasn't set before, add it now
+    if (!existingAuthorId) {
+      updatePayload['authorId'] = trimmedAuthorId;
+    }
+
     if (customUrl) {
       updatePayload['customUrl'] = customUrl;
     } else {
       updatePayload['customUrl'] = firestoreModule.deleteField();
     }
 
-    await firestoreModule.updateDoc(
-      firestoreModule.doc(firestore, 'prompts', trimmedId),
-      updatePayload
-    );
+    await firestoreModule.updateDoc(docRef, updatePayload);
   }
 
   private mapPrompt(
@@ -135,6 +165,7 @@ export class PromptService {
   ): Prompt {
     const data = doc.data() as Record<string, unknown>;
 
+    const authorIdValue = data['authorId'];
     const titleValue = data['title'];
     const contentValue = data['content'];
     const tagValue = data['tag'];
@@ -146,6 +177,7 @@ export class PromptService {
 
     return {
       id: doc.id,
+      authorId: typeof authorIdValue === 'string' ? authorIdValue : '',
       title: typeof titleValue === 'string' ? titleValue : '',
       content: typeof contentValue === 'string' ? contentValue : '',
       tag: typeof tagValue === 'string' ? tagValue : 'general',
@@ -157,15 +189,36 @@ export class PromptService {
     };
   }
 
-  async deletePrompt(id: string): Promise<void> {
+  async deletePrompt(id: string, authorId: string): Promise<void> {
     const trimmedId = id?.trim();
+    const trimmedAuthorId = authorId?.trim();
 
     if (!trimmedId) {
       throw new Error('A prompt id is required to delete a prompt.');
     }
 
+    if (!trimmedAuthorId) {
+      throw new Error('An author ID is required to delete a prompt.');
+    }
+
     const { firestore, firestoreModule } = await this.getFirestoreContext();
     const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+    
+    // Fetch the existing prompt to check ownership
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Prompt not found.');
+    }
+
+    const existingData = docSnap.data() as Record<string, unknown>;
+    const existingAuthorId = typeof existingData['authorId'] === 'string' ? existingData['authorId'] : '';
+
+    // Check if user is the author
+    if (existingAuthorId && existingAuthorId !== trimmedAuthorId) {
+      throw new Error('You do not have permission to delete this prompt. Only the author can delete it.');
+    }
+
     await firestoreModule.deleteDoc(docRef);
   }
 

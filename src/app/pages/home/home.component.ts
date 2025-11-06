@@ -17,6 +17,7 @@ interface PromptCategory {
 
 interface PromptCard {
   readonly id: string;
+  readonly authorId: string;
   readonly title: string;
   readonly content: string;
   readonly preview: string;
@@ -519,6 +520,18 @@ export class HomeComponent {
   }
 
   openEditPromptModal(prompt: PromptCard) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to edit a prompt.');
+      return;
+    }
+
+    // Check if user is the author
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.promptFormError.set('You do not have permission to edit this prompt. Only the author can edit it.');
+      return;
+    }
+
     this.closeMenu();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
@@ -536,6 +549,19 @@ export class HomeComponent {
     // Do not enable suggestions immediately when editing a prompt; wait for the user to type
     this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
+  }
+
+  /**
+   * Check if the current user can edit a prompt (must be the author).
+   */
+  canEditPrompt(prompt: PromptCard): boolean {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+    // If prompt has no authorId, allow edit (for backward compatibility with old prompts)
+    // If prompt has authorId, only allow if current user is the author
+    return !prompt.authorId || prompt.authorId === currentUser.uid;
   }
 
   /**
@@ -608,15 +634,21 @@ export class HomeComponent {
     this.customUrlError.set(null);
 
     try {
+      const currentUser = this.authService.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to create a prompt.');
+      }
+
       if (this.isEditingPrompt() && this.editingPromptId()) {
         await this.promptService.updatePrompt(this.editingPromptId()!, {
           title,
           content,
           tag,
           customUrl: trimmedCustomUrl
-        });
+        }, currentUser.uid);
       } else {
         await this.promptService.createPrompt({
+          authorId: currentUser.uid,
           title,
           content,
           tag,
@@ -649,6 +681,18 @@ export class HomeComponent {
       return;
     }
 
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.deleteError.set('You must be signed in to delete a prompt.');
+      return;
+    }
+
+    // Check if user is the author
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.deleteError.set('You do not have permission to delete this prompt. Only the author can delete it.');
+      return;
+    }
+
     const confirmed = window.confirm(`Delete "${prompt.title}"? This action cannot be undone.`);
 
     if (!confirmed) {
@@ -659,7 +703,7 @@ export class HomeComponent {
     this.deleteError.set(null);
 
     try {
-      await this.promptService.deletePrompt(prompt.id);
+      await this.promptService.deletePrompt(prompt.id, currentUser.uid);
     } catch (error) {
       console.error('Failed to delete prompt', error);
       this.deleteError.set(
@@ -745,6 +789,7 @@ export class HomeComponent {
 
     return {
       id: prompt.id,
+      authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
       preview: this.buildPreview(prompt.content),

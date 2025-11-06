@@ -1,5 +1,6 @@
 export interface Prompt {
   readonly id: string;
+  readonly authorId: string;
   readonly title: string;
   readonly content: string;
   readonly tag: string;
@@ -11,6 +12,7 @@ export interface Prompt {
 }
 
 export interface CreatePromptInput {
+  readonly authorId: string;
   readonly title: string;
   readonly content: string;
   readonly tag: string;
