@@ -113,6 +113,16 @@ export class ProfilePageComponent {
     return currentUser && (viewingId === null || viewingId === currentUser.uid);
   });
 
+  // Current logged-in user's profile (for avatar and menu)
+  readonly currentUserProfile$ = this.currentUser$.pipe(
+    switchMap(user => {
+      if (!user) {
+        return of<UserProfile | undefined>(undefined);
+      }
+      return this.authService.userProfile$(user.uid);
+    })
+  );
+
   readonly profile$ = combineLatest([this.route.params, this.route.queryParams]).pipe(
     switchMap(([params, queryParams]) => {
       const username = params['username'];
@@ -507,6 +517,14 @@ export class ProfilePageComponent {
         // Fallback to userId if username not available
         void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
       }
+    }
+  }
+
+  navigateToCurrentUserProfile(currentUserProfile: UserProfile) {
+    if (currentUserProfile?.username) {
+      void this.router.navigate(['/profile', currentUserProfile.username]);
+    } else {
+      void this.router.navigate(['/profile']);
     }
   }
 
