@@ -72,4 +72,97 @@
   color: #dc2626;
 }
 
+/* Icon button - matching home page style */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #334155;
+  transition: background .15s ease, transform .15s ease;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .06);
+  border: 0;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.icon-button[data-tooltip] {
+  position: relative;
+}
+
+.icon-button[data-tooltip]::before,
+.icon-button[data-tooltip]::after {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.icon-button[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translate(-50%, 6px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+}
+
+.icon-button[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 50%;
+  transform: translate(-50%, 6px);
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  z-index: 30;
+  box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
+}
+
+.icon-button[data-tooltip]:hover::before,
+.icon-button[data-tooltip]:hover::after,
+.icon-button[data-tooltip]:focus-visible::before,
+.icon-button[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Like button - matching prompt page style */
+.btn-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 6px 10px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 9999px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.btn-like:hover:not(:disabled) {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.btn-like:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
