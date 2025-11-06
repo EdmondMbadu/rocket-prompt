@@ -267,6 +267,19 @@
   color: #9333ea;
 }
 
+.menu-item--profile {
+  background: rgba(255, 255, 255, 0.5);
+  color: #334155;
+  border-color: rgba(148, 163, 184, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+.menu-item--profile:hover {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #1e293b;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;

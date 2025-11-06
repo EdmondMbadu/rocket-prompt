@@ -46,6 +46,12 @@
                     />
                   </svg>
                 </button>
+                <button type="button" class="menu-item menu-item--profile" role="menuitem" (click)="router.navigate(['/profile']); closeMenu()">
+                  <span>Profile</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
                 <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
                   <span>Log out</span>
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
@@ -137,6 +143,10 @@
       <div *ngIf="loadPromptsError()"
         class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
         {{ loadPromptsError() }}
+      </div>
+      <div *ngIf="deleteError()"
+        class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+        {{ deleteError() }}
       </div>
 
       <ng-container *ngIf="isLoadingPrompts(); else promptList">
@@ -248,12 +258,182 @@
                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
+                <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--primary" aria-label="Modify prompt"
+                  data-tooltip="Modify prompt" title="Modify prompt" (click)="openEditPromptModal(prompt)"
+                  [disabled]="isSavingPrompt()">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--danger" aria-label="Delete prompt"
+                  data-tooltip="Delete prompt" title="Delete prompt" (click)="onDeletePrompt(prompt)"
+                  [disabled]="deletingPromptId() === prompt.id">
+                  <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+                      </circle>
+                      <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round"></path>
+                    </svg>
+                  </ng-container>
+                  <ng-template #deleteIcon>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                      <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </ng-template>
+                </button>
               </div>
             </article>
           </div>
         </ng-container>
       </ng-template>
     </main>
+
+    <!-- EDIT PROMPT MODAL -->
+    <div *ngIf="newPromptModalOpen()" class="modal-overlay" (click)="closeCreatePromptModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <button type="button" class="modal-close" aria-label="Close" (click)="closeCreatePromptModal()"
+          [disabled]="isSavingPrompt()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+            <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </button>
+
+        <header class="pr-8">
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">
+            {{ isEditingPrompt() ? 'Update' : 'Create' }}
+          </p>
+          <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+            {{ isEditingPrompt() ? 'Edit Prompt' : 'New Prompt' }}
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ isEditingPrompt() ? 'Make adjustments and keep your library fresh.' : 'Capture your best prompt ideas and
+            keep them ready to launch.' }}
+          </p>
+        </header>
+
+        <form class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-600" for="prompt-title">Title</label>
+              <input id="prompt-title" type="text" formControlName="title"
+                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                placeholder="e.g. Growth Marketing Sprint" />
+              <p *ngIf="createPromptForm.controls.title.invalid && createPromptForm.controls.title.touched"
+                class="mt-1 text-xs text-red-600">
+                A title with at least 3 characters is required.
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-600" for="prompt-tag">Tag</label>
+              <input id="prompt-tag" type="text" formControlName="tag" (input)="onTagInput(($any($event.target)).value)"
+                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                placeholder="e.g. marketing" />
+              <p *ngIf="createPromptForm.controls.tag.invalid && createPromptForm.controls.tag.touched"
+                class="mt-1 text-xs text-red-600">
+                Add a tag so the prompt can be grouped.
+              </p>
+
+              <div
+                class="mt-2 rounded-md bg-white border border-slate-300 shadow-sm transition-opacity duration-150 ease-in-out overflow-hidden"
+                [class.opacity-0]="tagSuggestions().length === 0" [class.opacity-100]="tagSuggestions().length > 0"
+                [attr.aria-hidden]="tagSuggestions().length === 0">
+                <ul class="max-h-40 overflow-auto">
+                  <li *ngFor="let s of tagSuggestions()" (click)="selectTagSuggestion(s.value)"
+                    class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    {{ s.label }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-600" for="prompt-custom-url">Custom Short URL (optional)</label>
+            <div class="mt-1 flex items-center gap-2">
+              <span class="text-sm text-slate-500">rocketprompt.io/</span>
+              <div class="flex-1 relative">
+                <input id="prompt-custom-url" type="text" formControlName="customUrl" 
+                  (input)="onCustomUrlInput(($any($event.target)).value)"
+                  class="w-full rounded-xl border px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                  [ngClass]="{
+                    'border-red-300': customUrlError(),
+                    'border-slate-300': !customUrlError()
+                  }"
+                  placeholder="my-custom-url" />
+                <div *ngIf="isCheckingCustomUrl()" class="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin text-slate-400">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
+                    <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <p *ngIf="customUrlError()" class="mt-1 text-xs text-red-600">
+              {{ customUrlError() }}
+            </p>
+            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && createPromptForm.controls.customUrl.value" class="mt-1 text-xs text-slate-500">
+              Your prompt will be available at: rocketprompt.io/{{ createPromptForm.controls.customUrl.value }}
+            </p>
+            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+              Checking availability...
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content</label>
+            <textarea id="prompt-content" rows="6" formControlName="content"
+              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+              placeholder="Write the full prompt here, including instructions or variables."></textarea>
+            <p *ngIf="createPromptForm.controls.content.invalid && createPromptForm.controls.content.touched"
+              class="mt-1 text-xs text-red-600">
+              Please provide at least 10 characters of content.
+            </p>
+          </div>
+
+          <div *ngIf="promptFormError()"
+            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ promptFormError() }}
+          </div>
+
+          <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+            <button type="button"
+              class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              (click)="closeCreatePromptModal()" [disabled]="isSavingPrompt()">
+              Cancel
+            </button>
+            <button type="submit"
+              class="inline-flex items-center justify-center rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-60"
+              [disabled]="isSavingPrompt()">
+              <ng-container *ngIf="isSavingPrompt(); else saveLabel">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+                  </circle>
+                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round"></path>
+                </svg>
+                Saving…
+              </ng-container>
+              <ng-template #saveLabel>
+                {{ isEditingPrompt() ? 'Update Prompt' : 'Save Prompt' }}
+              </ng-template>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </ng-container>
 
@@ -270,12 +450,23 @@
     <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
-    <p class="mt-4 text-lg font-semibold text-slate-800">No prompts yet</p>
+    <p class="mt-4 text-lg font-semibold text-slate-800">No prompts found</p>
     <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
-      You haven't created any prompts yet. Start creating amazing prompts to see them here!
+      <ng-container *ngIf="(profile$ | async); else notLoggedIn">
+        You haven't created any prompts yet. Start creating amazing prompts to see them here!
+      </ng-container>
+      <ng-template #notLoggedIn>
+        Please sign in to view your prompts.
+      </ng-template>
     </p>
-    <a [routerLink]="['/home']" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C]">
+    <a *ngIf="profile$ | async" [routerLink]="['/home']" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C]">
       Go to Home
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </a>
+    <a *ngIf="!(profile$ | async)" [routerLink]="['/auth']" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B91C1C]">
+      Sign In
       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
       </svg>

@@ -26,7 +26,6 @@ export const routes: Routes = [
   },
   {
     path: 'profile',
-    canActivate: [verifiedUserGuard],
     loadComponent: () =>
       import('./pages/profile/profile-page.component').then(m => m.ProfilePageComponent)
   },

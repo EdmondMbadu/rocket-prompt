@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
@@ -32,7 +33,7 @@ interface PromptCard {
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.css'
 })
@@ -41,6 +42,7 @@ export class ProfilePageComponent {
   private readonly promptService = inject(PromptService);
   readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
 
   private readonly baseCategories: PromptCategory[] = [
     { label: 'All', value: 'all' },
@@ -65,9 +67,38 @@ export class ProfilePageComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
+  readonly newPromptModalOpen = signal(false);
+  readonly isEditingPrompt = signal(false);
+  readonly editingPromptId = signal<string | null>(null);
+  readonly isSavingPrompt = signal(false);
+  readonly promptFormError = signal<string | null>(null);
+  readonly deleteError = signal<string | null>(null);
+  readonly deletingPromptId = signal<string | null>(null);
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  private readonly createPromptDefaults = {
+    title: '',
+    tag: '',
+    customUrl: '',
+    content: ''
+  } as const;
+
+  readonly createPromptForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required]],
+    customUrl: [''],
+    content: ['', [Validators.required, Validators.minLength(10)]]
+  });
+
+  readonly tagQuery = signal('');
+  readonly tagQueryDebounced = signal('');
+  private tagQueryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  readonly customUrlError = signal<string | null>(null);
+  readonly isCheckingCustomUrl = signal(false);
+  private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly currentUser$ = this.authService.currentUser$;
   readonly profile$ = this.currentUser$.pipe(
@@ -112,6 +143,57 @@ export class ProfilePageComponent {
   readonly userPromptCount = computed(() => {
     return this.prompts().length;
   });
+
+  readonly tagSuggestions = computed(() => {
+    const term = String(this.tagQueryDebounced()).trim().toLowerCase();
+
+    if (!term) {
+      return [];
+    }
+
+    const termLetters = term.replace(/[^a-z]/gi, '');
+
+    if (!termLetters) {
+      return [];
+    }
+
+    return this.categories().filter(c => {
+      if (c.value === 'all') return false;
+      const candidate = String(c.value).toLowerCase().replace(/[^a-z]/gi, '');
+
+      if (candidate.includes(termLetters)) return true;
+
+      const distance = this.levenshteinDistance(termLetters, candidate);
+      const threshold = Math.max(1, Math.floor(candidate.length * 0.35));
+      return distance <= threshold;
+    });
+  });
+
+  private levenshteinDistance(a: string, b: string) {
+    if (a === b) return 0;
+    const al = a.length;
+    const bl = b.length;
+    if (al === 0) return bl;
+    if (bl === 0) return al;
+
+    const v0 = new Array(bl + 1).fill(0);
+    const v1 = new Array(bl + 1).fill(0);
+
+    for (let j = 0; j <= bl; j++) {
+      v0[j] = j;
+    }
+
+    for (let i = 0; i < al; i++) {
+      v1[0] = i + 1;
+      for (let j = 0; j < bl; j++) {
+        const cost = a.charAt(i) === b.charAt(j) ? 0 : 1;
+        v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+      }
+      for (let j = 0; j <= bl; j++) v0[j] = v1[j];
+    }
+
+    return v1[bl];
+  }
 
   constructor() {
     this.observePrompts();
@@ -305,8 +387,262 @@ export class ProfilePageComponent {
     }
   }
 
+  canEditPrompt(prompt: PromptCard): boolean {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+    return !prompt.authorId || prompt.authorId === currentUser.uid;
+  }
+
+  openEditPromptModal(prompt: PromptCard) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to edit a prompt.');
+      return;
+    }
+
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.promptFormError.set('You do not have permission to edit this prompt. Only the author can edit it.');
+      return;
+    }
+
+    this.closeMenu();
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.isEditingPrompt.set(true);
+    this.editingPromptId.set(prompt.id);
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: prompt.customUrl ?? '',
+      content: prompt.content
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.tagQuery.set('');
+    this.newPromptModalOpen.set(true);
+  }
+
+  async onDeletePrompt(prompt: PromptCard) {
+    if (this.deletingPromptId() === prompt.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.deleteError.set('You must be signed in to delete a prompt.');
+      return;
+    }
+
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.deleteError.set('You do not have permission to delete this prompt. Only the author can delete it.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${prompt.title}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingPromptId.set(prompt.id);
+    this.deleteError.set(null);
+
+    try {
+      await this.promptService.deletePrompt(prompt.id, currentUser.uid);
+    } catch (error) {
+      console.error('Failed to delete prompt', error);
+      this.deleteError.set(
+        error instanceof Error ? error.message : 'Could not delete the prompt. Please try again.'
+      );
+    } finally {
+      this.deletingPromptId.set(null);
+    }
+  }
+
+  closeCreatePromptModal() {
+    if (this.isSavingPrompt()) {
+      return;
+    }
+
+    this.newPromptModalOpen.set(false);
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+  }
+
+  async submitPromptForm() {
+    if (this.createPromptForm.invalid) {
+      this.createPromptForm.markAllAsTouched();
+      return;
+    }
+
+    const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
+    const trimmedCustomUrl = (customUrl ?? '').trim();
+
+    if (trimmedCustomUrl) {
+      const urlPattern = /^[a-z0-9-]+$/i;
+      if (!urlPattern.test(trimmedCustomUrl)) {
+        this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+        return;
+      }
+
+      const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+      if (reservedPaths.includes(trimmedCustomUrl.toLowerCase())) {
+        this.customUrlError.set('This URL is reserved. Please choose a different one.');
+        return;
+      }
+
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, this.editingPromptId());
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to verify custom URL', error);
+        this.promptFormError.set('Unable to verify custom URL availability. Please try again.');
+        return;
+      }
+    }
+
+    this.isSavingPrompt.set(true);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+
+    try {
+      const currentUser = this.authService.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to update a prompt.');
+      }
+
+      if (this.isEditingPrompt() && this.editingPromptId()) {
+        await this.promptService.updatePrompt(this.editingPromptId()!, {
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl
+        }, currentUser.uid);
+      }
+
+      const trimmedTag = (tag ?? '').trim();
+      if (trimmedTag && !this.categories().some(c => c.value === trimmedTag) && !this.baseCategoryValues.has(trimmedTag)) {
+        const next = [...this.categories(), { label: this.formatTagLabel(trimmedTag), value: trimmedTag }];
+        next.sort((a, b) => a.label.localeCompare(b.label));
+        this.categories.set(next);
+      }
+
+      this.resetCreatePromptForm();
+      this.isEditingPrompt.set(false);
+      this.editingPromptId.set(null);
+      this.newPromptModalOpen.set(false);
+    } catch (error) {
+      console.error('Failed to save prompt', error);
+      this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
+    } finally {
+      this.isSavingPrompt.set(false);
+    }
+  }
+
+  onTagInput(value: string) {
+    const raw = String(value ?? '');
+    this.tagQuery.set(raw);
+    this.clearDebounce();
+    this.tagQueryTimer = setTimeout(() => {
+      this.tagQueryDebounced.set(raw);
+      this.tagQueryTimer = null;
+    }, 180);
+  }
+
+  private clearDebounce() {
+    if (this.tagQueryTimer) {
+      clearTimeout(this.tagQueryTimer);
+      this.tagQueryTimer = null;
+    }
+  }
+
+  selectTagSuggestion(value: string) {
+    this.createPromptForm.controls.tag.setValue(value);
+    this.tagQuery.set('');
+    this.clearDebounce();
+    this.tagQueryDebounced.set('');
+  }
+
+  onCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+    
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+    }
+
+    if (!trimmed) {
+      this.customUrlError.set(null);
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.customUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    this.isCheckingCustomUrl.set(true);
+    this.customUrlError.set(null);
+    
+    this.customUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmed, this.editingPromptId());
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.customUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.customUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCustomUrl.set(false);
+      }
+    }, 500);
+  }
+
+  private clearCustomUrlDebounce() {
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+      this.customUrlTimer = null;
+    }
+  }
+
+  private resetCreatePromptForm() {
+    this.createPromptForm.reset({ ...this.createPromptDefaults });
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+  }
+
   @HostListener('document:keydown.escape')
   handleEscape() {
+    if (this.newPromptModalOpen()) {
+      this.closeCreatePromptModal();
+      return;
+    }
+
     if (this.menuOpen()) {
       this.closeMenu();
     }
@@ -316,6 +652,7 @@ export class ProfilePageComponent {
     this.currentUser$.pipe(
       switchMap(user => {
         if (!user) {
+          this.isLoadingPrompts.set(false);
           return of<Prompt[]>([]);
         }
         return this.promptService.promptsByAuthor$(user.uid);
@@ -347,6 +684,12 @@ export class ProfilePageComponent {
         this.syncCategories(prompts);
         this.isLoadingPrompts.set(false);
         this.loadPromptsError.set(null);
+        if (this.promptFormError()) {
+          this.promptFormError.set(null);
+        }
+        if (this.deleteError()) {
+          this.deleteError.set(null);
+        }
       },
       error: error => {
         console.error('Failed to load prompts', error);

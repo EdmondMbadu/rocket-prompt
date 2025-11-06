@@ -133,6 +133,19 @@
   color: #9333ea;
 }
 
+.menu-item--profile {
+  background: rgba(255, 255, 255, 0.5);
+  color: #334155;
+  border-color: rgba(148, 163, 184, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+.menu-item--profile:hover {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #1e293b;
+}
+
 /* Prompt Link Wrapper for Home Page - Smaller version */
 .prompt-link-wrapper-home {
   display: inline-flex;
@@ -211,6 +224,91 @@
   width: 12px;
   height: 12px;
   display: block;
+}
+
+.icon-button--primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.icon-button--primary:hover {
+  background: #bfdbfe;
+  color: #1e40af;
+}
+
+.icon-button--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.icon-button--danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+
+.icon-button--danger:hover {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.icon-button--danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.64);
+  backdrop-filter: blur(9px);
+  z-index: 50;
+}
+
+.modal-card {
+  position: relative;
+  width: min(100%, 40rem);
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 35px 80px -35px rgba(15, 23, 42, 0.65);
+  padding: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.86);
+  color: #475569;
+  transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease;
+}
+
+.modal-close:hover:not(:disabled) {
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(148, 163, 184, 0.55);
+  transform: rotate(3deg);
+}
+
+.modal-close:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .icon-button[data-tooltip] {
