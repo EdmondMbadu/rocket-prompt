@@ -714,7 +714,7 @@
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .action-section--collapsed {
@@ -861,7 +861,7 @@
     gap: 0.75rem;
     align-items: center;
     max-height: 500px;
-    overflow: hidden;
+    overflow: visible;
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin-top 0.3s ease;
     opacity: 1;
     margin-top: 0;
@@ -871,6 +871,10 @@
     max-height: 0;
     opacity: 0;
     margin-top: 0;
+    overflow: hidden;
+}
+
+.action-section--collapsed {
     overflow: hidden;
 }
 
@@ -920,7 +924,7 @@
     font-size: 0.875rem;
     transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
@@ -960,7 +964,6 @@
 
 .ai-platform-button--gpt:hover {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(16, 163, 127, 0.25), inset 0 0 0 1px rgba(16, 163, 127, 0.15);
 }
 
@@ -976,7 +979,6 @@
 
 .ai-platform-button--gemini:hover {
     background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25), inset 0 0 0 1px rgba(37, 99, 235, 0.15);
 }
 
@@ -992,7 +994,6 @@
 
 .ai-platform-button--claude:hover {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25), inset 0 0 0 1px rgba(220, 38, 38, 0.15);
 }
 
@@ -1008,7 +1009,6 @@
 
 .ai-platform-button--copy:hover {
     background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(100, 116, 139, 0.25), inset 0 0 0 1px rgba(100, 116, 139, 0.15);
 }
 
@@ -1029,7 +1029,7 @@
     font-size: 0.875rem;
     transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
@@ -1066,7 +1066,6 @@
 
 .social-share-button--copy:hover {
     background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(148, 163, 184, 0.25), inset 0 0 0 1px rgba(148, 163, 184, 0.3);
 }
 
@@ -1082,7 +1081,6 @@
 
 .social-share-button--facebook:hover {
     background: linear-gradient(135deg, #166fe5 0%, #1461d9 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(24, 119, 242, 0.4), inset 0 0 0 1px rgba(24, 119, 242, 0.3);
 }
 
@@ -1099,7 +1097,6 @@
 
 .social-share-button--twitter:hover {
     background: linear-gradient(135deg, #1a1a1a 0%, #262626 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
@@ -1116,7 +1113,6 @@
 
 .social-share-button--linkedin:hover {
     background: linear-gradient(135deg, #006399 0%, #005a87 100%);
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 119, 181, 0.4), inset 0 0 0 1px rgba(0, 119, 181, 0.3);
 }
 
@@ -1129,6 +1125,12 @@
 .ai-platform-button[data-tooltip],
 .social-share-button[data-tooltip] {
     position: relative;
+    z-index: 1;
+}
+
+.ai-platform-button[data-tooltip]:hover,
+.social-share-button[data-tooltip]:hover {
+    z-index: 10000;
 }
 
 .ai-platform-button[data-tooltip]::before,
@@ -1143,20 +1145,21 @@
 .ai-platform-button[data-tooltip]::before {
     content: '';
     position: absolute;
-    top: calc(100% + 0.35rem);
+    bottom: calc(100% + 0.35rem);
     left: 50%;
-    transform: translate(-50%, -6px);
+    transform: translate(-50%, 6px);
     border-width: 6px;
     border-style: solid;
-    border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
+    border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+    z-index: 9999;
 }
 
 .ai-platform-button[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    top: calc(100% + 0.75rem);
+    bottom: calc(100% + 0.75rem);
     left: 50%;
-    transform: translate(-50%, -6px);
+    transform: translate(-50%, 6px);
     background: rgba(15, 23, 42, 0.9);
     color: #f8fafc;
     padding: 0.2rem 0.55rem;
@@ -1164,27 +1167,28 @@
     font-size: 0.65rem;
     letter-spacing: 0.02em;
     white-space: nowrap;
-    z-index: 30;
+    z-index: 9999;
     box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
 }
 
 .social-share-button[data-tooltip]::before {
     content: '';
     position: absolute;
-    top: calc(100% + 0.35rem);
+    bottom: calc(100% + 0.35rem);
     left: 50%;
-    transform: translate(-50%, -6px);
+    transform: translate(-50%, 6px);
     border-width: 6px;
     border-style: solid;
-    border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
+    border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+    z-index: 9999;
 }
 
 .social-share-button[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    top: calc(100% + 0.75rem);
+    bottom: calc(100% + 0.75rem);
     left: 50%;
-    transform: translate(-50%, -6px);
+    transform: translate(-50%, 6px);
     background: rgba(15, 23, 42, 0.9);
     color: #f8fafc;
     padding: 0.2rem 0.55rem;
@@ -1192,7 +1196,7 @@
     font-size: 0.65rem;
     letter-spacing: 0.02em;
     white-space: nowrap;
-    z-index: 30;
+    z-index: 9999;
     box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
 }
 

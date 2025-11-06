@@ -132,7 +132,7 @@
                 </div>
                 <div class="action-section__actions">
                     <button type="button" class="ai-platform-button ai-platform-button--gpt"
-                        aria-label="Open in ChatGPT" data-tooltip="Open in ChatGPT" title="Open in ChatGPT"
+                        aria-label="Open in ChatGPT" title="open directly in ChatGpt"
                         (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" />
@@ -141,7 +141,7 @@
                     </button>
 
                     <button type="button" class="ai-platform-button ai-platform-button--gemini"
-                        aria-label="Open in Gemini" data-tooltip="Open in Gemini" title="Open in Gemini"
+                        aria-label="Open in Gemini" title="open and paste in Gemini"
                         (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
@@ -150,7 +150,7 @@
                     </button>
 
                     <button type="button" class="ai-platform-button ai-platform-button--claude"
-                        aria-label="Open in Claude" data-tooltip="Open in Claude" title="Open in Claude"
+                        aria-label="Open in Claude" title="open and paste in Claude"
                         (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
@@ -160,16 +160,14 @@
 
                     <button type="button" class="ai-platform-button ai-platform-button--copy"
                         [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.data-tooltip]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.title]="copied() ? 'Copied' : 'Copy prompt'"
-                        (click)="copyPrompt()">
+                        [attr.title]="copied() ? 'Copied' : 'Copy prompt for other AI'" (click)="copyPrompt()">
                         <div class="ai-platform-button__icon">
                             <svg *ngIf="!copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
                                     stroke-linejoin="round" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                                    stroke-linejoin="round" />
                             </svg>
                             <svg *ngIf="copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
                                 stroke="currentColor" stroke-width="2.2">
@@ -278,7 +276,8 @@
                 </div>
                 <div class="action-section__actions">
                     <button type="button" class="ai-platform-button ai-platform-button--gpt"
-                        aria-label="Open in ChatGPT" data-tooltip="Open in ChatGPT" title="Open in ChatGPT"
+                        aria-label="Open in ChatGPT" data-tooltip="open directly in ChatGpt"
+                        title="open directly in ChatGpt"
                         (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" />
@@ -287,7 +286,8 @@
                     </button>
 
                     <button type="button" class="ai-platform-button ai-platform-button--gemini"
-                        aria-label="Open in Gemini" data-tooltip="Open in Gemini" title="Open in Gemini"
+                        aria-label="Open in Gemini" data-tooltip="open and paste in Gemini"
+                        title="open and paste in Gemini"
                         (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
@@ -296,7 +296,8 @@
                     </button>
 
                     <button type="button" class="ai-platform-button ai-platform-button--claude"
-                        aria-label="Open in Claude" data-tooltip="Open in Claude" title="Open in Claude"
+                        aria-label="Open in Claude" data-tooltip="open and paste in Claude"
+                        title="open and paste in Claude"
                         (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
                         <div class="ai-platform-button__icon">
                             <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
@@ -306,16 +307,15 @@
 
                     <button type="button" class="ai-platform-button ai-platform-button--copy"
                         [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.data-tooltip]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.title]="copied() ? 'Copied' : 'Copy prompt'"
-                        (click)="copyPrompt()">
+                        [attr.data-tooltip]="copied() ? 'Copied' : 'Copy prompt for other AI'"
+                        [attr.title]="copied() ? 'Copied' : 'Copy prompt for other AI'" (click)="copyPrompt()">
                         <div class="ai-platform-button__icon">
                             <svg *ngIf="!copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
                                     stroke-linejoin="round" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                                    stroke-linejoin="round" />
                             </svg>
                             <svg *ngIf="copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
                                 stroke="currentColor" stroke-width="2.2">
@@ -329,8 +329,7 @@
 
             <!-- ACTIONS: Share this RocketPrompt (Bottom) - only show if prompt is longer than 100 words -->
             <div class="action-section action-section--share"
-                [class.action-section--collapsed]="!shareSectionExpanded()"
-                *ngIf="!isShortPrompt()">
+                [class.action-section--collapsed]="!shareSectionExpanded()" *ngIf="!isShortPrompt()">
                 <div class="action-section__header" (click)="toggleShareSection()">
                     <div class="action-section__icon-wrapper">
                         <svg aria-hidden="true" viewBox="0 0 24 24" class="action-section__svg-icon" fill="none"
