@@ -73,6 +73,29 @@
                 </div>
             </div>
 
+            <!-- Author section -->
+            <div *ngIf="prompt()?.authorId" class="author-section">
+                <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId, $event)"
+                    class="author-avatar-button"
+                    [attr.aria-label]="'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
+                    title="View author profile">
+                    <span class="author-avatar-initials">{{ getAuthorInitials() }}</span>
+                </button>
+                <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId, $event)"
+                    class="author-name-button"
+                    [attr.aria-label]="'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
+                    title="View author profile">
+                    <span class="author-name-text">
+                        <ng-container *ngIf="getAuthorProfile(); else loadingName">
+                            {{ getAuthorProfile()?.firstName }} {{ getAuthorProfile()?.lastName }}
+                        </ng-container>
+                        <ng-template #loadingName>
+                            <span class="text-slate-400">Author</span>
+                        </ng-template>
+                    </span>
+                </button>
+            </div>
+
             <div class="meta">
                 <div class="meta-left">
                     <!-- views hidden for now -->

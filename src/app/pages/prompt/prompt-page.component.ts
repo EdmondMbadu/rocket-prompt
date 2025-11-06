@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
 import { AuthService } from '../../services/auth.service';
 import type { Prompt } from '../../models/prompt.model';
+import type { UserProfile } from '../../models/user-profile.model';
 
 @Component({
   selector: 'app-prompt-page',
@@ -25,6 +26,7 @@ export class PromptPageComponent {
   readonly prompt = signal<Prompt | undefined>(undefined);
   readonly shareModalOpen = signal(false);
   readonly currentUser = signal(this.authService.currentUser);
+  readonly authorProfile = signal<UserProfile | undefined>(undefined);
 
   // Provide like state
   readonly liked = signal(false);
@@ -280,6 +282,11 @@ export class PromptPageComponent {
       this.loadError.set(null);
       this.isLoading.set(false);
       
+      // Load author profile if authorId exists
+      if (found.authorId) {
+        void this.loadAuthorProfile(found.authorId);
+      }
+      
       // determine whether current actor already liked this prompt
       void this.updateLikedState(found.id);
     } catch (error) {
@@ -386,5 +393,47 @@ export class PromptPageComponent {
 
   toggleShareSection() {
     this.shareSectionExpanded.update(v => !v);
+  }
+
+  // Author profile methods
+  private async loadAuthorProfile(authorId: string) {
+    try {
+      const profile = await this.authService.fetchUserProfile(authorId);
+      this.authorProfile.set(profile || undefined);
+    } catch (error) {
+      console.error('Failed to load author profile', error);
+      this.authorProfile.set(undefined);
+    }
+  }
+
+  getAuthorProfile(): UserProfile | undefined {
+    return this.authorProfile();
+  }
+
+  getAuthorInitials(): string {
+    const profile = this.getAuthorProfile();
+    if (!profile) {
+      return 'RP';
+    }
+
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  async navigateToAuthorProfile(authorId: string, event: Event) {
+    event.stopPropagation();
+    if (authorId) {
+      // Try to get the profile to get the username
+      const profile = await this.authService.fetchUserProfile(authorId);
+      if (profile?.username) {
+        void this.router.navigate(['/profile', profile.username]);
+      } else {
+        // Fallback to userId if username not available
+        void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      }
+    }
   }
 }
