@@ -45,6 +45,42 @@ export class CollectionService {
     });
   }
 
+  collectionsByAuthor$(authorId: string): Observable<PromptCollection[]> {
+    const trimmedAuthorId = authorId?.trim();
+    
+    return new Observable<PromptCollection[]>((subscriber) => {
+      if (!trimmedAuthorId) {
+        subscriber.next([]);
+        subscriber.complete();
+        return;
+      }
+
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'collections');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('authorId', '==', trimmedAuthorId),
+            firestoreModule.orderBy('createdAt', 'desc')
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const collections = snapshot.docs.map((doc) => this.mapCollection(doc, firestoreModule));
+              subscriber.next(collections);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
   collection$(id: string): Observable<PromptCollection | undefined> {
     const trimmedId = id?.trim();
 

@@ -320,6 +320,34 @@
   display: block;
 }
 
+/* Profile Tabs */
+.profile-tab {
+  position: relative;
+  padding: 12px 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.profile-tab:hover {
+  color: #334155;
+}
+
+.profile-tab--active {
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom-color: #DC2626;
+}
+
+.profile-tab--active:hover {
+  color: #1e293b;
+}
+
 .icon-button--primary {
   background: #dbeafe;
   color: #1d4ed8;

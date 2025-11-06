@@ -7,8 +7,10 @@ import { map, switchMap } from 'rxjs/operators';
 import { of, combineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
+import { CollectionService } from '../../services/collection.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
 
 interface PromptCategory {
@@ -42,6 +44,7 @@ interface PromptCard {
 export class ProfilePageComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
+  private readonly collectionService = inject(CollectionService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -67,8 +70,12 @@ export class ProfilePageComponent {
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
+  readonly activeTab = signal<'prompts' | 'collections'>('prompts');
   readonly isLoadingPrompts = signal(true);
   readonly loadPromptsError = signal<string | null>(null);
+  readonly collections = signal<PromptCollection[]>([]);
+  readonly isLoadingCollections = signal(false);
+  readonly loadCollectionsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
   readonly profileUrlCopied = signal(false);
@@ -292,7 +299,55 @@ export class ProfilePageComponent {
 
   constructor() {
     this.observePrompts();
+    this.observeCollections();
   }
+
+  selectTab(tab: 'prompts' | 'collections') {
+    this.activeTab.set(tab);
+  }
+
+  private observeCollections() {
+    combineLatest([this.route.params, this.route.queryParams, this.profile$]).pipe(
+      switchMap(([params, queryParams, profile]) => {
+        if (!profile) {
+          this.collections.set([]);
+          this.isLoadingCollections.set(false);
+          return of<PromptCollection[]>([]);
+        }
+
+        const username = params['username'];
+        const userId = queryParams['userId'];
+        const authorId = profile.userId || profile.id || userId || '';
+
+        if (!authorId) {
+          this.collections.set([]);
+          this.isLoadingCollections.set(false);
+          return of<PromptCollection[]>([]);
+        }
+
+        this.isLoadingCollections.set(true);
+        this.loadCollectionsError.set(null);
+
+        return this.collectionService.collectionsByAuthor$(authorId);
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: collections => {
+        this.collections.set(collections);
+        this.isLoadingCollections.set(false);
+        this.loadCollectionsError.set(null);
+      },
+      error: error => {
+        console.error('Failed to load collections', error);
+        this.isLoadingCollections.set(false);
+        this.loadCollectionsError.set('We could not load collections. Please try again.');
+      }
+    });
+  }
+
+  readonly userCollectionCount = computed(() => {
+    return this.collections().length;
+  });
 
   async copyPromptUrl(prompt: PromptCard) {
     if (!prompt) return;
