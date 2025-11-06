@@ -5,9 +5,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import type { Prompt } from '../../models/prompt.model';
+import type { UserProfile } from '../../models/user-profile.model';
 
 interface LikedPromptCard {
   readonly id: string;
+  readonly authorId: string;
   readonly title: string;
   readonly content: string;
   readonly preview: string;
@@ -15,6 +17,7 @@ interface LikedPromptCard {
   readonly tagLabel: string;
   readonly likes: number;
   readonly customUrl?: string;
+  readonly authorProfile?: UserProfile;
 }
 
 @Component({
@@ -31,6 +34,7 @@ export class LikedPromptsPageComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly likedPrompts = signal<LikedPromptCard[]>([]);
+  readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly searchTerm = signal('');
@@ -188,7 +192,9 @@ export class LikedPromptsPageComponent {
         return;
       }
 
-      this.likedPrompts.set(prompts.map(prompt => this.mapPromptToCard(prompt)));
+      const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
+      this.likedPrompts.set(cards);
+      this.loadAuthorProfiles(prompts);
       this.lastLoadedActor = actor;
     } catch (error) {
       if (this.loadRequestId !== requestId) {
@@ -227,18 +233,87 @@ export class LikedPromptsPageComponent {
     }
   }
 
+  getAuthorProfile(authorId: string): UserProfile | undefined {
+    return this.authorProfiles().get(authorId);
+  }
+
+  getAuthorInitials(authorId: string): string {
+    const profile = this.getAuthorProfile(authorId);
+    if (!profile) {
+      return 'RP';
+    }
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  navigateToAuthorProfile(authorId: string, event: Event) {
+    event.stopPropagation();
+    if (authorId) {
+      void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+    }
+  }
+
+  private loadAuthorProfiles(prompts: readonly Prompt[]) {
+    const uniqueAuthorIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.authorId) {
+        uniqueAuthorIds.add(prompt.authorId);
+      }
+    });
+
+    const profilesMap = new Map(this.authorProfiles());
+    const profilesToLoad: string[] = [];
+
+    uniqueAuthorIds.forEach(authorId => {
+      if (!profilesMap.has(authorId)) {
+        profilesToLoad.push(authorId);
+      }
+    });
+
+    if (profilesToLoad.length === 0) {
+      return;
+    }
+
+    Promise.all(
+      profilesToLoad.map(authorId =>
+        this.authService.fetchUserProfile(authorId).then(profile => ({
+          authorId,
+          profile
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(profilesMap);
+      results.forEach(({ authorId, profile }) => {
+        if (profile) {
+          updatedMap.set(authorId, profile);
+        }
+      });
+      this.authorProfiles.set(updatedMap);
+      
+      const updatedCards = this.likedPrompts().map(card => ({
+        ...card,
+        authorProfile: card.authorId ? updatedMap.get(card.authorId) : undefined
+      }));
+      this.likedPrompts.set(updatedCards);
+    });
+  }
+
   private mapPromptToCard(prompt: Prompt): LikedPromptCard {
     const tag = prompt.tag || 'general';
 
     return {
       id: prompt.id,
+      authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
       preview: this.buildPreview(prompt.content),
       tag,
       tagLabel: this.formatTagLabel(tag),
       likes: prompt.likes ?? 0,
-      customUrl: prompt.customUrl
+      customUrl: prompt.customUrl,
+      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
     };
   }
 

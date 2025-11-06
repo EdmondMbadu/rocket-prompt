@@ -105,6 +105,33 @@
               {{ prompt.tagLabel }}
             </span>
 
+            <!-- Author section -->
+            <div *ngIf="prompt.authorId" class="mt-3 flex items-center gap-2.5">
+              <button
+                type="button"
+                (click)="navigateToAuthorProfile(prompt.authorId, $event)"
+                class="author-avatar-button"
+                [attr.aria-label]="'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
+                title="View author profile">
+                <span class="author-avatar-initials">{{ getAuthorInitials(prompt.authorId) }}</span>
+              </button>
+              <button
+                type="button"
+                (click)="navigateToAuthorProfile(prompt.authorId, $event)"
+                class="author-name-button"
+                [attr.aria-label]="'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
+                title="View author profile">
+                <span class="author-name-text">
+                  <ng-container *ngIf="getAuthorProfile(prompt.authorId); else loadingName">
+                    {{ getAuthorProfile(prompt.authorId)?.firstName }} {{ getAuthorProfile(prompt.authorId)?.lastName }}
+                  </ng-container>
+                  <ng-template #loadingName>
+                    <span class="text-slate-400">Author</span>
+                  </ng-template>
+                </span>
+              </button>
+            </div>
+
             <h3 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">
               {{ prompt.title }}
             </h3>

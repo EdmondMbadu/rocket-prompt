@@ -28,6 +28,7 @@ interface PromptCard {
   readonly likes: number;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
+  readonly authorProfile?: UserProfile;
 }
 
 @Component({
@@ -60,6 +61,7 @@ export class ProfilePageComponent {
   readonly hiddenCategories = signal<Set<string>>(new Set());
 
   readonly prompts = signal<PromptCard[]>([]);
+  readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
 
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
@@ -369,6 +371,22 @@ export class ProfilePageComponent {
     const initials = `${firstInitial}${lastInitial}`.trim();
 
     return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  getAuthorProfile(authorId: string): UserProfile | undefined {
+    return this.authorProfiles().get(authorId);
+  }
+
+  getAuthorInitials(authorId: string): string {
+    const profile = this.getAuthorProfile(authorId);
+    return this.profileInitials(profile);
+  }
+
+  navigateToAuthorProfile(authorId: string, event: Event) {
+    event.stopPropagation();
+    if (authorId) {
+      void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+    }
   }
 
   openPrompt(prompt: PromptCard) {
@@ -709,22 +727,70 @@ export class ProfilePageComponent {
           }
         }
 
-        this.prompts.set(cards);
-        this.syncCategories(prompts);
-        this.isLoadingPrompts.set(false);
-        this.loadPromptsError.set(null);
-        if (this.promptFormError()) {
-          this.promptFormError.set(null);
-        }
-        if (this.deleteError()) {
-          this.deleteError.set(null);
-        }
-      },
+          this.prompts.set(cards);
+          this.syncCategories(prompts);
+          this.loadAuthorProfiles(prompts);
+          this.isLoadingPrompts.set(false);
+          this.loadPromptsError.set(null);
+          if (this.promptFormError()) {
+            this.promptFormError.set(null);
+          }
+          if (this.deleteError()) {
+            this.deleteError.set(null);
+          }
+        },
       error: error => {
         console.error('Failed to load prompts', error);
         this.isLoadingPrompts.set(false);
         this.loadPromptsError.set('We could not load your prompts. Please try again.');
       }
+    });
+  }
+
+  private loadAuthorProfiles(prompts: readonly Prompt[]) {
+    const uniqueAuthorIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.authorId) {
+        uniqueAuthorIds.add(prompt.authorId);
+      }
+    });
+
+    const profilesMap = new Map(this.authorProfiles());
+    const profilesToLoad: string[] = [];
+
+    uniqueAuthorIds.forEach(authorId => {
+      if (!profilesMap.has(authorId)) {
+        profilesToLoad.push(authorId);
+      }
+    });
+
+    if (profilesToLoad.length === 0) {
+      return;
+    }
+
+    // Load profiles in parallel
+    Promise.all(
+      profilesToLoad.map(authorId =>
+        this.authService.fetchUserProfile(authorId).then(profile => ({
+          authorId,
+          profile
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(profilesMap);
+      results.forEach(({ authorId, profile }) => {
+        if (profile) {
+          updatedMap.set(authorId, profile);
+        }
+      });
+      this.authorProfiles.set(updatedMap);
+      
+      // Update prompt cards with author profiles
+      const updatedCards = this.prompts().map(card => ({
+        ...card,
+        authorProfile: card.authorId ? updatedMap.get(card.authorId) : undefined
+      }));
+      this.prompts.set(updatedCards);
     });
   }
 
@@ -743,7 +809,8 @@ export class ProfilePageComponent {
       views: prompt.views ?? 0,
       likes: prompt.likes ?? 0,
       createdAt: prompt.createdAt,
-      updatedAt: prompt.updatedAt
+      updatedAt: prompt.updatedAt,
+      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
     };
   }
 

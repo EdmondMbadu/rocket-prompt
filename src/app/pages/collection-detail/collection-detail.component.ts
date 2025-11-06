@@ -13,12 +13,14 @@ import type { UserProfile } from '../../models/user-profile.model';
 
 interface PromptCard {
   readonly id: string;
+  readonly authorId: string;
   readonly title: string;
   readonly content: string;
   readonly preview: string;
   readonly tag: string;
   readonly tagLabel: string;
   readonly customUrl?: string;
+  readonly authorProfile?: UserProfile;
 }
 
 interface PromptOption {
@@ -53,6 +55,7 @@ export class CollectionDetailComponent {
   readonly isLoadingCollection = signal(true);
   readonly collectionNotFound = signal(false);
   readonly prompts = signal<PromptCard[]>([]);
+  readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
   readonly isLoadingPrompts = signal(true);
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
@@ -398,6 +401,7 @@ export class CollectionDetailComponent {
       .subscribe({
         next: prompts => {
           const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
+          this.loadAuthorProfiles(prompts);
           this.prompts.set(cards);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
@@ -456,17 +460,86 @@ export class CollectionDetailComponent {
     };
   }
 
+  getAuthorProfile(authorId: string): UserProfile | undefined {
+    return this.authorProfiles().get(authorId);
+  }
+
+  getAuthorInitials(authorId: string): string {
+    const profile = this.getAuthorProfile(authorId);
+    if (!profile) {
+      return 'RP';
+    }
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  navigateToAuthorProfile(authorId: string, event: Event) {
+    event.stopPropagation();
+    if (authorId) {
+      void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+    }
+  }
+
+  private loadAuthorProfiles(prompts: readonly Prompt[]) {
+    const uniqueAuthorIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.authorId) {
+        uniqueAuthorIds.add(prompt.authorId);
+      }
+    });
+
+    const profilesMap = new Map(this.authorProfiles());
+    const profilesToLoad: string[] = [];
+
+    uniqueAuthorIds.forEach(authorId => {
+      if (!profilesMap.has(authorId)) {
+        profilesToLoad.push(authorId);
+      }
+    });
+
+    if (profilesToLoad.length === 0) {
+      return;
+    }
+
+    Promise.all(
+      profilesToLoad.map(authorId =>
+        this.authService.fetchUserProfile(authorId).then(profile => ({
+          authorId,
+          profile
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(profilesMap);
+      results.forEach(({ authorId, profile }) => {
+        if (profile) {
+          updatedMap.set(authorId, profile);
+        }
+      });
+      this.authorProfiles.set(updatedMap);
+      
+      const updatedCards = this.prompts().map(card => ({
+        ...card,
+        authorProfile: card.authorId ? updatedMap.get(card.authorId) : undefined
+      }));
+      this.prompts.set(updatedCards);
+    });
+  }
+
   private mapPromptToCard(prompt: Prompt): PromptCard {
     const tag = prompt.tag || 'general';
 
     return {
       id: prompt.id,
+      authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
       preview: this.buildPreview(prompt.content),
       tag,
       tagLabel: this.formatTagLabel(tag),
-      customUrl: prompt.customUrl
+      customUrl: prompt.customUrl,
+      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
     };
   }
 
