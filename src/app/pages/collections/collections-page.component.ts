@@ -298,6 +298,8 @@ export class CollectionsPageComponent {
         }
 
         const { name, tag, promptIds } = this.collectionForm.getRawValue();
+        const currentUser = this.authService.currentUser;
+        const authorId = currentUser?.uid;
 
         this.isSavingCollection.set(true);
         this.collectionFormError.set(null);
@@ -307,7 +309,7 @@ export class CollectionsPageComponent {
                 name,
                 tag,
                 promptIds
-            });
+            }, authorId);
 
             this.newCollectionModalOpen.set(false);
             this.collectionForm.reset({

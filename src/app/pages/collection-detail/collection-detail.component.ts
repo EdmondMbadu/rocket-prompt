@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { map, distinctUntilChanged, switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { map, distinctUntilChanged, switchMap, combineLatest } from 'rxjs/operators';
+import { of, combineLatest as rxjsCombineLatest } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CollectionService } from '../../services/collection.service';
 import { PromptService } from '../../services/prompt.service';
@@ -19,6 +19,13 @@ interface PromptCard {
   readonly tag: string;
   readonly tagLabel: string;
   readonly customUrl?: string;
+}
+
+interface PromptOption {
+  readonly id: string;
+  readonly title: string;
+  readonly tag: string;
+  readonly tagLabel: string;
 }
 
 @Component({
@@ -54,6 +61,16 @@ export class CollectionDetailComponent {
   readonly bookmarking = signal(false);
   readonly clientId = signal('');
   readonly copiedPromptUrl = signal<Set<string>>(new Set());
+  readonly editModalOpen = signal(false);
+  readonly editModalTab = signal<'remove' | 'add'>('remove');
+  readonly selectedPromptsToRemove = signal<Set<string>>(new Set());
+  readonly selectedPromptsToAdd = signal<Set<string>>(new Set());
+  readonly isUpdatingCollection = signal(false);
+  readonly updateCollectionError = signal<string | null>(null);
+  readonly availablePromptsForAdd = signal<PromptOption[]>([]);
+  readonly isLoadingAvailablePrompts = signal(true);
+  readonly loadAvailablePromptsError = signal<string | null>(null);
+  readonly promptAddSearchTerm = signal('');
 
   readonly actorId = computed(() => {
     const user = this.authService.currentUser;
@@ -69,6 +86,19 @@ export class CollectionDetailComponent {
   readonly isLoggedIn = computed(() => {
     return !!this.profile();
   });
+
+  // Check if current user is the author of the collection
+  readonly isAuthor = computed(() => {
+    const collection = this.collection();
+    const currentUser = this.authService.currentUser;
+    if (!collection || !currentUser) {
+      return false;
+    }
+    return collection.authorId === currentUser.uid;
+  });
+
+  readonly canEdit = computed(() => this.isAuthor());
+  readonly canDelete = computed(() => this.isAuthor());
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly promptUrlCopyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -104,6 +134,7 @@ export class CollectionDetailComponent {
     this.ensureClientId();
     this.observeCollection();
     this.observePrompts();
+    this.observeAvailablePrompts();
 
     this.currentUser$
       .pipe(
@@ -206,7 +237,7 @@ export class CollectionDetailComponent {
     void this.router.navigate(['/collections']);
   }
 
-  trackPromptById(_: number, prompt: PromptCard) {
+  trackPromptById(_: number, prompt: PromptCard | PromptOption | { id: string }) {
     return prompt.id;
   }
 
@@ -294,6 +325,10 @@ export class CollectionDetailComponent {
 
   @HostListener('document:keydown.escape')
   handleEscape() {
+    if (this.editModalOpen()) {
+      this.closeEditModal();
+      return;
+    }
     if (this.menuOpen()) {
       this.closeMenu();
     }
@@ -373,6 +408,52 @@ export class CollectionDetailComponent {
           this.loadPromptsError.set('We could not load prompts for this collection.');
         }
       });
+  }
+
+  private observeAvailablePrompts() {
+    rxjsCombineLatest([
+      this.promptService.prompts$(),
+      this.route.paramMap.pipe(
+        map(params => params.get('id')),
+        distinctUntilChanged(),
+        switchMap(id => {
+          if (!id) {
+            return of<PromptCollection | null>(null);
+          }
+          return this.collectionService.collection$(id);
+        })
+      )
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ([prompts, collection]) => {
+          const collectionPromptIds = new Set(collection?.promptIds ?? []);
+          
+          // Filter out prompts that are already in the collection
+          const available = prompts
+            .filter(prompt => !collectionPromptIds.has(prompt.id))
+            .map(prompt => this.mapPromptToOption(prompt));
+          
+          this.availablePromptsForAdd.set(available);
+          this.isLoadingAvailablePrompts.set(false);
+          this.loadAvailablePromptsError.set(null);
+        },
+        error: error => {
+          console.error('Failed to load available prompts', error);
+          this.isLoadingAvailablePrompts.set(false);
+          this.loadAvailablePromptsError.set('We could not load available prompts.');
+        }
+      });
+  }
+
+  private mapPromptToOption(prompt: Prompt): PromptOption {
+    const tag = prompt.tag || 'general';
+    return {
+      id: prompt.id,
+      title: prompt.title,
+      tag,
+      tagLabel: this.formatTagLabel(tag)
+    };
   }
 
   private mapPromptToCard(prompt: Prompt): PromptCard {
@@ -550,6 +631,188 @@ export class CollectionDetailComponent {
     } catch (error) {
       console.error('Failed to determine collection bookmarked state', error);
       this.bookmarked.set(false);
+    }
+  }
+
+  openEditModal() {
+    this.editModalOpen.set(true);
+    this.editModalTab.set('remove');
+    this.selectedPromptsToRemove.set(new Set());
+    this.selectedPromptsToAdd.set(new Set());
+    this.updateCollectionError.set(null);
+    this.promptAddSearchTerm.set('');
+  }
+
+  closeEditModal() {
+    if (this.isUpdatingCollection()) {
+      return;
+    }
+    this.editModalOpen.set(false);
+    this.editModalTab.set('remove');
+    this.selectedPromptsToRemove.set(new Set());
+    this.selectedPromptsToAdd.set(new Set());
+    this.updateCollectionError.set(null);
+    this.promptAddSearchTerm.set('');
+  }
+
+  togglePromptSelectionForRemoval(promptId: string) {
+    this.selectedPromptsToRemove.update(prev => {
+      const next = new Set(prev);
+      if (next.has(promptId)) {
+        next.delete(promptId);
+      } else {
+        next.add(promptId);
+      }
+      return next;
+    });
+  }
+
+  isPromptSelectedForRemoval(promptId: string): boolean {
+    return this.selectedPromptsToRemove().has(promptId);
+  }
+
+  togglePromptSelectionForAdd(promptId: string) {
+    this.selectedPromptsToAdd.update(prev => {
+      const next = new Set(prev);
+      if (next.has(promptId)) {
+        next.delete(promptId);
+      } else {
+        next.add(promptId);
+      }
+      return next;
+    });
+  }
+
+  isPromptSelectedForAdd(promptId: string): boolean {
+    return this.selectedPromptsToAdd().has(promptId);
+  }
+
+  onPromptAddSearch(value: string) {
+    this.promptAddSearchTerm.set(value);
+  }
+
+  readonly filteredPromptsToAdd = computed(() => {
+    const term = this.promptAddSearchTerm().trim().toLowerCase();
+    const prompts = this.availablePromptsForAdd();
+
+    if (!term) {
+      return prompts;
+    }
+
+    return prompts.filter(prompt => {
+      const haystack = [prompt.title, prompt.tag, prompt.tagLabel].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+  });
+
+  async removeSelectedPrompts() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    const selectedIds = Array.from(this.selectedPromptsToRemove());
+    if (selectedIds.length === 0) {
+      this.updateCollectionError.set('Please select at least one prompt to remove.');
+      return;
+    }
+
+    // Calculate new promptIds by removing selected ones
+    const currentPromptIds = collection.promptIds ?? [];
+    const remainingPromptIds = currentPromptIds.filter(id => !selectedIds.includes(id));
+
+    if (remainingPromptIds.length === 0) {
+      this.updateCollectionError.set('A collection must contain at least one prompt.');
+      return;
+    }
+
+    this.isUpdatingCollection.set(true);
+    this.updateCollectionError.set(null);
+
+    try {
+      await this.collectionService.updateCollection(
+        collection.id,
+        { promptIds: remainingPromptIds },
+        currentUser.uid
+      );
+      this.closeEditModal();
+    } catch (error) {
+      console.error('Failed to update collection', error);
+      this.updateCollectionError.set(
+        error instanceof Error ? error.message : 'Failed to update collection. Please try again.'
+      );
+    } finally {
+      this.isUpdatingCollection.set(false);
+    }
+  }
+
+  async addSelectedPrompts() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    const selectedIds = Array.from(this.selectedPromptsToAdd());
+    if (selectedIds.length === 0) {
+      this.updateCollectionError.set('Please select at least one prompt to add.');
+      return;
+    }
+
+    // Calculate new promptIds by adding selected ones (avoid duplicates)
+    const currentPromptIds = collection.promptIds ?? [];
+    const newPromptIds = Array.from(new Set([...currentPromptIds, ...selectedIds]));
+
+    this.isUpdatingCollection.set(true);
+    this.updateCollectionError.set(null);
+
+    try {
+      await this.collectionService.updateCollection(
+        collection.id,
+        { promptIds: newPromptIds },
+        currentUser.uid
+      );
+      this.closeEditModal();
+    } catch (error) {
+      console.error('Failed to update collection', error);
+      this.updateCollectionError.set(
+        error instanceof Error ? error.message : 'Failed to update collection. Please try again.'
+      );
+    } finally {
+      this.isUpdatingCollection.set(false);
+    }
+  }
+
+  async deleteCollection() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await this.collectionService.deleteCollection(collection.id, currentUser.uid);
+      await this.router.navigate(['/collections']);
+    } catch (error) {
+      console.error('Failed to delete collection', error);
+      alert(error instanceof Error ? error.message : 'Failed to delete collection. Please try again.');
     }
   }
 }

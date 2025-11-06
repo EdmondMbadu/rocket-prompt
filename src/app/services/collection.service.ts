@@ -79,7 +79,7 @@ export class CollectionService {
     });
   }
 
-  async createCollection(input: CreateCollectionInput): Promise<string> {
+  async createCollection(input: CreateCollectionInput, authorId?: string): Promise<string> {
     const name = input.name?.trim();
     const tag = input.tag?.trim();
     const promptIds = Array.isArray(input.promptIds) ? input.promptIds.filter(Boolean) : [];
@@ -111,19 +111,49 @@ export class CollectionService {
       updatedAt: timestamp
     };
 
+    if (authorId) {
+      payload['authorId'] = authorId.trim();
+    }
+
     const docRef = await firestoreModule.addDoc(
       firestoreModule.collection(firestore, 'collections'),
       payload
     );
 
+    // Update the document with its own ID (collectionId)
+    await firestoreModule.updateDoc(docRef, {
+      collectionId: docRef.id
+    });
+
     return docRef.id;
   }
 
-  async updateCollection(id: string, input: UpdateCollectionInput): Promise<void> {
+  async updateCollection(id: string, input: UpdateCollectionInput, userId?: string): Promise<void> {
     const trimmedId = id?.trim();
 
     if (!trimmedId) {
       throw new Error('A collection id is required to update a collection.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to edit collections.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only edit collections you created.');
+      }
     }
 
     const updatePayload: Record<string, unknown> = {};
@@ -156,17 +186,12 @@ export class CollectionService {
       return;
     }
 
-    const { firestore, firestoreModule } = await this.getFirestoreContext();
-
     updatePayload['updatedAt'] = firestoreModule.serverTimestamp();
 
-    await firestoreModule.updateDoc(
-      firestoreModule.doc(firestore, 'collections', trimmedId),
-      updatePayload
-    );
+    await firestoreModule.updateDoc(docRef, updatePayload);
   }
 
-  async deleteCollection(id: string): Promise<void> {
+  async deleteCollection(id: string, userId?: string): Promise<void> {
     const trimmedId = id?.trim();
 
     if (!trimmedId) {
@@ -175,6 +200,25 @@ export class CollectionService {
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
     const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to delete collections.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only delete collections you created.');
+      }
+    }
+
     await firestoreModule.deleteDoc(docRef);
   }
 
@@ -205,6 +249,8 @@ export class CollectionService {
     const bookmarkCountValue = data['bookmarkCount'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
+    const authorIdValue = data['authorId'];
+    const collectionIdValue = data['collectionId'];
 
     return {
       id,
@@ -215,7 +261,9 @@ export class CollectionService {
         : [],
       bookmarkCount: typeof bookmarkCountValue === 'number' ? bookmarkCountValue : 0,
       createdAt: this.toDate(createdAtValue, firestoreModule),
-      updatedAt: this.toDate(updatedAtValue, firestoreModule)
+      updatedAt: this.toDate(updatedAtValue, firestoreModule),
+      authorId: typeof authorIdValue === 'string' ? authorIdValue : undefined,
+      collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined
     };
   }
 

@@ -6,6 +6,8 @@ export interface PromptCollection {
   readonly bookmarkCount: number;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
+  readonly authorId?: string;
+  readonly collectionId?: string;
 }
 
 export interface CreateCollectionInput {

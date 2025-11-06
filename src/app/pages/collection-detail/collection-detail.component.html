@@ -94,7 +94,7 @@
         </div>
 
         <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+          <div class="flex-1">
             <div class="flex flex-wrap items-center gap-3">
               <span
                 class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
@@ -115,9 +115,34 @@
                 <span>{{ collection()?.bookmarkCount || 0 }}</span>
               </button>
             </div>
-            <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              {{ collection()?.name || 'Collection' }}
-            </h1>
+            <div class="mt-3 flex items-center gap-3 flex-wrap">
+              <h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+                {{ collection()?.name || 'Collection' }}
+              </h1>
+              <div *ngIf="canEdit()" class="flex items-center gap-2">
+                <button type="button"
+                  class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                  (click)="openEditModal()" title="Edit collection">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none"
+                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <span>Edit</span>
+                </button>
+                <button type="button"
+                  class="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-white px-3 py-1.5 text-sm font-semibold text-red-600 transition hover:border-red-400 hover:bg-red-50"
+                  (click)="deleteCollection()" title="Delete collection">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="w-full max-w-md">
@@ -272,3 +297,217 @@
     </div>
   </div>
 </ng-template>
+
+<!-- Edit Collection Modal -->
+<div *ngIf="editModalOpen()" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+  aria-modal="true">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" (click)="closeEditModal()"></div>
+
+    <!-- Modal -->
+    <div class="relative z-10 w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
+      <div class="px-6 py-5 sm:px-8 sm:py-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-semibold text-slate-900" id="modal-title">
+            Edit Collection
+          </h3>
+          <button type="button"
+            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            (click)="closeEditModal()" [disabled]="isUpdatingCollection()">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="updateCollectionError()"
+          class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ updateCollectionError() }}
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6 flex gap-2 border-b border-slate-200">
+          <button type="button" class="px-4 py-2 text-sm font-semibold transition-colors border-b-2"
+            [class.text-slate-900]="editModalTab() === 'remove'" [class.text-slate-400]="editModalTab() !== 'remove'"
+            [class.border-[#DC2626]]="editModalTab() === 'remove'"
+            [class.border-transparent]="editModalTab() !== 'remove'" [disabled]="isUpdatingCollection()"
+            (click)="editModalTab.set('remove')">
+            Remove Prompts
+          </button>
+          <button type="button" class="px-4 py-2 text-sm font-semibold transition-colors border-b-2"
+            [class.text-slate-900]="editModalTab() === 'add'" [class.text-slate-400]="editModalTab() !== 'add'"
+            [class.border-[#DC2626]]="editModalTab() === 'add'" [class.border-transparent]="editModalTab() !== 'add'"
+            [disabled]="isUpdatingCollection()" (click)="editModalTab.set('add')">
+            Add Prompts
+          </button>
+        </div>
+
+        <!-- Instructions -->
+        <p class="mb-6 text-sm text-slate-600" *ngIf="editModalTab() === 'remove'">
+          Select the prompts you want to remove from this collection. At least one prompt must remain.
+        </p>
+        <p class="mb-6 text-sm text-slate-600" *ngIf="editModalTab() === 'add'">
+          Select prompts to add to this collection. Prompts already in the collection are not shown.
+        </p>
+
+        <!-- Remove Prompts Section -->
+        <ng-container *ngIf="editModalTab() === 'remove'">
+          <div
+            class="max-h-96 overflow-y-auto space-y-2 mb-6 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+            <ng-container *ngIf="collectionPrompts().length > 0; else noPromptsToRemove">
+              <div *ngFor="let prompt of collectionPrompts(); trackBy: trackPromptById"
+                [class.prompt-option-selected]="isPromptSelectedForRemoval(prompt.id)"
+                class="prompt-option flex items-start gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0 transition-all duration-200">
+                <div class="flex-shrink-0">
+                  <div class="prompt-checkbox-wrapper">
+                    <input type="checkbox"
+                      class="prompt-checkbox h-5 w-5 rounded border-2 border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-0 cursor-pointer transition-all"
+                      [checked]="isPromptSelectedForRemoval(prompt.id)"
+                      (change)="togglePromptSelectionForRemoval(prompt.id)" [disabled]="isUpdatingCollection()" />
+                    <svg *ngIf="isPromptSelectedForRemoval(prompt.id)" class="prompt-check-icon" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="block font-semibold text-slate-900 leading-snug">{{ prompt.title }}</span>
+                  <span
+                    class="mt-1.5 inline-flex items-center rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 border border-slate-200">
+                    {{ prompt.tagLabel }}
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noPromptsToRemove>
+              <div class="px-4 py-8 text-center">
+                <p class="text-sm font-medium text-slate-700">No prompts in this collection</p>
+              </div>
+            </ng-template>
+          </div>
+        </ng-container>
+
+        <!-- Add Prompts Section -->
+        <ng-container *ngIf="editModalTab() === 'add'">
+          <!-- Prompt Search -->
+          <div
+            *ngIf="!isLoadingAvailablePrompts() && !loadAvailablePromptsError() && availablePromptsForAdd().length > 0"
+            class="mb-4">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
+                  <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <input type="search"
+                class="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
+                placeholder="Search prompts by title or tag..." [value]="promptAddSearchTerm()"
+                (input)="onPromptAddSearch(($any($event.target)).value)" [disabled]="isUpdatingCollection()" />
+              <button *ngIf="promptAddSearchTerm()" type="button" (click)="promptAddSearchTerm.set('')"
+                class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors"
+                [disabled]="isUpdatingCollection()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+                  <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="isLoadingAvailablePrompts()"
+            class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+            Loading prompts…
+          </div>
+
+          <div *ngIf="!isLoadingAvailablePrompts() && loadAvailablePromptsError()"
+            class="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ loadAvailablePromptsError() }}
+          </div>
+
+          <div *ngIf="!isLoadingAvailablePrompts() && !loadAvailablePromptsError()"
+            class="mt-3 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+            <ng-container *ngIf="filteredPromptsToAdd().length > 0; else noPromptsToAdd">
+              <label *ngFor="let prompt of filteredPromptsToAdd(); trackBy: trackPromptById"
+                [class.prompt-option-selected]="isPromptSelectedForAdd(prompt.id)"
+                class="prompt-option flex cursor-pointer items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0 transition-all duration-200">
+                <div class="flex-shrink-0">
+                  <div class="prompt-checkbox-wrapper">
+                    <input type="checkbox"
+                      class="prompt-checkbox h-5 w-5 rounded border-2 border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-0 cursor-pointer transition-all"
+                      [checked]="isPromptSelectedForAdd(prompt.id)" (change)="togglePromptSelectionForAdd(prompt.id)"
+                      [disabled]="isUpdatingCollection()" />
+                    <svg *ngIf="isPromptSelectedForAdd(prompt.id)" class="prompt-check-icon" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="block font-semibold text-slate-900 leading-snug">{{ prompt.title }}</span>
+                  <span
+                    class="mt-1.5 inline-flex items-center rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 border border-slate-200">
+                    {{ prompt.tagLabel }}
+                  </span>
+                </div>
+              </label>
+            </ng-container>
+            <ng-template #noPromptsToAdd>
+              <ng-container *ngIf="promptAddSearchTerm().trim(); else noPromptsFound">
+                <div class="px-4 py-8 text-center">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
+                    <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <p class="mt-3 text-sm font-medium text-slate-700">No prompts found</p>
+                  <p class="mt-1 text-xs text-slate-500">Try a different search term</p>
+                </div>
+              </ng-container>
+              <ng-template #noPromptsFound>
+                <div class="px-4 py-8 text-center">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
+                    <path
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                  <p class="mt-3 text-sm font-medium text-slate-700">All prompts are already in this collection</p>
+                  <p class="mt-1 text-xs text-slate-500">There are no more prompts to add</p>
+                </div>
+              </ng-template>
+            </ng-template>
+          </div>
+        </ng-container>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button"
+            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            (click)="closeEditModal()" [disabled]="isUpdatingCollection()">
+            Cancel
+          </button>
+          <button *ngIf="editModalTab() === 'remove'" type="button"
+            class="rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            (click)="removeSelectedPrompts()"
+            [disabled]="isUpdatingCollection() || selectedPromptsToRemove().size === 0">
+            <span *ngIf="!isUpdatingCollection()">Remove Selected</span>
+            <span *ngIf="isUpdatingCollection()">Removing...</span>
+          </button>
+          <button *ngIf="editModalTab() === 'add'" type="button"
+            class="rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            (click)="addSelectedPrompts()" [disabled]="isUpdatingCollection() || selectedPromptsToAdd().size === 0">
+            <span *ngIf="!isUpdatingCollection()">Add Selected</span>
+            <span *ngIf="isUpdatingCollection()">Adding...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
