@@ -67,6 +67,45 @@ export class PromptService {
     });
   }
 
+  /**
+   * Get prompts by authorId (for profile page)
+   */
+  promptsByAuthor$(authorId: string): Observable<Prompt[]> {
+    return new Observable<Prompt[]>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      const trimmedAuthorId = authorId?.trim();
+      if (!trimmedAuthorId) {
+        subscriber.next([]);
+        return () => unsubscribe?.();
+      }
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('authorId', '==', trimmedAuthorId),
+            firestoreModule.orderBy('createdAt', 'desc')
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const prompts = snapshot.docs
+                .map((doc) => this.mapPrompt(doc, firestoreModule))
+                .filter((prompt) => !prompt.isInvisible); // Filter out invisible prompts
+              subscriber.next(prompts);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
   async createPrompt(input: CreatePromptInput): Promise<string> {
     const title = input.title?.trim();
     const content = input.content?.trim();

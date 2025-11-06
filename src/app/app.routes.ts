@@ -25,6 +25,12 @@ export const routes: Routes = [
       import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'profile',
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/profile/profile-page.component').then(m => m.ProfilePageComponent)
+  },
+  {
     path: 'prompts/liked',
     loadComponent: () =>
       import('./pages/liked-prompts/liked-prompts-page.component').then(m => m.LikedPromptsPageComponent)
