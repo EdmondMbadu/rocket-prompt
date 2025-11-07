@@ -1,26 +1,28 @@
 <div class="prompt-page-root">
     <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <!-- Brand -->
-                <div class="flex items-center gap-3 text-slate-900">
-                    <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-14 w-auto" />
+                <div class="flex items-center gap-3 text-slate-900 flex-shrink-0">
+                    <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 sm:h-14 w-auto" />
                 </div>
 
                 <!-- Actions (back, id, share) -->
-                <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
+                <div
+                    class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
                     <button type="button" (click)="back()"
-                        class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-200">
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-200 transition-colors">
                         <span class="text-base">←</span>
-                        Back
+                        <span>Back</span>
                     </button>
 
-                    <div class="inline-flex items-center gap-2">
+                    <div class="flex items-center gap-2.5 w-full sm:w-auto min-w-0">
                         <span
-                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">{{
-                            fullPath() }}</span>
+                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 overflow-hidden flex-1 sm:flex-initial min-w-0">
+                            <span class="truncate">{{ fullPath() }}</span>
+                        </span>
                         <button type="button" (click)="openShareModal()"
-                            class="inline-flex items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-red-300 hover:bg-[#B91C1C]">
+                            class="share-button-header inline-flex items-center justify-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-red-300 hover:bg-[#B91C1C] transition-colors flex-shrink-0 whitespace-nowrap">
                             Share
                         </button>
                     </div>
