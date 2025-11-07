@@ -119,7 +119,8 @@ export class CollectionsPageComponent {
         promptIds: this.fb.nonNullable.control<string[]>([], {
             validators: [this.promptSelectionValidator]
         }),
-        customUrl: ['']
+        customUrl: [''],
+        blurb: ['']
     });
 
     readonly filteredCollections = computed(() => {
@@ -303,7 +304,7 @@ export class CollectionsPageComponent {
             return;
         }
 
-        const { name, tag, promptIds, customUrl } = this.collectionForm.getRawValue();
+        const { name, tag, promptIds, customUrl, blurb } = this.collectionForm.getRawValue();
         const currentUser = this.authService.currentUser;
         const authorId = currentUser?.uid;
 
@@ -315,7 +316,8 @@ export class CollectionsPageComponent {
                 name,
                 tag,
                 promptIds,
-                customUrl: customUrl?.trim() || undefined
+                customUrl: customUrl?.trim() || undefined,
+                blurb: blurb?.trim() || undefined
             }, authorId);
 
             this.newCollectionModalOpen.set(false);
@@ -323,7 +325,8 @@ export class CollectionsPageComponent {
                 name: '',
                 tag: '',
                 promptIds: [],
-                customUrl: ''
+                customUrl: '',
+                blurb: ''
             });
             this.collectionForm.markAsPristine();
             this.collectionForm.markAsUntouched();

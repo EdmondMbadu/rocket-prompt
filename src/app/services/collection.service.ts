@@ -120,6 +120,7 @@ export class CollectionService {
     const tag = input.tag?.trim();
     const promptIds = Array.isArray(input.promptIds) ? input.promptIds.filter(Boolean) : [];
     const customUrl = input.customUrl?.trim();
+    const blurb = input.blurb?.trim();
 
     if (!name) {
       throw new Error('A name is required to create a collection.');
@@ -167,6 +168,10 @@ export class CollectionService {
 
     if (customUrl) {
       payload['customUrl'] = customUrl;
+    }
+
+    if (blurb) {
+      payload['blurb'] = blurb;
     }
 
     const docRef = await firestoreModule.addDoc(
@@ -259,6 +264,16 @@ export class CollectionService {
       }
     }
 
+    if (typeof input.blurb === 'string') {
+      const blurb = input.blurb.trim();
+      if (blurb) {
+        updatePayload['blurb'] = blurb;
+      } else {
+        // Remove blurb if empty string
+        updatePayload['blurb'] = firestoreModule.deleteField();
+      }
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -330,6 +345,7 @@ export class CollectionService {
     const collectionIdValue = data['collectionId'];
     const heroImageUrlValue = data['heroImageUrl'];
     const customUrlValue = data['customUrl'];
+    const blurbValue = data['blurb'];
 
     return {
       id,
@@ -344,7 +360,8 @@ export class CollectionService {
       authorId: typeof authorIdValue === 'string' ? authorIdValue : undefined,
       collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined,
       heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined,
-      customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined
+      customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,
+      blurb: typeof blurbValue === 'string' ? blurbValue : undefined
     };
   }
 

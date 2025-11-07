@@ -80,6 +80,7 @@ export class CollectionDetailComponent {
   readonly editCollectionName = signal('');
   readonly editCollectionTag = signal('');
   readonly editCollectionCustomUrl = signal('');
+  readonly editCollectionBlurb = signal('');
   readonly editCustomUrlError = signal<string | null>(null);
   readonly isCheckingCustomUrl = signal(false);
   private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
@@ -766,6 +767,7 @@ export class CollectionDetailComponent {
     this.editCollectionName.set(collection?.name ?? '');
     this.editCollectionTag.set(collection?.tag ?? '');
     this.editCollectionCustomUrl.set(collection?.customUrl ?? '');
+    this.editCollectionBlurb.set(collection?.blurb ?? '');
     this.editCustomUrlError.set(null);
     this.clearCustomUrlDebounce();
   }
@@ -783,6 +785,7 @@ export class CollectionDetailComponent {
     this.editCollectionName.set('');
     this.editCollectionTag.set('');
     this.editCollectionCustomUrl.set('');
+    this.editCollectionBlurb.set('');
     this.editCustomUrlError.set(null);
     this.clearCustomUrlDebounce();
   }
@@ -1094,6 +1097,7 @@ export class CollectionDetailComponent {
     const name = this.editCollectionName().trim();
     const tag = this.editCollectionTag().trim();
     const customUrl = this.editCollectionCustomUrl().trim();
+    const blurb = this.editCollectionBlurb().trim();
 
     if (!name || name.length < 3) {
       this.updateCollectionError.set('Collection name must be at least 3 characters.');
@@ -1114,7 +1118,8 @@ export class CollectionDetailComponent {
         {
           name,
           tag,
-          customUrl: customUrl || undefined
+          customUrl: customUrl || undefined,
+          blurb: blurb || undefined
         },
         currentUser.uid
       );
