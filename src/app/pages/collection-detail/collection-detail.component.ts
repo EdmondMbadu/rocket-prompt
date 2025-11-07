@@ -126,6 +126,16 @@ export class CollectionDetailComponent {
     return this.prompts().filter(prompt => ids.has(prompt.id));
   });
 
+  readonly promptCount = computed(() => {
+    const collection = this.collection();
+    if (!collection) {
+      return 0;
+    }
+    // Always calculate from the current promptIds array to ensure accuracy
+    const promptIds = collection.promptIds ?? [];
+    return Array.isArray(promptIds) ? promptIds.length : 0;
+  });
+
   readonly filteredPrompts = computed(() => {
     const prompts = this.collectionPrompts();
     const term = this.searchTerm().trim().toLowerCase();
@@ -875,6 +885,7 @@ export class CollectionDetailComponent {
         { promptIds: remainingPromptIds },
         currentUser.uid
       );
+      // The collection observable will automatically update, which will trigger the promptCount computed signal
       this.closeEditModal();
     } catch (error) {
       console.error('Failed to update collection', error);
@@ -916,6 +927,7 @@ export class CollectionDetailComponent {
         { promptIds: newPromptIds },
         currentUser.uid
       );
+      // The collection observable will automatically update, which will trigger the promptCount computed signal
       this.closeEditModal();
     } catch (error) {
       console.error('Failed to update collection', error);

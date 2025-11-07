@@ -129,8 +129,8 @@
                   <span *ngIf="collection()" [class.text-white]="collection()?.heroImageUrl"
                     [class.text-slate-600]="!collection()?.heroImageUrl"
                     [class.drop-shadow-lg]="collection()?.heroImageUrl" class="text-sm font-semibold">
-                    {{ collection()?.promptIds?.length || 0 }}
-                    {{ (collection()?.promptIds?.length || 0) === 1 ? 'prompt' : 'prompts' }}
+                    {{ promptCount() }}
+                    {{ promptCount() === 1 ? 'prompt' : 'prompts' }}
                   </span>
                   <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
                     [class.bg-slate-100]="!collection()?.heroImageUrl"

@@ -502,12 +502,15 @@ export class CollectionsPageComponent {
 
     private mapCollectionToCard(collection: PromptCollection): CollectionCard {
         const tag = collection.tag || 'general';
+        // Always calculate from the current promptIds array to ensure accuracy
+        const promptIds = collection.promptIds ?? [];
+        const promptCount = Array.isArray(promptIds) ? promptIds.length : 0;
         return {
             id: collection.id,
             name: collection.name,
             tag,
             tagLabel: this.formatTagLabel(tag),
-            promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0,
+            promptCount,
             bookmarkCount: collection.bookmarkCount ?? 0,
             heroImageUrl: collection.heroImageUrl,
             customUrl: collection.customUrl
