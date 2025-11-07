@@ -93,107 +93,101 @@
           </div>
         </div>
 
-        <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div class="flex-1">
-            <div class="flex flex-wrap items-center gap-3">
-              <span
-                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                {{ collectionTagLabel() }}
-              </span>
-              <span *ngIf="collection()" class="text-sm text-slate-500">
-                {{ collection()?.promptIds?.length || 0 }}
-                {{ (collection()?.promptIds?.length || 0) === 1 ? 'prompt' : 'prompts' }}
-              </span>
-              <button type="button" class="collection-bookmark-button" [attr.aria-pressed]="bookmarked()"
-                [disabled]="bookmarking()" (click)="toggleBookmark($event)" data-tooltip="Add to saved collections">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                  <path [attr.fill]="bookmarked() ? '#dc2626' : 'none'"
-                    [attr.stroke]="bookmarked() ? '#dc2626' : 'currentColor'" stroke-width="1.6" stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M6 3h12a1 1 0 011 1v16.382a.5.5 0 01-.79.407L12 17.25l-6.21 3.539a.5.5 0 01-.79-.407V4a1 1 0 011-1z" />
-                </svg>
-                <span>{{ collection()?.bookmarkCount || 0 }}</span>
-              </button>
-            </div>
-            <div class="mt-3 flex items-center gap-3 flex-wrap">
-              <h1 class="text-3xl font-semibold tracking-tight text-slate-900">
-                {{ collection()?.name || 'Collection' }}
-              </h1>
-              <div *ngIf="canEdit()" class="flex items-center gap-2">
-                <button type="button"
-                  class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
-                  (click)="openEditModal()" title="Edit collection">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none"
-                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor"
-                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <span>Edit</span>
-                </button>
-                <button type="button"
-                  class="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-white px-3 py-1.5 text-sm font-semibold text-red-600 transition hover:border-red-400 hover:bg-red-50"
-                  (click)="deleteCollection()" title="Delete collection">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
-                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
-            <div *ngIf="collection()?.blurb" class="mt-4">
-              <p class="text-base text-slate-600 leading-relaxed">
-                {{ collection()?.blurb }}
-              </p>
-            </div>
-          </div>
-
-          <div class="w-full max-w-md">
-            <label
-              class="group relative flex w-full items-center rounded-2xl bg-white border border-slate-300 shadow-sm">
-              <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-5 w-5 text-slate-400">
-                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <input type="search"
-                class="w-full rounded-2xl bg-white py-3 pr-10 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
-                placeholder="Search within this collection..." [value]="searchTerm()"
-                (input)="onSearch(($any($event.target)).value)" />
-              <button *ngIf="searchTerm()" type="button"
-                class="absolute right-3 flex items-center justify-center w-6 h-6 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                (click)="clearSearch()" aria-label="Clear search">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                  <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </button>
-            </label>
-          </div>
-        </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+    <main class="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
       <div *ngIf="collectionNotFound()"
         class="rounded-2xl border border-dashed border-red-300 bg-red-50 px-6 py-10 text-center text-red-700">
         This collection could not be found.
       </div>
 
       <ng-container *ngIf="!collectionNotFound()">
-        <!-- Hero Image Section -->
-        <div *ngIf="collection()?.heroImageUrl || canEdit()" class="mb-8">
-          <div class="relative rounded-2xl overflow-hidden shadow-lg" [class.bg-slate-100]="!collection()?.heroImageUrl"
+        <!-- Hero Image Section with Title Overlay -->
+        <div class="mb-8">
+          <div class="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200"
+            [class.bg-gradient-to-br]="!collection()?.heroImageUrl" [class.from-slate-100]="!collection()?.heroImageUrl"
+            [class.to-slate-50]="!collection()?.heroImageUrl"
             [style.background-image]="collection()?.heroImageUrl ? 'url(' + collection()?.heroImageUrl + ')' : 'none'"
             [style.background-size]="'cover'" [style.background-position]="'center'"
-            [style.min-height]="collection()?.heroImageUrl ? '400px' : '200px'">
-            <!-- Overlay for better text readability if image exists -->
+            [style.min-height]="collection()?.heroImageUrl ? '500px' : '350px'">
+            <!-- Enhanced Overlay for better text readability when image exists -->
             <div *ngIf="collection()?.heroImageUrl"
-              class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"></div>
+
+            <!-- Title and Meta Info Overlay -->
+            <div class="absolute inset-0 flex flex-col justify-end p-8 sm:p-10 lg:p-12 z-10">
+              <div class="max-w-4xl">
+                <!-- Meta Info -->
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                  <span [class.bg-white/95]="collection()?.heroImageUrl"
+                    [class.bg-slate-100]="!collection()?.heroImageUrl" [class.text-slate-700]="true"
+                    [class.drop-shadow-lg]="collection()?.heroImageUrl"
+                    class="inline-flex items-center rounded-full backdrop-blur-sm px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide border border-white/50 shadow-lg">
+                    {{ collectionTagLabel() }}
+                  </span>
+                  <span *ngIf="collection()" [class.text-white]="collection()?.heroImageUrl"
+                    [class.text-slate-600]="!collection()?.heroImageUrl"
+                    [class.drop-shadow-lg]="collection()?.heroImageUrl" class="text-sm font-semibold">
+                    {{ collection()?.promptIds?.length || 0 }}
+                    {{ (collection()?.promptIds?.length || 0) === 1 ? 'prompt' : 'prompts' }}
+                  </span>
+                  <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
+                    [class.bg-slate-100]="!collection()?.heroImageUrl"
+                    class="collection-bookmark-button backdrop-blur-sm shadow-lg" [attr.aria-pressed]="bookmarked()"
+                    [disabled]="bookmarking()" (click)="toggleBookmark($event)" data-tooltip="Add to saved collections">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                      <path [attr.fill]="bookmarked() ? '#dc2626' : 'none'"
+                        [attr.stroke]="bookmarked() ? '#dc2626' : 'currentColor'" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        d="M6 3h12a1 1 0 011 1v16.382a.5.5 0 01-.79.407L12 17.25l-6.21 3.539a.5.5 0 01-.79-.407V4a1 1 0 011-1z" />
+                    </svg>
+                    <span>{{ collection()?.bookmarkCount || 0 }}</span>
+                  </button>
+                </div>
+
+                <!-- Title -->
+                <div class="flex items-start gap-4 flex-wrap mb-4">
+                  <h1 [class.text-white]="collection()?.heroImageUrl"
+                    [class.text-slate-900]="!collection()?.heroImageUrl"
+                    [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                    [class.[text-shadow:_0_2px_20px_rgb(0_0_0_/_60%)]]="collection()?.heroImageUrl"
+                    class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+                    {{ collection()?.name || 'Collection' }}
+                  </h1>
+                  <div *ngIf="canEdit()" class="flex items-center gap-2 flex-shrink-0">
+                    <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
+                      [class.bg-white]="!collection()?.heroImageUrl"
+                      [class.border-white/30]="collection()?.heroImageUrl"
+                      [class.border-slate-300]="!collection()?.heroImageUrl"
+                      class="inline-flex items-center gap-2 rounded-xl border backdrop-blur-sm px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-white hover:shadow-lg"
+                      (click)="openEditModal()" title="Edit collection">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none"
+                          stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none"
+                          stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
+                      [class.bg-white]="!collection()?.heroImageUrl"
+                      class="inline-flex items-center gap-2 rounded-xl border border-red-300 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-white hover:shadow-lg"
+                      (click)="deleteCollection()" title="Delete collection">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                          fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                          stroke-linejoin="round" />
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Image Upload Controls (Author Only) -->
-            <div *ngIf="canEdit()" class="absolute top-4 right-4 flex gap-2 z-10">
+            <div *ngIf="canEdit()" class="absolute top-4 right-4 flex gap-2 z-20">
               <label *ngIf="!uploadingImage()"
                 class="inline-flex items-center gap-2 rounded-xl bg-white/90 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:bg-white cursor-pointer">
                 <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
@@ -241,7 +235,7 @@
 
             <!-- Placeholder when no image -->
             <div *ngIf="!collection()?.heroImageUrl && !canEdit()"
-              class="flex items-center justify-center h-full min-h-[200px]">
+              class="absolute inset-0 flex items-center justify-center">
               <p class="text-slate-400 text-sm">No hero image</p>
             </div>
           </div>
@@ -250,6 +244,56 @@
           <div *ngIf="imageUploadError()"
             class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {{ imageUploadError() }}
+          </div>
+        </div>
+
+        <!-- Search Bar - Below Hero Image -->
+        <div class="mb-8">
+          <label
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-slate-200 shadow-sm hover:border-slate-300 transition-all focus-within:border-[#DC2626] focus-within:ring-2 focus-within:ring-[#DC2626]/20 focus-within:shadow-md">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-transparent py-4 pr-12 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              placeholder="Search within this collection..." [value]="searchTerm()"
+              (input)="onSearch(($any($event.target)).value)" />
+            <button *ngIf="searchTerm()" type="button"
+              class="absolute right-3 flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              (click)="clearSearch()" aria-label="Clear search">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+          </label>
+        </div>
+
+        <!-- Blurb Section - Below Search -->
+        <div *ngIf="collection()?.blurb"
+          class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 border border-slate-200 shadow-sm">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 mt-0.5">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor"
+                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <line x1="16" y1="13" x2="8" y2="13" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <line x1="16" y1="17" x2="8" y2="17" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <polyline points="10 9 9 9 8 9" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-lg text-slate-700 leading-relaxed font-medium">
+                {{ collection()?.blurb }}
+              </p>
+            </div>
           </div>
         </div>
         <div *ngIf="loadPromptsError()"
@@ -277,9 +321,9 @@
           <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-                class="flex h-full flex-col rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
+                class="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg hover:border-slate-300 hover:-translate-y-1">
                 <span
-                  class="w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
+                  class="w-fit rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 border border-slate-200 shadow-sm">
                   {{ prompt.tagLabel }}
                 </span>
 
@@ -307,7 +351,8 @@
                   </button>
                 </div>
 
-                <h3 class="mt-3 text-xl font-semibold tracking-tight text-slate-900">
+                <h3
+                  class="mt-4 text-xl font-bold tracking-tight text-slate-900 leading-snug group-hover:text-[#DC2626] transition-colors">
                   {{ prompt.title }}
                 </h3>
 
@@ -341,7 +386,8 @@
                   </button>
                 </div>
 
-                <div class="prompt-snippet mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 min-h-[10rem]">
+                <div
+                  class="prompt-snippet mt-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 p-5 text-sm text-slate-700 min-h-[10rem] border border-slate-100 leading-relaxed">
                   {{ prompt.preview }}
                 </div>
 
@@ -382,25 +428,40 @@
 
         <ng-template #noPrompts>
           <div
-            class="mx-auto max-w-6xl rounded-2xl border border-dashed border-slate-300 bg-white px-10 py-16 text-center shadow-sm">
+            class="mx-auto max-w-6xl rounded-3xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-10 py-20 text-center shadow-sm">
             <ng-container *ngIf="searchTerm().trim(); else noPromptsInCollection">
-              <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
-                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <p class="mt-3 text-lg font-semibold text-slate-800">No prompts found</p>
-              <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
-                No prompts match your search "{{ searchTerm() }}". Try a different search term.
+              <div class="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8 text-slate-400">
+                  <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <p class="text-xl font-bold text-slate-900">No prompts found</p>
+              <p class="mt-3 max-w-md mx-auto text-base text-slate-600 leading-relaxed">
+                No prompts match your search <span class="font-semibold text-slate-700">"{{ searchTerm() }}"</span>. Try
+                a different search term.
               </p>
               <button type="button"
-                class="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                class="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50 hover:shadow-md"
                 (click)="clearSearch()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                  <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
                 Clear search
               </button>
             </ng-container>
             <ng-template #noPromptsInCollection>
-              <p class="text-lg font-semibold text-slate-800">No prompts in this collection yet</p>
-              <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
+              <div class="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8 text-slate-400">
+                  <path
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>
+              </div>
+              <p class="text-xl font-bold text-slate-900">No prompts in this collection yet</p>
+              <p class="mt-3 max-w-md mx-auto text-base text-slate-600 leading-relaxed">
                 Add prompts to this collection from the collections page.
               </p>
             </ng-template>
