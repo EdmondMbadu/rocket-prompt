@@ -1,18 +1,17 @@
 <!-- RocketPrompt.io Landing Page -->
-<div class="min-h-screen bg-white scroll-smooth text-slate-900 overflow-x-hidden">
+<div class="min-h-screen bg-white scroll-smooth text-slate-900 overflow-x-hidden w-full max-w-full">
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-black/5">
-    <div class="container mx-auto px-4 md:px-6 py-4 md:py-5">
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-black/5 w-full max-w-full">
+    <div class="container mx-auto px-4 md:px-6 py-3 md:py-5 max-w-full">
       <div class="flex items-center justify-between gap-4">
         <a routerLink="/" class="flex items-center transition hover:opacity-80" (click)="closeMobileMenu()">
           <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-10 w-auto md:h-12" />
         </a>
 
         <button type="button"
-          class="flex items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm font-medium text-black transition hover:border-black/20 hover:bg-black/5 md:hidden"
+          class="flex items-center justify-center rounded-lg border border-black/10 px-3 py-2.5 text-black transition hover:border-black/20 hover:bg-black/5 active:bg-black/10 md:hidden touch-manipulation min-w-[44px] min-h-[44px]"
           (click)="toggleMobileMenu()" aria-label="Toggle navigation" [attr.aria-expanded]="mobileMenuOpen()">
-          <span>{{ mobileMenuOpen() ? 'Close' : 'Menu' }}</span>
-          <span class="text-lg" aria-hidden="true">☰</span>
+          <span class="text-xl font-normal" aria-hidden="true">{{ mobileMenuOpen() ? '✕' : '☰' }}</span>
         </button>
 
         <div class="hidden items-center gap-8 text-sm font-medium text-black/70 md:flex">
@@ -34,49 +33,65 @@
       </div>
 
       <div *ngIf="mobileMenuOpen()"
-        class="mt-4 flex flex-col gap-3 rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl p-4 text-sm text-black md:hidden shadow-xl">
-        <a href="#how-it-works" class="transition hover:text-[#DC2626] py-2" (click)="closeMobileMenu()">How it works</a>
-        <a href="#collections" class="transition hover:text-[#DC2626] py-2" (click)="closeMobileMenu()">Collections</a>
-        <a href="#pricing" class="transition hover:text-[#DC2626] py-2" (click)="closeMobileMenu()">Pricing</a>
-        <a routerLink="/auth" [queryParams]="{ mode: 'login' }" class="transition hover:text-[#DC2626] py-2"
+        class="mt-4 flex flex-col gap-1 rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl p-4 text-sm text-black md:hidden shadow-xl">
+        <a href="#how-it-works"
+          class="transition hover:text-[#DC2626] hover:bg-black/5 py-3 px-4 rounded-lg font-medium"
+          (click)="closeMobileMenu()">How it works</a>
+        <a href="#collections" class="transition hover:text-[#DC2626] hover:bg-black/5 py-3 px-4 rounded-lg font-medium"
+          (click)="closeMobileMenu()">Collections</a>
+        <a href="#pricing" class="transition hover:text-[#DC2626] hover:bg-black/5 py-3 px-4 rounded-lg font-medium"
+          (click)="closeMobileMenu()">Pricing</a>
+        <div class="border-t border-black/10 my-2"></div>
+        <a routerLink="/auth" [queryParams]="{ mode: 'login' }"
+          class="transition hover:text-[#DC2626] hover:bg-black/5 py-3 px-4 rounded-lg font-medium"
           (click)="closeMobileMenu()">Log in</a>
-        <a routerLink="/auth" [queryParams]="{ mode: 'signup' }" class="transition hover:text-[#DC2626] py-2"
+        <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
+          class="transition hover:text-[#DC2626] hover:bg-black/5 py-3 px-4 rounded-lg font-medium bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white hover:opacity-90"
           (click)="closeMobileMenu()">Sign Up</a>
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
-  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden">
+  <section class="relative pt-20 pb-10 md:pt-32 md:pb-16 overflow-hidden w-full max-w-full">
     <!-- Animated background gradient -->
     <div class="absolute inset-0 bg-gradient-to-br from-red-50/50 via-white to-black/5"></div>
-    <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#DC2626]/10 to-transparent rounded-full blur-3xl"></div>
-    <div class="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-black/5 to-transparent rounded-full blur-3xl"></div>
-    
-    <div class="container mx-auto px-4 md:px-6 text-center max-w-6xl relative z-10">
-      <div class="inline-block mb-6 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+    <div
+      class="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-[#DC2626]/10 to-transparent rounded-full blur-3xl">
+    </div>
+    <div
+      class="absolute bottom-0 left-0 w-64 h-64 md:w-96 md:h-96 bg-gradient-to-tr from-black/5 to-transparent rounded-full blur-3xl">
+    </div>
+
+    <div class="container mx-auto px-4 md:px-6 text-center max-w-6xl relative z-10 w-full">
+      <div
+        class="inline-block mb-6 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
         <span class="text-sm font-semibold text-[#DC2626]">🚀 Transform Your AI Workflow</span>
       </div>
-      
-      <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 md:mb-8 leading-[1.1] text-black">
+
+      <h1
+        class="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-4 md:mb-8 leading-[1.1] text-black px-2">
         Turn long prompts into
         <span class="block mt-2 bg-gradient-to-r from-[#DC2626] to-[#B91C1C] bg-clip-text text-transparent">
           custom shareable URLs
         </span>
       </h1>
 
-      <p class="text-xl md:text-2xl lg:text-3xl font-medium text-black/70 mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed">
+      <p
+        class="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-medium text-black/70 mb-6 md:mb-10 max-w-3xl mx-auto leading-relaxed px-4">
         Create beautiful, short custom links for your AI prompts. Share once, launch everywhere.
       </p>
 
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4 max-w-full">
         <a href="#signup"
-          class="group relative bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-8 py-4 md:px-10 md:py-5 rounded-xl text-base md:text-lg font-bold transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 w-full sm:w-auto">
+          class="group relative bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-6 py-3.5 md:px-10 md:py-5 rounded-xl text-sm sm:text-base md:text-lg font-bold transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 w-full sm:w-auto min-w-[140px] touch-manipulation">
           <span class="relative z-10">Get Started Free</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+          </div>
         </a>
         <a routerLink="/auth" [queryParams]="{ mode: 'login' }"
-          class="border-2 border-black/10 hover:border-black/20 text-black px-8 py-4 md:px-10 md:py-5 rounded-xl text-base md:text-lg font-bold transition-all hover:bg-black/5 hover:scale-105 w-full sm:w-auto">
+          class="border-2 border-black/10 hover:border-black/20 text-black px-6 py-3.5 md:px-10 md:py-5 rounded-xl text-sm sm:text-base md:text-lg font-bold transition-all hover:bg-black/5 hover:scale-105 active:scale-95 w-full sm:w-auto min-w-[140px] touch-manipulation">
           Log in
         </a>
       </div>
@@ -94,65 +109,75 @@
   </section>
 
   <!-- How It Works Section -->
-  <section id="how-it-works" class="relative py-12 md:py-16 bg-gradient-to-b from-white to-black/5">
-    <div class="container mx-auto px-4 md:px-6 max-w-7xl">
+  <section id="how-it-works"
+    class="relative py-10 md:py-16 bg-gradient-to-b from-white to-black/5 w-full max-w-full overflow-hidden">
+    <div class="container mx-auto px-4 md:px-6 max-w-7xl w-full">
       <div class="text-center mb-10 md:mb-12">
-        <div class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+        <div
+          class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
           <span class="text-sm font-semibold text-[#DC2626]">Simple Process</span>
         </div>
-        <h2 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-black">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-black px-2">
           How it works
         </h2>
-        <p class="text-lg md:text-xl text-black/60 max-w-2xl mx-auto">
+        <p class="text-base sm:text-lg md:text-xl text-black/60 max-w-2xl mx-auto px-4">
           Four simple steps to transform your AI workflow
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        <div class="group relative bg-white rounded-2xl p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-xl font-black text-[#DC2626]">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 w-full">
+        <div
+          class="group relative bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div
+            class="absolute top-4 right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-lg sm:text-xl font-black text-[#DC2626]">
             1
           </div>
-          <div class="text-5xl md:text-6xl mb-6">✍️</div>
-          <h3 class="text-xl md:text-2xl font-bold mb-4 text-black">Create</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">✍️</div>
+          <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-black">Create</h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Paste your long AI prompt and optionally customize the short URL
           </p>
         </div>
 
-        <div class="group relative bg-white rounded-2xl p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-xl font-black text-[#DC2626]">
+        <div
+          class="group relative bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div
+            class="absolute top-4 right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-lg sm:text-xl font-black text-[#DC2626]">
             2
           </div>
-          <div class="text-5xl md:text-6xl mb-6">🔗</div>
-          <h3 class="text-xl md:text-2xl font-bold mb-4 text-black">Share</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">🔗</div>
+          <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-black">Share</h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Get a clean, memorable URL that's easy to share anywhere
           </p>
         </div>
 
-        <div class="group relative bg-white rounded-2xl p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-xl font-black text-[#DC2626]">
+        <div
+          class="group relative bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div
+            class="absolute top-4 right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-lg sm:text-xl font-black text-[#DC2626]">
             3
           </div>
-          <div class="flex items-center justify-center gap-3 mb-6">
-            <img src="assets/gpt.png" alt="ChatGPT" class="w-12 h-12 md:w-14 md:h-14" />
-            <img src="assets/gemini.png" alt="Gemini" class="w-12 h-12 md:w-14 md:h-14" />
-            <img src="assets/claude.jpeg" alt="Claude" class="w-12 h-12 md:w-14 md:h-14 rounded-full" />
+          <div class="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <img src="assets/gpt.png" alt="ChatGPT" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14" />
+            <img src="assets/gemini.png" alt="Gemini" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14" />
+            <img src="assets/claude.jpeg" alt="Claude" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full" />
           </div>
-          <h3 class="text-xl md:text-2xl font-bold mb-4 text-black">Launch</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+          <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-black">Launch</h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Recipients can instantly launch your prompt in their favorite AI tool
           </p>
         </div>
 
-        <div class="group relative bg-white rounded-2xl p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="absolute top-4 right-4 w-12 h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-xl font-black text-[#DC2626]">
+        <div
+          class="group relative bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div
+            class="absolute top-4 right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#DC2626]/10 to-[#B91C1C]/10 flex items-center justify-center text-lg sm:text-xl font-black text-[#DC2626]">
             4
           </div>
-          <div class="text-5xl md:text-6xl mb-6">💾</div>
-          <h3 class="text-xl md:text-2xl font-bold mb-4 text-black">Manage</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">💾</div>
+          <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-black">Manage</h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Save and edit your most powerful prompts
           </p>
         </div>
@@ -161,42 +186,48 @@
   </section>
 
   <!-- Collections Section -->
-  <section id="collections" class="relative py-12 md:py-16 bg-white overflow-hidden">
+  <section id="collections" class="relative py-10 md:py-16 bg-white overflow-hidden w-full max-w-full">
     <div class="absolute inset-0 bg-gradient-to-br from-[#DC2626]/5 via-transparent to-black/5"></div>
-    <div class="container mx-auto px-4 md:px-6 max-w-7xl relative z-10">
+    <div class="container mx-auto px-4 md:px-6 max-w-7xl relative z-10 w-full">
       <div class="max-w-3xl mx-auto text-center mb-10 md:mb-12">
-        <div class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+        <div
+          class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
           <span class="text-sm font-semibold text-[#DC2626]">Collections</span>
         </div>
-        <h2 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-black">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-black px-2">
           Bundle prompts into a shareable playbook
         </h2>
-        <p class="text-lg md:text-xl text-black/60 leading-relaxed">
+        <p class="text-base sm:text-lg md:text-xl text-black/60 leading-relaxed px-4">
           Organize your best prompts into themed collections, keep teams in sync, and share one link that lets
           collaborators browse and launch each prompt instantly.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
-        <div class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-8 md:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="text-5xl md:text-6xl mb-6">🗂️</div>
-          <h3 class="text-2xl md:text-3xl font-bold mb-4 text-black">Curate themed bundles</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-10 md:mb-12 w-full">
+        <div
+          class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">🗂️</div>
+          <h3 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-black">Curate themed bundles</h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Combine multiple prompts into organized collections so your workflows stay tidy and repeatable.
           </p>
         </div>
-        <div class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-8 md:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="text-5xl md:text-6xl mb-6">🤝</div>
-          <h3 class="text-2xl md:text-3xl font-bold mb-4 text-black">Collaborate without friction</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+        <div
+          class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">🤝</div>
+          <h3 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-black">Collaborate without friction
+          </h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Share a single collection link with teammates or clients so everyone works from the same best-practice
             prompts.
           </p>
         </div>
-        <div class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-8 md:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="text-5xl md:text-6xl mb-6">📤</div>
-          <h3 class="text-2xl md:text-3xl font-bold mb-4 text-black">Share once, launch everywhere</h3>
-          <p class="text-black/60 text-base leading-relaxed">
+        <div
+          class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 border border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div class="text-4xl sm:text-5xl md:text-6xl mb-4 sm:mb-6">📤</div>
+          <h3 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-black">Share once, launch everywhere
+          </h3>
+          <p class="text-black/60 text-sm sm:text-base leading-relaxed">
             Every prompt stays launch-ready for ChatGPT, Gemini, and Claude so collaborators can pick up your context
             instantly.
           </p>
@@ -207,7 +238,9 @@
         <a routerLink="/collections"
           class="group relative bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-8 py-4 rounded-xl text-base md:text-lg font-bold transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
           <span class="relative z-10">Explore Collections</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+          </div>
         </a>
         <p class="text-sm md:text-base text-black/50">Sign in to start curating and sharing your prompt suites.</p>
       </div>
@@ -215,27 +248,29 @@
   </section>
 
   <!-- Get Started Form Section -->
-  <section id="signup" class="relative py-12 md:py-16 bg-gradient-to-b from-black/5 to-white overflow-hidden">
+  <section id="signup"
+    class="relative py-10 md:py-16 bg-gradient-to-b from-black/5 to-white overflow-hidden w-full max-w-full">
     <div class="absolute inset-0 bg-gradient-to-br from-[#DC2626]/5 via-transparent to-black/5"></div>
-    <div class="container mx-auto px-4 md:px-6 max-w-4xl relative z-10">
+    <div class="container mx-auto px-4 md:px-6 max-w-4xl relative z-10 w-full">
       <div class="text-center mb-8 md:mb-10">
-        <div class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+        <div
+          class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
           <span class="text-sm font-semibold text-[#DC2626]">Get Started</span>
         </div>
-        <h2 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-black">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-black px-2">
           Create your first prompt
         </h2>
-        <p class="text-lg md:text-xl text-black/60 max-w-2xl mx-auto">
+        <p class="text-base sm:text-lg md:text-xl text-black/60 max-w-2xl mx-auto px-4">
           Transform your long AI prompts into shareable short URLs in seconds
         </p>
       </div>
 
-      <div class="bg-white rounded-3xl p-8 md:p-12 border border-black/10 shadow-2xl">
+      <div class="bg-white rounded-3xl p-5 sm:p-6 md:p-8 lg:p-12 border border-black/10 shadow-2xl w-full max-w-full">
         <form [formGroup]="promptForm" (ngSubmit)="onSubmit()">
-          <div class="mb-8">
-            <label class="block text-lg font-bold mb-3 text-black">Name Your Prompt</label>
+          <div class="mb-6 sm:mb-8">
+            <label class="block text-base sm:text-lg font-bold mb-2 sm:mb-3 text-black">Name Your Prompt</label>
             <input type="text" formControlName="name" placeholder="e.g., Productivity Coach for Impossible Goals"
-              class="w-full bg-white border-2 border-black/10 rounded-xl px-5 py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 text-base transition-all" />
+              class="w-full bg-white border-2 border-black/10 rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 text-sm sm:text-base transition-all" />
             <p class="text-black/50 text-sm mt-2">
               Give your prompt a descriptive name for easy identification
             </p>
@@ -246,11 +281,11 @@
             </div>
           </div>
 
-          <div class="mb-8">
-            <label class="block text-lg font-bold mb-3 text-black">Enter your prompt</label>
-            <textarea rows="8" formControlName="content"
+          <div class="mb-6 sm:mb-8">
+            <label class="block text-base sm:text-lg font-bold mb-2 sm:mb-3 text-black">Enter your prompt</label>
+            <textarea rows="6" formControlName="content"
               placeholder="You are a wise and experienced professional productivity coach tasked with creating a comprehensive time management strategy guide..."
-              class="w-full bg-white border-2 border-black/10 rounded-xl px-5 py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 resize-none text-base transition-all"></textarea>
+              class="w-full bg-white border-2 border-black/10 rounded-xl px-4 sm:px-5 py-3 sm:py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 resize-none text-sm sm:text-base transition-all"></textarea>
             <p class="text-black/50 text-sm mt-2">{{ characterCount }} characters</p>
             <div *ngIf="promptForm.get('content')?.invalid && promptForm.get('content')?.touched"
               class="text-[#DC2626] text-sm mt-2 font-medium">
@@ -260,24 +295,27 @@
             </div>
           </div>
 
-          <div class="mb-8">
-            <label class="block text-lg font-bold mb-3 text-black">Custom short name (optional)</label>
-            <div class="flex items-center">
+          <div class="mb-6 sm:mb-8">
+            <label class="block text-base sm:text-lg font-bold mb-2 sm:mb-3 text-black">Custom short name
+              (optional)</label>
+            <div class="flex items-center w-full">
               <span
-                class="bg-black/5 border-2 border-black/10 border-r-0 rounded-l-xl px-5 py-4 text-black/70 text-sm font-medium">
+                class="bg-black/5 border-2 border-black/10 border-r-0 rounded-l-xl px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-black/70 text-xs sm:text-sm font-medium whitespace-nowrap">
                 rocketprompt.io/
               </span>
               <input type="text" formControlName="customUrl" placeholder="impossible-goals"
-                class="flex-1 bg-white border-2 border-black/10 rounded-r-xl px-5 py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 text-base transition-all" />
+                class="flex-1 bg-white border-2 border-black/10 rounded-r-xl px-4 sm:px-5 py-3 sm:py-4 text-black placeholder-black/40 focus:outline-none focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/20 text-sm sm:text-base transition-all min-w-0" />
             </div>
             <p class="text-black/50 text-sm mt-2">Leave blank for auto-generated URL</p>
           </div>
 
           <div class="text-center">
             <button type="submit" [disabled]="promptForm.invalid"
-              class="group relative bg-gradient-to-r from-[#DC2626] to-[#B91C1C] disabled:from-black/20 disabled:to-black/20 disabled:cursor-not-allowed text-white px-10 py-5 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 w-full sm:w-auto">
+              class="group relative bg-gradient-to-r from-[#DC2626] to-[#B91C1C] disabled:from-black/20 disabled:to-black/20 disabled:cursor-not-allowed text-white px-8 sm:px-10 py-4 sm:py-5 rounded-xl text-base sm:text-lg font-bold transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 w-full sm:w-auto touch-manipulation">
               <span class="relative z-10">Shorten Me</span>
-              <div class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+              </div>
             </button>
           </div>
         </form>
@@ -286,45 +324,55 @@
   </section>
 
   <!-- Results Section -->
-  <section *ngIf="showResults" id="results" class="relative py-12 md:py-16 bg-gradient-to-b from-white to-black/5 overflow-hidden">
+  <section *ngIf="showResults" id="results"
+    class="relative py-10 md:py-16 bg-gradient-to-b from-white to-black/5 overflow-hidden w-full max-w-full">
     <div class="absolute inset-0 bg-gradient-to-br from-[#DC2626]/5 via-transparent to-black/5"></div>
-    <div class="container mx-auto px-4 md:px-6 max-w-5xl relative z-10">
+    <div class="container mx-auto px-4 md:px-6 max-w-5xl relative z-10 w-full">
       <div class="text-center mb-8 md:mb-10">
-        <div class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+        <div
+          class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
           <span class="text-sm font-semibold text-[#DC2626]">Success!</span>
         </div>
-        <h2 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-black">Your Prompt is Ready! 🎉</h2>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-black px-2">Your Prompt is
+          Ready! 🎉</h2>
       </div>
 
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-3xl p-8 md:p-10 border-2 border-black/10 shadow-2xl mb-8">
-          <h3 class="text-2xl font-bold mb-6 text-black">Your Short URL</h3>
-          <div class="bg-gradient-to-br from-black/5 to-black/10 rounded-xl p-6 border-2 border-black/10">
-            <p class="text-[#DC2626] font-mono text-xl md:text-2xl font-bold break-all">
+      <div class="max-w-4xl mx-auto w-full">
+        <div
+          class="bg-white rounded-3xl p-5 sm:p-6 md:p-8 lg:p-10 border-2 border-black/10 shadow-2xl mb-6 sm:mb-8 w-full max-w-full">
+          <h3 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-black">Your Short URL</h3>
+          <div
+            class="bg-gradient-to-br from-black/5 to-black/10 rounded-xl p-4 sm:p-6 border-2 border-black/10 w-full overflow-hidden">
+            <p class="text-[#DC2626] font-mono text-base sm:text-lg md:text-xl lg:text-2xl font-bold break-all">
               {{ generateShortUrl(promptForm.get('customUrl')?.value || promptForm.get('name')?.value) }}
             </p>
           </div>
           <p class="text-black/60 text-base mt-4 font-medium">Share this URL to let others access your prompt</p>
         </div>
 
-        <div class="bg-white rounded-3xl p-8 md:p-10 border-2 border-black/10 shadow-2xl">
-          <h3 class="text-2xl md:text-3xl font-bold mb-4 text-center text-black">Launch Your Prompt</h3>
-          <p class="text-black/60 text-center mb-10 text-base">
+        <div
+          class="bg-white rounded-3xl p-5 sm:p-6 md:p-8 lg:p-10 border-2 border-black/10 shadow-2xl w-full max-w-full">
+          <h3 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-center text-black px-2">Launch Your
+            Prompt</h3>
+          <p class="text-black/60 text-center mb-6 sm:mb-10 text-sm sm:text-base px-4">
             All chatbots open in new tabs. Claude & Gemini URLs are also copied for manual pasting
           </p>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 w-full">
             <div *ngFor="let chatbot of generatedLinks"
-              class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-6 md:p-8 border-2 border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
+              class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
               <div class="text-center">
                 <div class="flex items-center justify-center mb-6">
-                  <img *ngIf="chatbot.name === 'ChatGPT'" src="assets/gpt.png" alt="ChatGPT" class="w-16 h-16 md:w-20 md:h-20" />
-                  <img *ngIf="chatbot.name === 'Gemini'" src="assets/gemini.png" alt="Gemini" class="w-16 h-16 md:w-20 md:h-20" />
-                  <img *ngIf="chatbot.name === 'Claude'" src="assets/claude.jpeg" alt="Claude" class="w-16 h-16 md:w-20 md:h-20 rounded-full" />
+                  <img *ngIf="chatbot.name === 'ChatGPT'" src="assets/gpt.png" alt="ChatGPT"
+                    class="w-16 h-16 md:w-20 md:h-20" />
+                  <img *ngIf="chatbot.name === 'Gemini'" src="assets/gemini.png" alt="Gemini"
+                    class="w-16 h-16 md:w-20 md:h-20" />
+                  <img *ngIf="chatbot.name === 'Claude'" src="assets/claude.jpeg" alt="Claude"
+                    class="w-16 h-16 md:w-20 md:h-20 rounded-full" />
                 </div>
                 <h4 class="text-xl md:text-2xl font-bold mb-6 text-black">{{ chatbot.name }}</h4>
                 <button (click)="openChatbot(chatbot.url, chatbot.name)"
-                  class="w-full {{ chatbot.color }} text-white px-6 py-4 rounded-xl font-bold text-base transition-all hover:shadow-lg hover:scale-105 mb-4">
+                  class="w-full {{ chatbot.color }} text-white px-5 sm:px-6 py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all hover:shadow-lg hover:scale-105 active:scale-95 mb-3 sm:mb-4 touch-manipulation">
                   Open {{ chatbot.name }}
                 </button>
                 <p *ngIf="chatbot.name !== 'ChatGPT'" class="text-black/60 text-sm mb-4">
@@ -349,9 +397,9 @@
           </div>
         </div>
 
-        <div class="text-center mt-10">
+        <div class="text-center mt-6 sm:mt-10">
           <button (click)="resetForm()"
-            class="bg-black hover:bg-black/80 text-white px-8 py-4 rounded-xl font-bold text-base transition-all hover:shadow-xl hover:scale-105">
+            class="bg-black hover:bg-black/80 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all hover:shadow-xl hover:scale-105 active:scale-95 touch-manipulation">
             Create Another Prompt
           </button>
         </div>
@@ -360,31 +408,34 @@
   </section>
 
   <!-- Pricing Section -->
-  <section id="pricing" class="relative py-12 md:py-16 bg-gradient-to-b from-white via-black/5 to-white overflow-hidden">
+  <section id="pricing"
+    class="relative py-10 md:py-16 bg-gradient-to-b from-white via-black/5 to-white overflow-hidden w-full max-w-full">
     <div class="absolute inset-0 bg-gradient-to-br from-[#DC2626]/5 via-transparent to-black/5"></div>
-    <div class="container mx-auto px-4 md:px-6 max-w-7xl relative z-10">
+    <div class="container mx-auto px-4 md:px-6 max-w-7xl relative z-10 w-full">
       <div class="text-center mb-10 md:mb-12">
-        <div class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
+        <div
+          class="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-[#DC2626]/10 to-[#B91C1C]/10 border border-[#DC2626]/20">
           <span class="text-sm font-semibold text-[#DC2626]">Pricing</span>
         </div>
-        <h2 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 text-black">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 text-black px-2">
           Choose the plan that fits your needs
         </h2>
-        <p class="text-lg md:text-xl text-black/60 max-w-2xl mx-auto">
+        <p class="text-base sm:text-lg md:text-xl text-black/60 max-w-2xl mx-auto px-4">
           Start free and upgrade when you're ready for unlimited prompts and collections
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto w-full">
         <!-- Free Plan -->
-        <div class="group relative bg-white rounded-3xl border-2 border-black/10 p-8 md:p-10 flex flex-col hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
+        <div
+          class="group relative bg-white rounded-3xl border-2 border-black/10 p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
           <div class="mb-8">
-            <h3 class="text-3xl md:text-4xl font-black text-black mb-3">Free</h3>
-            <div class="flex items-baseline mb-4">
-              <span class="text-5xl md:text-6xl font-black text-black">$0</span>
-              <span class="text-black/60 ml-2 text-lg">/month</span>
+            <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Free</h3>
+            <div class="flex items-baseline mb-3 sm:mb-4">
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$0</span>
+              <span class="text-black/60 ml-2 text-base sm:text-lg">/month</span>
             </div>
-            <p class="text-black/60 text-base">Perfect for getting started</p>
+            <p class="text-black/60 text-sm sm:text-base">Perfect for getting started</p>
           </div>
 
           <ul class="flex-1 space-y-4 mb-8">
@@ -422,14 +473,15 @@
         </div>
 
         <!-- Plus Plan -->
-        <div class="group relative bg-white rounded-3xl border-2 border-black/10 p-8 md:p-10 flex flex-col hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2">
-          <div class="mb-8">
-            <h3 class="text-3xl md:text-4xl font-black text-black mb-3">Plus</h3>
-            <div class="flex items-baseline mb-4">
-              <span class="text-5xl md:text-6xl font-black text-black">$29.99</span>
-              <span class="text-black/60 ml-2 text-lg">lifetime</span>
+        <div
+          class="group relative bg-white rounded-3xl border-2 border-black/10 p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
+          <div class="mb-6 sm:mb-8">
+            <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Plus</h3>
+            <div class="flex items-baseline mb-3 sm:mb-4">
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$29.99</span>
+              <span class="text-black/60 ml-2 text-base sm:text-lg">lifetime</span>
             </div>
-            <p class="text-black/60 text-base">For power users</p>
+            <p class="text-black/60 text-sm sm:text-base">For power users</p>
           </div>
 
           <ul class="flex-1 space-y-4 mb-8">
@@ -468,22 +520,26 @@
           <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
             class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
             <span class="relative z-10">Upgrade to Plus</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
           </a>
         </div>
 
         <!-- Pro Plan -->
-        <div class="group relative bg-gradient-to-br from-white to-[#DC2626]/5 rounded-3xl border-2 border-[#DC2626] p-8 md:p-10 flex flex-col shadow-2xl hover:shadow-red-500/20 transition-all hover:-translate-y-2">
-          <div class="absolute top-0 right-6 bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-4 py-2 rounded-b-xl text-xs font-black uppercase tracking-wide">
+        <div
+          class="group relative bg-gradient-to-br from-white to-[#DC2626]/5 rounded-3xl border-2 border-[#DC2626] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col shadow-2xl hover:shadow-red-500/20 transition-all hover:-translate-y-2 w-full max-w-full">
+          <div
+            class="absolute top-0 right-4 sm:right-6 bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-b-xl text-xs font-black uppercase tracking-wide">
             Popular
           </div>
-          <div class="mb-8">
-            <h3 class="text-3xl md:text-4xl font-black text-black mb-3">Pro</h3>
-            <div class="flex items-baseline mb-4">
-              <span class="text-5xl md:text-6xl font-black text-black">$99.99</span>
-              <span class="text-black/60 ml-2 text-lg">/year</span>
+          <div class="mb-6 sm:mb-8">
+            <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Pro</h3>
+            <div class="flex items-baseline mb-3 sm:mb-4">
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$99.99</span>
+              <span class="text-black/60 ml-2 text-base sm:text-lg">/year</span>
             </div>
-            <p class="text-black/60 text-base">For teams and businesses</p>
+            <p class="text-black/60 text-sm sm:text-base">For teams and businesses</p>
           </div>
 
           <ul class="flex-1 space-y-4 mb-8">
@@ -530,7 +586,9 @@
           <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
             class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
             <span class="relative z-10">Upgrade to Pro</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
           </a>
         </div>
       </div>
@@ -538,16 +596,19 @@
   </section>
 
   <!-- Footer -->
-  <footer class="relative border-t border-black/10 py-8 md:py-12 bg-gradient-to-b from-white to-black/5">
-    <div class="container mx-auto px-4 md:px-6">
+  <footer
+    class="relative border-t border-black/10 py-6 sm:py-8 md:py-12 bg-gradient-to-b from-white to-black/5 w-full max-w-full">
+    <div class="container mx-auto px-4 md:px-6 w-full">
       <div class="flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="text-sm md:text-base text-black/60 font-medium">
           © 2025 RocketPrompt.io. All rights reserved.
         </div>
         <div class="flex space-x-6 md:space-x-8">
           <a routerLink="/community-guidelines"
-            class="text-black/60 hover:text-[#DC2626] transition-colors text-sm md:text-base font-medium">Community Guidelines</a>
-          <a href="#" class="text-black/60 hover:text-[#DC2626] transition-colors text-sm md:text-base font-medium">Support</a>
+            class="text-black/60 hover:text-[#DC2626] transition-colors text-sm md:text-base font-medium">Community
+            Guidelines</a>
+          <a href="#"
+            class="text-black/60 hover:text-[#DC2626] transition-colors text-sm md:text-base font-medium">Support</a>
         </div>
       </div>
     </div>

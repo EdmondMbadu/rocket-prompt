@@ -3,3 +3,24 @@
 @tailwind utilities;
 
 /* You can add global styles to this file, and also import other style files */
+
+/* Prevent horizontal overflow globally */
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Ensure all elements respect container bounds */
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile app-like behavior */
+@media (max-width: 768px) {
+  body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+}
