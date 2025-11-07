@@ -402,7 +402,7 @@
             <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 pt-6">
               <article *ngFor="let collection of collections()"
                 class="group flex h-full flex-col rounded-2xl border border-slate-300 bg-white overflow-hidden shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-[#DC2626]/30 cursor-pointer"
-                (click)="router.navigate(['/collections', collection.id])">
+                (click)="navigateToCollection(collection)">
                 <!-- Hero Image Background -->
                 <div *ngIf="collection.heroImageUrl" 
                      class="relative h-48 w-full overflow-hidden"

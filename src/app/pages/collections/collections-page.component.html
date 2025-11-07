@@ -267,6 +267,26 @@
           </div>
 
           <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-custom-url">Custom URL (optional)</label>
+            <input id="collection-custom-url" type="text" formControlName="customUrl"
+              class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+              [class.border-red-300]="customUrlError()"
+              [class.border-slate-300]="!customUrlError()"
+              [class.focus:border-[#DC2626]]="!customUrlError()"
+              placeholder="e.g. my-awesome-collection"
+              (input)="onCustomUrlInput(($any($event.target)).value)" />
+            <p *ngIf="customUrlError()" class="mt-1 text-xs text-red-600">
+              {{ customUrlError() }}
+            </p>
+            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && collectionForm.controls.customUrl.value" class="mt-1 text-xs text-slate-500">
+              Your collection will be available at: rocketprompt.io/collection/{{ collectionForm.controls.customUrl.value }}
+            </p>
+            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+              Checking availability...
+            </p>
+          </div>
+
+          <div>
             <label class="block text-sm font-semibold text-slate-700 mb-3">Select prompts</label>
 
             <!-- Prompt Search -->

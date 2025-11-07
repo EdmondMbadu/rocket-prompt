@@ -9,12 +9,14 @@ export interface PromptCollection {
   readonly authorId?: string;
   readonly collectionId?: string;
   readonly heroImageUrl?: string;
+  readonly customUrl?: string;
 }
 
 export interface CreateCollectionInput {
   readonly name: string;
   readonly tag: string;
   readonly promptIds: readonly string[];
+  readonly customUrl?: string;
 }
 
 export interface UpdateCollectionInput {
@@ -22,5 +24,6 @@ export interface UpdateCollectionInput {
   readonly tag?: string;
   readonly promptIds?: readonly string[];
   readonly heroImageUrl?: string;
+  readonly customUrl?: string;
 }
 

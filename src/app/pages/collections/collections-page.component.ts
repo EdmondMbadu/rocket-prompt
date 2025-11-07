@@ -20,6 +20,7 @@ interface CollectionCard {
     readonly promptCount: number;
     readonly bookmarkCount: number;
     readonly heroImageUrl?: string;
+    readonly customUrl?: string;
 }
 
 interface PromptOption {
@@ -78,6 +79,9 @@ export class CollectionsPageComponent {
     readonly newCollectionModalOpen = signal(false);
     readonly isSavingCollection = signal(false);
     readonly collectionFormError = signal<string | null>(null);
+    readonly customUrlError = signal<string | null>(null);
+    readonly isCheckingCustomUrl = signal(false);
+    private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
     readonly menuOpen = signal(false);
     readonly clientId = signal('');
     readonly bookmarkedCollections = signal<Set<string>>(new Set());
@@ -114,7 +118,8 @@ export class CollectionsPageComponent {
         tag: ['', [Validators.required, Validators.minLength(2)]],
         promptIds: this.fb.nonNullable.control<string[]>([], {
             validators: [this.promptSelectionValidator]
-        })
+        }),
+        customUrl: ['']
     });
 
     readonly filteredCollections = computed(() => {
@@ -293,12 +298,12 @@ export class CollectionsPageComponent {
     }
 
     async submitCollectionForm() {
-        if (this.collectionForm.invalid) {
+        if (this.collectionForm.invalid || this.customUrlError()) {
             this.collectionForm.markAllAsTouched();
             return;
         }
 
-        const { name, tag, promptIds } = this.collectionForm.getRawValue();
+        const { name, tag, promptIds, customUrl } = this.collectionForm.getRawValue();
         const currentUser = this.authService.currentUser;
         const authorId = currentUser?.uid;
 
@@ -309,17 +314,21 @@ export class CollectionsPageComponent {
             await this.collectionService.createCollection({
                 name,
                 tag,
-                promptIds
+                promptIds,
+                customUrl: customUrl?.trim() || undefined
             }, authorId);
 
             this.newCollectionModalOpen.set(false);
             this.collectionForm.reset({
                 name: '',
                 tag: '',
-                promptIds: []
+                promptIds: [],
+                customUrl: ''
             });
             this.collectionForm.markAsPristine();
             this.collectionForm.markAsUntouched();
+            this.customUrlError.set(null);
+            this.clearCustomUrlDebounce();
         } catch (error) {
             console.error('Failed to create collection', error);
             this.collectionFormError.set(
@@ -334,6 +343,66 @@ export class CollectionsPageComponent {
         return collection.id;
     }
 
+    onCustomUrlInput(value: string) {
+        const trimmed = String(value ?? '').trim();
+        this.collectionForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+        
+        // Clear any existing timer
+        if (this.customUrlTimer) {
+            clearTimeout(this.customUrlTimer);
+        }
+
+        // Clear error if empty
+        if (!trimmed) {
+            this.customUrlError.set(null);
+            this.isCheckingCustomUrl.set(false);
+            return;
+        }
+
+        // Validate format first
+        const urlPattern = /^[a-z0-9-]+$/i;
+        if (!urlPattern.test(trimmed)) {
+            this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+            this.isCheckingCustomUrl.set(false);
+            return;
+        }
+
+        // Check for reserved paths (note: 'collection' is reserved for /collection/:customUrl route)
+        const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+        if (reservedPaths.includes(trimmed.toLowerCase())) {
+            this.customUrlError.set('This URL is reserved. Please choose a different one.');
+            this.isCheckingCustomUrl.set(false);
+            return;
+        }
+
+        // Debounce the uniqueness check
+        this.isCheckingCustomUrl.set(true);
+        this.customUrlError.set(null);
+        
+        this.customUrlTimer = setTimeout(async () => {
+            try {
+                const isTaken = await this.collectionService.isCustomUrlTaken(trimmed);
+                if (isTaken) {
+                    this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+                } else {
+                    this.customUrlError.set(null);
+                }
+            } catch (error) {
+                console.error('Failed to check custom URL', error);
+                this.customUrlError.set('Unable to verify custom URL availability. Please try again.');
+            } finally {
+                this.isCheckingCustomUrl.set(false);
+            }
+        }, 500); // 500ms debounce
+    }
+
+    private clearCustomUrlDebounce() {
+        if (this.customUrlTimer) {
+            clearTimeout(this.customUrlTimer);
+            this.customUrlTimer = null;
+        }
+    }
+
     trackPromptOptionById(_: number, prompt: PromptOption) {
         return prompt.id;
     }
@@ -343,7 +412,11 @@ export class CollectionsPageComponent {
             return;
         }
 
-        void this.router.navigate(['/collections', collection.id]);
+        if (collection.customUrl) {
+            void this.router.navigate(['/collection', collection.customUrl]);
+        } else {
+            void this.router.navigate(['/collections', collection.id]);
+        }
     }
 
     navigateToSignUp() {
@@ -433,7 +506,8 @@ export class CollectionsPageComponent {
             tagLabel: this.formatTagLabel(tag),
             promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0,
             bookmarkCount: collection.bookmarkCount ?? 0,
-            heroImageUrl: collection.heroImageUrl
+            heroImageUrl: collection.heroImageUrl,
+            customUrl: collection.customUrl
         };
     }
 

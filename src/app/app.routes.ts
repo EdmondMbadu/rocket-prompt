@@ -53,6 +53,12 @@ export const routes: Routes = [
     }
   },
   {
+    path: 'collection/:customUrl',
+    // Collection by custom URL (e.g., /collection/my-custom-url)
+    loadComponent: () =>
+      import('./pages/collection-detail/collection-detail.component').then(m => m.CollectionDetailComponent)
+  },
+  {
     path: 'collections/:id',
     loadComponent: () =>
       import('./pages/collection-detail/collection-detail.component').then(m => m.CollectionDetailComponent)

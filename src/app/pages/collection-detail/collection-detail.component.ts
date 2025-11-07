@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { map, distinctUntilChanged, switchMap, combineLatest } from 'rxjs/operators';
-import { of, combineLatest as rxjsCombineLatest } from 'rxjs';
+import { map, distinctUntilChanged, switchMap, combineLatest, catchError } from 'rxjs/operators';
+import { of, combineLatest as rxjsCombineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CollectionService } from '../../services/collection.service';
 import { PromptService } from '../../services/prompt.service';
@@ -65,7 +65,7 @@ export class CollectionDetailComponent {
   readonly clientId = signal('');
   readonly copiedPromptUrl = signal<Set<string>>(new Set());
   readonly editModalOpen = signal(false);
-  readonly editModalTab = signal<'remove' | 'add'>('remove');
+  readonly editModalTab = signal<'remove' | 'add' | 'settings'>('remove');
   readonly selectedPromptsToRemove = signal<Set<string>>(new Set());
   readonly selectedPromptsToAdd = signal<Set<string>>(new Set());
   readonly isUpdatingCollection = signal(false);
@@ -77,6 +77,12 @@ export class CollectionDetailComponent {
   readonly uploadingImage = signal(false);
   readonly deletingImage = signal(false);
   readonly imageUploadError = signal<string | null>(null);
+  readonly editCollectionName = signal('');
+  readonly editCollectionTag = signal('');
+  readonly editCollectionCustomUrl = signal('');
+  readonly editCustomUrlError = signal<string | null>(null);
+  readonly isCheckingCustomUrl = signal(false);
+  private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly actorId = computed(() => {
     const user = this.authService.currentUser;
@@ -347,10 +353,13 @@ export class CollectionDetailComponent {
   private observeCollection() {
     this.route.paramMap
       .pipe(
-        map(params => params.get('id')),
+        map(params => {
+          // Support both 'id' (for /collections/:id) and 'customUrl' (for /collection/:customUrl) route parameters
+          return params.get('id') ?? params.get('customUrl') ?? '';
+        }),
         distinctUntilChanged(),
-        switchMap(id => {
-          if (!id) {
+        switchMap(identifier => {
+          if (!identifier) {
             this.collection.set(null);
             this.collectionTagLabel.set('');
             this.collectionNotFound.set(true);
@@ -361,18 +370,43 @@ export class CollectionDetailComponent {
           this.isLoadingCollection.set(true);
           this.collectionNotFound.set(false);
 
-          return this.collectionService.collection$(id).pipe(
-            map(collection => {
-              if (!collection) {
+          // Check if this is a customUrl route (from /collection/:customUrl)
+          const isCustomUrlRoute = this.route.snapshot.url[0]?.path === 'collection';
+          
+          if (isCustomUrlRoute) {
+            // Load by custom URL
+            return from(this.collectionService.getCollectionByCustomUrl(identifier)).pipe(
+              map(collection => {
+                if (!collection) {
+                  this.collectionNotFound.set(true);
+                  this.bookmarked.set(false);
+                  return null;
+                }
+
+                this.collectionNotFound.set(false);
+                return collection;
+              }),
+              catchError(() => {
                 this.collectionNotFound.set(true);
                 this.bookmarked.set(false);
-                return null;
-              }
+                return of<PromptCollection | null>(null);
+              })
+            );
+          } else {
+            // Load by ID (existing behavior)
+            return this.collectionService.collection$(identifier).pipe(
+              map(collection => {
+                if (!collection) {
+                  this.collectionNotFound.set(true);
+                  this.bookmarked.set(false);
+                  return null;
+                }
 
-              this.collectionNotFound.set(false);
-              return collection;
-            })
-          );
+                this.collectionNotFound.set(false);
+                return collection;
+              })
+            );
+          }
         }),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -722,12 +756,18 @@ export class CollectionDetailComponent {
   }
 
   openEditModal() {
+    const collection = this.collection();
     this.editModalOpen.set(true);
     this.editModalTab.set('remove');
     this.selectedPromptsToRemove.set(new Set());
     this.selectedPromptsToAdd.set(new Set());
     this.updateCollectionError.set(null);
     this.promptAddSearchTerm.set('');
+    this.editCollectionName.set(collection?.name ?? '');
+    this.editCollectionTag.set(collection?.tag ?? '');
+    this.editCollectionCustomUrl.set(collection?.customUrl ?? '');
+    this.editCustomUrlError.set(null);
+    this.clearCustomUrlDebounce();
   }
 
   closeEditModal() {
@@ -740,6 +780,11 @@ export class CollectionDetailComponent {
     this.selectedPromptsToAdd.set(new Set());
     this.updateCollectionError.set(null);
     this.promptAddSearchTerm.set('');
+    this.editCollectionName.set('');
+    this.editCollectionTag.set('');
+    this.editCollectionCustomUrl.set('');
+    this.editCustomUrlError.set(null);
+    this.clearCustomUrlDebounce();
   }
 
   togglePromptSelectionForRemoval(promptId: string) {
@@ -967,6 +1012,122 @@ export class CollectionDetailComponent {
       );
     } finally {
       this.deletingImage.set(false);
+    }
+  }
+
+  onEditCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.editCollectionCustomUrl.set(trimmed);
+    
+    // Clear any existing timer
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+    }
+
+    // Clear error if empty
+    if (!trimmed) {
+      this.editCustomUrlError.set(null);
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Validate format first
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.editCustomUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Check for reserved paths
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.editCustomUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Debounce the uniqueness check
+    this.isCheckingCustomUrl.set(true);
+    this.editCustomUrlError.set(null);
+    
+    const collection = this.collection();
+    this.customUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.collectionService.isCustomUrlTaken(trimmed, collection?.id);
+        if (isTaken) {
+          this.editCustomUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.editCustomUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.editCustomUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCustomUrl.set(false);
+      }
+    }, 500); // 500ms debounce
+  }
+
+  private clearCustomUrlDebounce() {
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+      this.customUrlTimer = null;
+    }
+  }
+
+  async updateCollectionSettings() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (this.editCustomUrlError()) {
+      return;
+    }
+
+    const name = this.editCollectionName().trim();
+    const tag = this.editCollectionTag().trim();
+    const customUrl = this.editCollectionCustomUrl().trim();
+
+    if (!name || name.length < 3) {
+      this.updateCollectionError.set('Collection name must be at least 3 characters.');
+      return;
+    }
+
+    if (!tag || tag.length < 2) {
+      this.updateCollectionError.set('Collection tag must be at least 2 characters.');
+      return;
+    }
+
+    this.isUpdatingCollection.set(true);
+    this.updateCollectionError.set(null);
+
+    try {
+      await this.collectionService.updateCollection(
+        collection.id,
+        {
+          name,
+          tag,
+          customUrl: customUrl || undefined
+        },
+        currentUser.uid
+      );
+      // Reload collection to get updated data
+      // The observable will automatically update
+      this.closeEditModal();
+    } catch (error) {
+      console.error('Failed to update collection', error);
+      this.updateCollectionError.set(
+        error instanceof Error ? error.message : 'Failed to update collection. Please try again.'
+      );
+    } finally {
+      this.isUpdatingCollection.set(false);
     }
   }
 }

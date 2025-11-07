@@ -119,6 +119,7 @@ export class CollectionService {
     const name = input.name?.trim();
     const tag = input.tag?.trim();
     const promptIds = Array.isArray(input.promptIds) ? input.promptIds.filter(Boolean) : [];
+    const customUrl = input.customUrl?.trim();
 
     if (!name) {
       throw new Error('A name is required to create a collection.');
@@ -130,6 +131,19 @@ export class CollectionService {
 
     if (promptIds.length === 0) {
       throw new Error('Select at least one prompt to create a collection.');
+    }
+
+    // Validate customUrl if provided
+    if (customUrl) {
+      if (!/^[a-z0-9-]+$/.test(customUrl)) {
+        throw new Error('Custom URL can only contain lowercase letters, numbers, and hyphens.');
+      }
+      
+      // Check if customUrl is taken (by prompt or collection)
+      const isTaken = await this.isCustomUrlTaken(customUrl);
+      if (isTaken) {
+        throw new Error('This custom URL is already taken. Please choose a different one.');
+      }
     }
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
@@ -149,6 +163,10 @@ export class CollectionService {
 
     if (authorId) {
       payload['authorId'] = authorId.trim();
+    }
+
+    if (customUrl) {
+      payload['customUrl'] = customUrl;
     }
 
     const docRef = await firestoreModule.addDoc(
@@ -222,6 +240,25 @@ export class CollectionService {
       updatePayload['heroImageUrl'] = input.heroImageUrl.trim() || null;
     }
 
+    if (typeof input.customUrl === 'string') {
+      const customUrl = input.customUrl.trim();
+      if (customUrl) {
+        if (!/^[a-z0-9-]+$/.test(customUrl)) {
+          throw new Error('Custom URL can only contain lowercase letters, numbers, and hyphens.');
+        }
+        
+        // Check if customUrl is taken (by prompt or another collection)
+        const isTaken = await this.isCustomUrlTaken(customUrl, trimmedId);
+        if (isTaken) {
+          throw new Error('This custom URL is already taken. Please choose a different one.');
+        }
+        updatePayload['customUrl'] = customUrl;
+      } else {
+        // Remove customUrl if empty string
+        updatePayload['customUrl'] = firestoreModule.deleteField();
+      }
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -292,6 +329,7 @@ export class CollectionService {
     const authorIdValue = data['authorId'];
     const collectionIdValue = data['collectionId'];
     const heroImageUrlValue = data['heroImageUrl'];
+    const customUrlValue = data['customUrl'];
 
     return {
       id,
@@ -305,7 +343,8 @@ export class CollectionService {
       updatedAt: this.toDate(updatedAtValue, firestoreModule),
       authorId: typeof authorIdValue === 'string' ? authorIdValue : undefined,
       collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined,
-      heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined
+      heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined,
+      customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined
     };
   }
 
@@ -551,6 +590,87 @@ export class CollectionService {
       heroImageUrl: null,
       updatedAt: firestoreModule.serverTimestamp()
     });
+  }
+
+  /**
+   * Get a collection by its custom URL.
+   * @param customUrl The custom URL to look up
+   * @returns The collection if found, undefined otherwise
+   */
+  async getCollectionByCustomUrl(customUrl: string): Promise<PromptCollection | undefined> {
+    const trimmed = customUrl?.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // Query for collection with this custom URL
+    const queryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'collections'),
+      firestoreModule.where('customUrl', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+
+    if (snapshot.empty) {
+      return undefined;
+    }
+
+    const doc = snapshot.docs[0];
+    return this.mapCollection(doc, firestoreModule);
+  }
+
+  /**
+   * Check if a custom URL is already taken by a prompt or another collection.
+   * This checks both prompts and collections to avoid collisions.
+   * @param customUrl The custom URL to check (should already be trimmed and normalized)
+   * @param excludeCollectionId Optional collection ID to exclude from the check (useful when editing)
+   * @returns true if the custom URL is taken, false otherwise
+   */
+  async isCustomUrlTaken(customUrl: string, excludeCollectionId?: string | null): Promise<boolean> {
+    const trimmed = customUrl?.trim();
+    if (!trimmed) {
+      return false;
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // Check collections
+    const collectionQueryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'collections'),
+      firestoreModule.where('customUrl', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const collectionSnapshot = await firestoreModule.getDocs(collectionQueryRef);
+
+    if (!collectionSnapshot.empty) {
+      // If we're editing a collection, check if the found collection is the one being edited
+      if (excludeCollectionId) {
+        const foundDoc = collectionSnapshot.docs[0];
+        if (foundDoc.id !== excludeCollectionId) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+
+    // Check prompts (import PromptService to check)
+    const promptService = await import('./prompt.service').then(m => m.PromptService);
+    // We need to create an instance, but since it's a service, we'll check directly
+    // For now, let's check prompts directly here
+    const promptQueryRef = firestoreModule.query(
+      firestoreModule.collection(firestore, 'prompts'),
+      firestoreModule.where('customUrl', '==', trimmed),
+      firestoreModule.limit(1)
+    );
+
+    const promptSnapshot = await firestoreModule.getDocs(promptQueryRef);
+
+    return !promptSnapshot.empty;
   }
 }
 

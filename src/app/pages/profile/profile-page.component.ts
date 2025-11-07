@@ -593,6 +593,18 @@ export class ProfilePageComponent {
     }
   }
 
+  navigateToCollection(collection: PromptCollection) {
+    if (!collection?.id) {
+      return;
+    }
+
+    if (collection.customUrl) {
+      void this.router.navigate(['/collection', collection.customUrl]);
+    } else {
+      void this.router.navigate(['/collections', collection.id]);
+    }
+  }
+
   getPromptUrl(prompt: PromptCard): string {
     const short = prompt.id ? prompt.id.slice(0, 8) : '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';

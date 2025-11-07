@@ -462,6 +462,14 @@
             [disabled]="isUpdatingCollection()" (click)="editModalTab.set('add')">
             Add Prompts
           </button>
+          <button type="button" class="px-4 py-2 text-sm font-semibold transition-colors border-b-2"
+            [class.text-slate-900]="editModalTab() === 'settings'"
+            [class.text-slate-400]="editModalTab() !== 'settings'"
+            [class.border-[#DC2626]]="editModalTab() === 'settings'"
+            [class.border-transparent]="editModalTab() !== 'settings'" [disabled]="isUpdatingCollection()"
+            (click)="editModalTab.set('settings')">
+            Settings
+          </button>
         </div>
 
         <!-- Instructions -->
@@ -470,6 +478,9 @@
         </p>
         <p class="mb-6 text-sm text-slate-600" *ngIf="editModalTab() === 'add'">
           Select prompts to add to this collection. Prompts already in the collection are not shown.
+        </p>
+        <p class="mb-6 text-sm text-slate-600" *ngIf="editModalTab() === 'settings'">
+          Update collection name, tag, and custom URL.
         </p>
 
         <!-- Remove Prompts Section -->
@@ -605,6 +616,50 @@
           </div>
         </ng-container>
 
+        <!-- Settings Section -->
+        <ng-container *ngIf="editModalTab() === 'settings'">
+          <div class="space-y-5 mb-6">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-name">Collection
+                name</label>
+              <input id="edit-collection-name" type="text"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [value]="editCollectionName()" (input)="editCollectionName.set(($any($event.target)).value)"
+                [disabled]="isUpdatingCollection()" placeholder="e.g. Launch Campaign Toolkit" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-tag">Collection
+                tag</label>
+              <input id="edit-collection-tag" type="text"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [value]="editCollectionTag()" (input)="editCollectionTag.set(($any($event.target)).value)"
+                [disabled]="isUpdatingCollection()" placeholder="e.g. marketing" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-custom-url">Custom URL
+                (optional)</label>
+              <input id="edit-collection-custom-url" type="text"
+                class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [class.border-red-300]="editCustomUrlError()" [class.border-slate-300]="!editCustomUrlError()"
+                [class.focus:border-[#DC2626]]="!editCustomUrlError()" [value]="editCollectionCustomUrl()"
+                (input)="onEditCustomUrlInput(($any($event.target)).value)" [disabled]="isUpdatingCollection()"
+                placeholder="e.g. my-awesome-collection" />
+              <p *ngIf="editCustomUrlError()" class="mt-1 text-xs text-red-600">
+                {{ editCustomUrlError() }}
+              </p>
+              <p *ngIf="!editCustomUrlError() && !isCheckingCustomUrl() && editCollectionCustomUrl()"
+                class="mt-1 text-xs text-slate-500">
+                Your collection will be available at: rocketprompt.io/collection/{{ editCollectionCustomUrl() }}
+              </p>
+              <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+                Checking availability...
+              </p>
+            </div>
+          </div>
+        </ng-container>
+
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
           <button type="button"
@@ -624,6 +679,12 @@
             (click)="addSelectedPrompts()" [disabled]="isUpdatingCollection() || selectedPromptsToAdd().size === 0">
             <span *ngIf="!isUpdatingCollection()">Add Selected</span>
             <span *ngIf="isUpdatingCollection()">Adding...</span>
+          </button>
+          <button *ngIf="editModalTab() === 'settings'" type="button"
+            class="rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            (click)="updateCollectionSettings()" [disabled]="isUpdatingCollection() || editCustomUrlError() !== null">
+            <span *ngIf="!isUpdatingCollection()">Save Changes</span>
+            <span *ngIf="isUpdatingCollection()">Saving...</span>
           </button>
         </div>
       </div>
