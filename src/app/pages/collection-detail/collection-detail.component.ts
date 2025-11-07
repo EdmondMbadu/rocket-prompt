@@ -211,6 +211,10 @@ export class CollectionDetailComponent {
     this.searchTerm.set(value);
   }
 
+  clearSearch() {
+    this.searchTerm.set('');
+  }
+
   async copyPrompt(prompt: PromptCard) {
     if (!prompt) {
       return;
