@@ -19,6 +19,7 @@ interface CollectionCard {
     readonly tagLabel: string;
     readonly promptCount: number;
     readonly bookmarkCount: number;
+    readonly heroImageUrl?: string;
 }
 
 interface PromptOption {
@@ -431,7 +432,8 @@ export class CollectionsPageComponent {
             tag,
             tagLabel: this.formatTagLabel(tag),
             promptCount: Array.isArray(collection.promptIds) ? collection.promptIds.length : 0,
-            bookmarkCount: collection.bookmarkCount ?? 0
+            bookmarkCount: collection.bookmarkCount ?? 0,
+            heroImageUrl: collection.heroImageUrl
         };
     }
 

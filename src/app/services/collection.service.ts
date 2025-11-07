@@ -218,6 +218,10 @@ export class CollectionService {
       updatePayload['promptIds'] = Array.from(new Set(prompts));
     }
 
+    if (typeof input.heroImageUrl === 'string') {
+      updatePayload['heroImageUrl'] = input.heroImageUrl.trim() || null;
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -287,6 +291,7 @@ export class CollectionService {
     const updatedAtValue = data['updatedAt'];
     const authorIdValue = data['authorId'];
     const collectionIdValue = data['collectionId'];
+    const heroImageUrlValue = data['heroImageUrl'];
 
     return {
       id,
@@ -299,7 +304,8 @@ export class CollectionService {
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule),
       authorId: typeof authorIdValue === 'string' ? authorIdValue : undefined,
-      collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined
+      collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined,
+      heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined
     };
   }
 
@@ -414,6 +420,137 @@ export class CollectionService {
     });
 
     return result as { bookmarked: boolean; bookmarkCount: number };
+  }
+
+  async uploadHeroImage(collectionId: string, file: File, userId: string): Promise<string> {
+    const trimmedId = collectionId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A collection id is required to upload a hero image.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to upload images.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only upload images for collections you created.');
+      }
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `collections/${trimmedId}/hero-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the collection with the new image URL
+    await firestoreModule.updateDoc(docRef, {
+      heroImageUrl: downloadURL,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
+
+    return downloadURL;
+  }
+
+  async deleteHeroImage(collectionId: string, userId: string): Promise<void> {
+    const trimmedId = collectionId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A collection id is required to delete a hero image.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+    const heroImageUrl = collectionData['heroImageUrl'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to delete images.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only delete images for collections you created.');
+      }
+    }
+
+    // Delete from Storage if URL exists
+    if (heroImageUrl) {
+      try {
+        const storageModule = await import('firebase/storage');
+        const storage = storageModule.getStorage(this.app);
+        
+        // Extract the path from the URL
+        // Firebase Storage URLs format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encodedPath}?alt=media
+        try {
+          const url = new URL(heroImageUrl);
+          const pathMatch = url.pathname.match(/\/o\/(.+)\?/);
+          if (pathMatch && pathMatch[1]) {
+            const decodedPath = decodeURIComponent(pathMatch[1]);
+            const imageRef = storageModule.ref(storage, decodedPath);
+            await storageModule.deleteObject(imageRef);
+          } else {
+            console.warn('Could not extract path from storage URL:', heroImageUrl);
+          }
+        } catch (urlError) {
+          // If URL parsing fails, log the error
+          console.warn('Failed to parse storage URL:', urlError);
+        }
+      } catch (error) {
+        // If deletion from storage fails, continue to remove from Firestore
+        console.warn('Failed to delete image from storage:', error);
+      }
+    }
+
+    // Remove the heroImageUrl from Firestore
+    await firestoreModule.updateDoc(docRef, {
+      heroImageUrl: null,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
   }
 }
 

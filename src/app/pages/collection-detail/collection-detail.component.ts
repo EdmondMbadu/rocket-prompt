@@ -74,6 +74,9 @@ export class CollectionDetailComponent {
   readonly isLoadingAvailablePrompts = signal(true);
   readonly loadAvailablePromptsError = signal<string | null>(null);
   readonly promptAddSearchTerm = signal('');
+  readonly uploadingImage = signal(false);
+  readonly deletingImage = signal(false);
+  readonly imageUploadError = signal<string | null>(null);
 
   readonly actorId = computed(() => {
     const user = this.authService.currentUser;
@@ -893,6 +896,73 @@ export class CollectionDetailComponent {
     } catch (error) {
       console.error('Failed to delete collection', error);
       alert(error instanceof Error ? error.message : 'Failed to delete collection. Please try again.');
+    }
+  }
+
+  async onImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    this.uploadingImage.set(true);
+    this.imageUploadError.set(null);
+
+    try {
+      const imageUrl = await this.collectionService.uploadHeroImage(collection.id, file, currentUser.uid);
+      this.collection.set({ ...collection, heroImageUrl: imageUrl });
+    } catch (error) {
+      console.error('Failed to upload hero image', error);
+      this.imageUploadError.set(
+        error instanceof Error ? error.message : 'Failed to upload image. Please try again.'
+      );
+    } finally {
+      this.uploadingImage.set(false);
+      // Reset the input
+      input.value = '';
+    }
+  }
+
+  async deleteHeroImage() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to remove the hero image?')) {
+      return;
+    }
+
+    this.deletingImage.set(true);
+    this.imageUploadError.set(null);
+
+    try {
+      await this.collectionService.deleteHeroImage(collection.id, currentUser.uid);
+      this.collection.set({ ...collection, heroImageUrl: undefined });
+    } catch (error) {
+      console.error('Failed to delete hero image', error);
+      this.imageUploadError.set(
+        error instanceof Error ? error.message : 'Failed to delete image. Please try again.'
+      );
+    } finally {
+      this.deletingImage.set(false);
     }
   }
 }
