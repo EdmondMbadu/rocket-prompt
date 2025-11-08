@@ -16,16 +16,10 @@
                         <span>Back</span>
                     </button>
 
-                    <div class="flex items-center justify-center sm:justify-start gap-2.5 w-full sm:w-auto min-w-0">
-                        <span
-                            class="hidden sm:inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 overflow-hidden flex-1 sm:flex-initial min-w-0">
-                            <span class="truncate">{{ fullPath() }}</span>
-                        </span>
-                        <button type="button" (click)="openShareModal()"
-                            class="share-button-header inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 flex-shrink-0 whitespace-nowrap">
-                            Share
-                        </button>
-                    </div>
+                    <button type="button" (click)="openShareModal()"
+                        class="share-button-header inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 flex-shrink-0 whitespace-nowrap">
+                        Share
+                    </button>
                 </div>
             </div>
         </div>
