@@ -35,7 +35,7 @@ export class PromptPageComponent {
   // copied state for the single prompt page (used to show check icon briefly)
   readonly copied = signal(false);
   private copyTimer?: ReturnType<typeof setTimeout>;
-  
+
   // Collapsible sections state - launch stays open, share starts collapsed
   readonly launchSectionExpanded = signal(true);
   readonly shareSectionExpanded = signal(false);
@@ -263,7 +263,7 @@ export class PromptPageComponent {
     try {
       // First, try to find by customUrl (most efficient for custom URLs)
       let found = await this.promptService.getPromptByCustomUrl(identifier);
-      
+
       // If not found by customUrl, try by ID (supports full ID or short prefix)
       if (!found) {
         found = await this.promptService.getPromptById(identifier);
@@ -281,24 +281,24 @@ export class PromptPageComponent {
       this.prompt.set(found);
       this.loadError.set(null);
       this.isLoading.set(false);
-      
+
       // Load author profile if authorId exists
       if (found.authorId) {
         void this.loadAuthorProfile(found.authorId);
       }
-      
+
       // determine whether current actor already liked this prompt
       void this.updateLikedState(found.id);
     } catch (error) {
       // Handle errors gracefully - show error message but don't redirect
       console.error('Failed to load prompt', error);
       this.prompt.set(undefined);
-      
+
       // Provide more specific error messages
-      const errorMessage = error instanceof Error 
-        ? `Could not load the prompt: ${error.message}` 
+      const errorMessage = error instanceof Error
+        ? `Could not load the prompt: ${error.message}`
         : 'Could not load the prompt. Please try again.';
-      
+
       this.loadError.set(errorMessage);
       this.isLoading.set(false);
     }
