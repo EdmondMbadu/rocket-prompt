@@ -511,11 +511,36 @@ export class HomeComponent {
 
     const button = this.avatarButtonRef.nativeElement;
     const rect = button.getBoundingClientRect();
-    // Position menu below the button with some spacing
-    this.menuTop.set(rect.bottom + 12);
-    // Align right edge of menu with right edge of button
     const viewportWidth = window.innerWidth;
-    this.menuRight.set(Math.max(16, viewportWidth - rect.right));
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth < 640;
+    
+    if (isMobile) {
+      // On mobile, position below the button with some spacing
+      // Ensure it doesn't go off screen at the bottom
+      const menuHeight = 250; // Approximate menu height (increased for safety)
+      const spacing = 12;
+      let topPosition = rect.bottom + spacing;
+      
+      // If menu would go off screen, position it above the button instead
+      if (topPosition + menuHeight > viewportHeight - 16) {
+        topPosition = rect.top - menuHeight - spacing;
+        // Ensure it doesn't go off screen at the top either
+        if (topPosition < 16) {
+          topPosition = 16;
+        }
+      }
+      
+      // Ensure menu is always visible and not cut off
+      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
+      // On mobile, align to right with some margin
+      this.menuRight.set(16);
+    } else {
+      // Desktop: Position menu below the button with some spacing
+      this.menuTop.set(rect.bottom + 12);
+      // Align right edge of menu with right edge of button
+      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
+    }
   }
 
   closeMenu() {

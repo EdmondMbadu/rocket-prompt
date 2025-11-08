@@ -20,7 +20,7 @@
               <span class="min-[375px]:hidden">New</span>
             </button>
 
-            <div class="relative z-[9999]" data-user-menu>
+            <div class="relative z-50" data-user-menu>
               <button #avatarButton type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
                 aria-haspopup="true">
                 <span class="sr-only">Open user menu</span>
@@ -116,7 +116,7 @@
     </section>
 
     <!-- CATEGORIES - Horizontally Scrollable -->
-    <section class="mx-auto max-w-6xl px-2 py-3 sm:px-3 sm:py-4 md:px-4 md:py-6 lg:px-8">
+    <section class="hidden sm:block mx-auto max-w-6xl px-2 py-3 sm:px-3 sm:py-4 md:px-4 md:py-6 lg:px-8">
       <div class="relative">
         <!-- Scrollable container -->
         <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2 scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
@@ -151,8 +151,8 @@
       </div>
 
       <ng-container *ngIf="isLoadingPrompts(); else promptList">
-        <div class="grid gap-3 sm:gap-4 md:gap-6 lg:gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
-          <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-xl border-2 border-black/5 bg-white p-3 shadow-lg animate-pulse sm:rounded-2xl sm:p-4 md:rounded-3xl md:p-6 w-full max-w-full box-border">
+        <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
+          <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg animate-pulse w-full max-w-full box-border">
             <div class="h-5 w-24 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-7 sm:w-28"></div>
             <div class="mt-4 h-5 w-3/4 rounded-lg bg-gradient-to-r from-slate-200 to-slate-100 sm:mt-5 sm:h-6"></div>
             <div class="mt-2.5 h-3.5 w-full rounded-lg bg-gradient-to-r from-slate-200/80 to-slate-100/80 sm:mt-3 sm:h-4"></div>
@@ -171,19 +171,19 @@
 
       <ng-template #promptList>
         <ng-container *ngIf="filteredPrompts().length > 0; else showEmptyState">
-          <div class="grid gap-3 sm:gap-4 md:gap-6 lg:gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
+          <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
 
             <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-              class="group flex h-full flex-col rounded-xl border-2 border-black/5 bg-white p-3 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 sm:rounded-2xl sm:p-4 md:rounded-3xl md:p-6 w-full min-w-0 max-w-full overflow-hidden box-border">
+              class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 w-full min-w-0 max-w-full overflow-hidden box-border">
 
               <!-- Tag at the top -->
               <span
-                class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-1.5 py-0.5 text-[9px] font-bold capitalize text-[#DC2626] shadow-sm sm:px-2 sm:py-1 md:px-3 md:py-1.5 md:text-xs">
+                class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-3 py-1.5 text-xs font-bold capitalize text-[#DC2626] shadow-sm">
                 {{ prompt.tagLabel }}
               </span>
 
               <!-- Author section -->
-              <div *ngIf="prompt.authorId" class="mt-1.5 flex items-center gap-1.5 sm:mt-2 md:mt-3 md:gap-2.5">
+              <div *ngIf="prompt.authorId" class="mt-3 flex items-center gap-2.5">
                 <button
                   type="button"
                   (click)="navigateToAuthorProfile(prompt.authorId, $event)"
@@ -210,9 +210,9 @@
               </div>
 
               <!-- Likes count between author and title (hidden when zero) -->
-              <div *ngIf="(prompt.likes || 0) > 0" class="mt-1.5 flex items-center gap-1.5 text-[10px] sm:mt-2 sm:gap-2 md:mt-3 md:gap-3 md:text-xs sm:text-sm">
-                <span class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 px-1.5 py-0.5 shadow-sm sm:gap-1.5 sm:px-2 sm:py-1 md:gap-2 md:px-3 md:py-1.5">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-2.5 w-2.5 text-[#DC2626] sm:h-3 sm:w-3 md:h-4 md:w-4" fill="currentColor"
+              <div *ngIf="(prompt.likes || 0) > 0" class="mt-3 flex items-center gap-3 text-sm">
+                <span class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 px-3 py-1.5 shadow-sm">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-[#DC2626]" fill="currentColor"
                     stroke="currentColor" stroke-width="1.6">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
@@ -221,11 +221,11 @@
                 </span>
               </div>
 
-              <h3 class="mt-2 text-sm font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200 sm:mt-3 sm:text-base md:mt-4 md:text-xl break-words overflow-wrap-anywhere leading-tight">
+              <h3 class="mt-4 text-xl font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200 break-words overflow-wrap-anywhere leading-tight">
                 {{ prompt.title }}
               </h3>
 
-              <div *ngIf="prompt.customUrl || prompt.id" class="mt-1 prompt-link-wrapper-home min-w-0 sm:mt-1.5">
+              <div *ngIf="prompt.customUrl || prompt.id" class="mt-1.5 prompt-link-wrapper-home min-w-0">
                 <a [href]="getPromptUrl(prompt)" target="_blank" class="prompt-link-home min-w-0" title="Open prompt link">
                   <svg aria-hidden="true" viewBox="0 0 24 24" class="prompt-link-icon-home flex-shrink-0" fill="none"
                     stroke="currentColor" stroke-width="2">
@@ -254,11 +254,11 @@
                 </button>
               </div>
 
-              <div class="prompt-snippet mt-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-2.5 text-[11px] text-slate-800 min-h-[6rem] leading-relaxed break-words overflow-wrap-anywhere sm:mt-3 sm:rounded-xl sm:p-3 sm:text-xs sm:min-h-[7rem] md:mt-4 md:rounded-2xl md:p-5 md:text-sm md:min-h-[10rem]">
+              <div class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed break-words overflow-wrap-anywhere">
                 {{ prompt.preview }}
               </div>
 
-              <div class="mt-3 mt-auto flex items-center justify-end gap-1 text-[10px] sm:mt-4 sm:gap-1.5 md:mt-6 md:gap-2.5 md:text-xs sm:text-sm">
+              <div class="mt-6 mt-auto flex items-center justify-end gap-2.5 text-sm">
                 <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
                   title="Copy prompt" (click)="copyPrompt(prompt); $event.stopPropagation()">
                   <ng-container *ngIf="recentlyCopied().has(prompt.id); else copyIcon">
