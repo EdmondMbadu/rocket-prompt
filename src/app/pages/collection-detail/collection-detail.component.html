@@ -1,11 +1,13 @@
 <ng-container *ngIf="profileLoaded(); else loading">
   <div class="min-h-screen bg-white text-slate-900">
-    <header class="bg-white border-b border-slate-200">
-      <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
+    <!-- TOP BAR -->
+    <header class="bg-white/95 backdrop-blur-xl border-b-2 border-black/5 shadow-md sticky top-0 z-40">
+      <div class="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <!-- Brand -->
           <div class="flex items-center gap-4 text-slate-900">
             <button type="button"
-              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+              class="inline-flex items-center gap-2 rounded-xl border-2 border-black/10 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#DC2626]/30 hover:bg-slate-50 hover:text-[#DC2626]"
               (click)="backToCollections()">
               <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                 <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
@@ -105,7 +107,7 @@
       <ng-container *ngIf="!collectionNotFound()">
         <!-- Hero Image Section with Title Overlay -->
         <div class="mb-8">
-          <div class="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200"
+          <div class="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-black/5"
             [class.bg-gradient-to-br]="!collection()?.heroImageUrl" [class.from-slate-100]="!collection()?.heroImageUrl"
             [class.to-slate-50]="!collection()?.heroImageUrl"
             [style.background-image]="collection()?.heroImageUrl ? 'url(' + collection()?.heroImageUrl + ')' : 'none'"
@@ -120,10 +122,13 @@
               <div class="max-w-4xl">
                 <!-- Meta Info -->
                 <div class="flex flex-wrap items-center gap-3 mb-4">
-                  <span [class.bg-white/95]="collection()?.heroImageUrl"
-                    [class.bg-slate-100]="!collection()?.heroImageUrl" [class.text-slate-700]="true"
+                  <span [class.bg-white/95]="collection()?.heroImageUrl" [class.bg-white]="!collection()?.heroImageUrl"
+                    [class.border-white/50]="collection()?.heroImageUrl"
+                    [class.border-[#DC2626]/30]="!collection()?.heroImageUrl"
+                    [class.text-slate-700]="collection()?.heroImageUrl"
+                    [class.text-[#DC2626]]="!collection()?.heroImageUrl"
                     [class.drop-shadow-lg]="collection()?.heroImageUrl"
-                    class="inline-flex items-center rounded-full backdrop-blur-sm px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide border border-white/50 shadow-lg">
+                    class="inline-flex items-center rounded-full backdrop-blur-sm border-2 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide shadow-lg">
                     {{ collectionTagLabel() }}
                   </span>
                   <span *ngIf="collection()" [class.text-white]="collection()?.heroImageUrl"
@@ -152,15 +157,15 @@
                     [class.text-slate-900]="!collection()?.heroImageUrl"
                     [class.drop-shadow-2xl]="collection()?.heroImageUrl"
                     [class.[text-shadow:_0_2px_20px_rgb(0_0_0_/_60%)]]="collection()?.heroImageUrl"
-                    class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+                    class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
                     {{ collection()?.name || 'Collection' }}
                   </h1>
                   <div *ngIf="canEdit()" class="flex items-center gap-2 flex-shrink-0">
                     <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
                       [class.bg-white]="!collection()?.heroImageUrl"
                       [class.border-white/30]="collection()?.heroImageUrl"
-                      [class.border-slate-300]="!collection()?.heroImageUrl"
-                      class="inline-flex items-center gap-2 rounded-xl border backdrop-blur-sm px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-white hover:shadow-lg"
+                      [class.border-black/10]="!collection()?.heroImageUrl"
+                      class="inline-flex items-center gap-2 rounded-xl border-2 backdrop-blur-sm px-4 py-2 text-sm font-bold text-slate-700 transition-all hover:bg-white hover:shadow-lg hover:border-[#DC2626]/30 hover:text-[#DC2626]"
                       (click)="openEditModal()" title="Edit collection">
                       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none"
@@ -172,7 +177,7 @@
                     </button>
                     <button type="button" [class.bg-white/95]="collection()?.heroImageUrl"
                       [class.bg-white]="!collection()?.heroImageUrl"
-                      class="inline-flex items-center gap-2 rounded-xl border border-red-300 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-white hover:shadow-lg"
+                      class="inline-flex items-center gap-2 rounded-xl border-2 border-red-300 backdrop-blur-sm px-4 py-2 text-sm font-bold text-red-600 transition-all hover:bg-red-50 hover:shadow-lg hover:border-red-400"
                       (click)="deleteCollection()" title="Delete collection">
                       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
@@ -250,18 +255,18 @@
         <!-- Search Bar - Below Hero Image -->
         <div class="mb-8">
           <label
-            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-slate-200 shadow-sm hover:border-slate-300 transition-all focus-within:border-[#DC2626] focus-within:ring-2 focus-within:ring-[#DC2626]/20 focus-within:shadow-md">
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 focus-within:border-[#DC2626] focus-within:ring-2 focus-within:ring-[#DC2626]/20 focus-within:shadow-lg">
             <svg aria-hidden="true" viewBox="0 0 24 24"
               class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
               <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <input type="search"
-              class="w-full rounded-2xl bg-transparent py-4 pr-12 text-[15px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              class="w-full rounded-2xl bg-white py-4 pr-12 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none"
               placeholder="Search within this collection..." [value]="searchTerm()"
               (input)="onSearch(($any($event.target)).value)" />
             <button *ngIf="searchTerm()" type="button"
-              class="absolute right-3 flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              class="absolute right-3 flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-[#DC2626] hover:bg-red-50 transition-all"
               (click)="clearSearch()" aria-label="Clear search">
               <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                 <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -273,24 +278,25 @@
 
         <!-- Blurb Section - Below Search -->
         <div *ngIf="collection()?.blurb"
-          class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 border border-slate-200 shadow-sm">
-          <div class="flex items-start gap-3">
+          class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 border-2 border-black/5 shadow-md">
+          <div class="flex items-start gap-4">
             <div class="flex-shrink-0 mt-0.5">
-              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor"
-                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round" />
-                <line x1="16" y1="13" x2="8" y2="13" fill="none" stroke="currentColor" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round" />
-                <line x1="16" y1="17" x2="8" y2="17" fill="none" stroke="currentColor" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round" />
-                <polyline points="10 9 9 9 8 9" fill="none" stroke="currentColor" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#DC2626] to-[#B91C1C] shadow-lg">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-white">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor"
+                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <line x1="16" y1="13" x2="8" y2="13" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <line x1="16" y1="17" x2="8" y2="17" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
             </div>
             <div class="flex-1">
-              <p class="text-lg text-slate-700 leading-relaxed font-medium">
+              <p class="text-lg text-slate-800 leading-relaxed font-semibold">
                 {{ collection()?.blurb }}
               </p>
             </div>
@@ -302,16 +308,18 @@
         </div>
 
         <ng-container *ngIf="isLoadingCollection() || isLoadingPrompts(); else promptList">
-          <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-              <div class="h-6 w-24 rounded-full bg-slate-200/70"></div>
-              <div class="mt-4 h-5 w-3/4 rounded bg-slate-200/70"></div>
-              <div class="mt-2 h-4 w-full rounded bg-slate-200/60"></div>
-              <div class="mt-6 h-24 rounded-xl bg-slate-100/80"></div>
+          <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div *ngFor="let skeleton of [1, 2, 3]"
+              class="rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg animate-pulse">
+              <div class="h-7 w-28 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
+              <div class="mt-5 h-6 w-3/4 rounded-lg bg-gradient-to-r from-slate-200 to-slate-100"></div>
+              <div class="mt-3 h-4 w-full rounded-lg bg-gradient-to-r from-slate-200/80 to-slate-100/80"></div>
+              <div class="mt-2 h-4 w-11/12 rounded-lg bg-gradient-to-r from-slate-200/60 to-slate-100/60"></div>
+              <div class="mt-6 h-28 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50"></div>
               <div class="mt-6 flex justify-end gap-2">
-                <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
-                <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
-                <div class="h-8 w-8 rounded-full bg-slate-200/70"></div>
+                <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
+                <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
+                <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
               </div>
             </div>
           </div>
@@ -319,11 +327,11 @@
 
         <ng-template #promptList>
           <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
-            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-                class="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg hover:border-slate-300 hover:-translate-y-1">
+                class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20">
                 <span
-                  class="w-fit rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 border border-slate-200 shadow-sm">
+                  class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-3 py-1.5 text-xs font-bold capitalize text-[#DC2626] shadow-sm">
                   {{ prompt.tagLabel }}
                 </span>
 
@@ -351,7 +359,8 @@
                   </button>
                 </div>
 
-                <h3 class="mt-4 text-xl font-bold tracking-tight text-slate-900 leading-snug">
+                <h3
+                  class="mt-4 text-xl font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200">
                   {{ prompt.title }}
                 </h3>
 
@@ -386,11 +395,11 @@
                 </div>
 
                 <div
-                  class="prompt-snippet mt-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 p-5 text-sm text-slate-700 min-h-[10rem] border border-slate-100 leading-relaxed">
+                  class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed">
                   {{ prompt.preview }}
                 </div>
 
-                <div class="mt-5 mt-auto flex items-center justify-end gap-2 text-sm text-slate-500">
+                <div class="mt-6 mt-auto flex items-center justify-end gap-2.5 text-sm">
                   <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
                     title="Copy prompt" (click)="copyPrompt(prompt)">
                     <ng-container *ngIf="recentlyCopied().has(prompt.id); else copyIcon">
@@ -427,21 +436,16 @@
 
         <ng-template #noPrompts>
           <div
-            class="mx-auto max-w-6xl rounded-3xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-10 py-20 text-center shadow-sm">
+            class="mx-auto max-w-6xl rounded-3xl border-2 border-dashed border-black/10 bg-gradient-to-br from-white to-slate-50/50 px-10 py-20 text-center shadow-lg">
             <ng-container *ngIf="searchTerm().trim(); else noPromptsInCollection">
-              <div class="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8 text-slate-400">
-                  <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-              <p class="text-xl font-bold text-slate-900">No prompts found</p>
-              <p class="mt-3 max-w-md mx-auto text-base text-slate-600 leading-relaxed">
-                No prompts match your search <span class="font-semibold text-slate-700">"{{ searchTerm() }}"</span>. Try
+              <div class="text-6xl mb-6">🔍</div>
+              <p class="text-2xl font-black text-black">No prompts found</p>
+              <p class="mt-3 max-w-md mx-auto text-base text-black/60 leading-relaxed">
+                No prompts match your search <span class="font-bold text-black">"{{ searchTerm() }}"</span>. Try
                 a different search term.
               </p>
               <button type="button"
-                class="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50 hover:shadow-md"
+                class="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-black/10 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition-all hover:border-[#DC2626]/30 hover:bg-slate-50 hover:text-[#DC2626] hover:shadow-md"
                 (click)="clearSearch()">
                 <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
                   <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"
@@ -451,16 +455,9 @@
               </button>
             </ng-container>
             <ng-template #noPromptsInCollection>
-              <div class="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8 text-slate-400">
-                  <path
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                    stroke-linejoin="round" />
-                </svg>
-              </div>
-              <p class="text-xl font-bold text-slate-900">No prompts in this collection yet</p>
-              <p class="mt-3 max-w-md mx-auto text-base text-slate-600 leading-relaxed">
+              <div class="text-6xl mb-6">📝</div>
+              <p class="text-2xl font-black text-black">No prompts in this collection yet</p>
+              <p class="mt-3 max-w-md mx-auto text-base text-black/60 leading-relaxed">
                 Add prompts to this collection from the collections page.
               </p>
             </ng-template>
