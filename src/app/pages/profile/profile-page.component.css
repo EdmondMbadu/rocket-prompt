@@ -94,14 +94,15 @@
   transform: translateY(-1px);
 }
 
-.category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+.icon-button--share {
+  background: #fee2e2;
+  color: #dc2626;
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.12);
 }
 
-.category-chip__button {
-  transition: all 0.15s ease;
+.icon-button--share:hover {
+  background: #fecaca;
+  color: #b91c1c;
 }
 
 .avatar-button {
@@ -323,15 +324,15 @@
 /* Profile Tabs */
 .profile-tab {
   position: relative;
-  padding: 12px 0;
-  font-size: 0.9375rem;
-  font-weight: 500;
+  padding: 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
   color: #64748b;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .profile-tab:hover {
@@ -339,13 +340,121 @@
 }
 
 .profile-tab--active {
-  color: #1e293b;
-  font-weight: 600;
+  color: #DC2626;
+  font-weight: 700;
   border-bottom-color: #DC2626;
 }
 
 .profile-tab--active:hover {
-  color: #1e293b;
+  color: #DC2626;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding: 0 1rem;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Category button active state enhancement */
+.category-chip__button {
+  position: relative;
+  overflow: hidden;
+}
+
+.category-chip__button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.category-chip__button:hover::before {
+  opacity: 1;
+}
+
+.collection-bookmark-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 0;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.collection-bookmark-button:hover:not(:disabled) {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.collection-bookmark-button[aria-pressed='true'] {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.collection-bookmark-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.collection-bookmark-button[data-tooltip] {
+  position: relative;
+}
+
+.collection-bookmark-button[data-tooltip]::before,
+.collection-bookmark-button[data-tooltip]::after {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.collection-bookmark-button[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translate(-50%, 6px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+}
+
+.collection-bookmark-button[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 50%;
+  transform: translate(-50%, 6px);
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  z-index: 30;
+  box-shadow: 0 6px 20px -10px rgba(15, 23, 42, 0.4);
+}
+
+.collection-bookmark-button[data-tooltip]:hover::before,
+.collection-bookmark-button[data-tooltip]:hover::after,
+.collection-bookmark-button[data-tooltip]:focus-visible::before,
+.collection-bookmark-button[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .icon-button--primary {
