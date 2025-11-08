@@ -265,7 +265,7 @@ export class ProfilePageComponent {
     };
   });
 
-  readonly launchBreakdownExpanded = signal(false);
+  readonly metricsExpanded = signal(false);
 
   readonly tagSuggestions = computed(() => {
     const term = String(this.tagQueryDebounced()).trim().toLowerCase();
@@ -327,8 +327,8 @@ export class ProfilePageComponent {
     this.activeTab.set(tab);
   }
 
-  toggleLaunchBreakdown() {
-    this.launchBreakdownExpanded.update(v => !v);
+  toggleMetrics() {
+    this.metricsExpanded.update(v => !v);
   }
 
   private observeCollections() {
