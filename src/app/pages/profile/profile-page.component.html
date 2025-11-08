@@ -131,7 +131,7 @@
             </div>
           </div>
         </div>
-        <div class="ml-auto">
+        <div class="ml-auto flex flex-col items-end gap-3">
           <div
             class="inline-flex items-center gap-3 rounded-2xl bg-white border-2 border-[#DC2626]/30 px-6 py-3 shadow-lg">
             <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-[#DC2626]" fill="none" stroke="currentColor"
@@ -148,6 +148,69 @@
               </ng-container>
             </span>
           </div>
+
+          <!-- Total Launches (only show on prompts tab) -->
+          <ng-container *ngIf="activeTab() === 'prompts'">
+            <div
+              class="inline-flex items-center gap-3 rounded-2xl bg-white border-2 border-blue-200/50 px-6 py-3 shadow-lg">
+              <span class="text-xl">🚀</span>
+              <div class="flex flex-col">
+                <span class="text-base font-black text-slate-900">
+                  <span class="text-blue-600">{{ totalLaunches() }}</span> Launches
+                </span>
+                <button type="button" (click)="toggleLaunchBreakdown()"
+                  class="text-xs text-blue-500 hover:text-blue-700 mt-0.5 flex items-center gap-1"
+                  [attr.aria-expanded]="launchBreakdownExpanded()">
+                  <span>{{ launchBreakdownExpanded() ? 'Hide' : 'Show' }} breakdown</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 transition-transform"
+                    [class.rotate-180]="launchBreakdownExpanded()" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Launch Breakdown (expandable) -->
+            <div *ngIf="launchBreakdownExpanded()"
+              class="rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200/50 px-6 py-4 shadow-lg w-full max-w-xs">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <img src="assets/gpt.png" alt="ChatGPT" class="h-5 w-5" />
+                    <span class="text-sm font-semibold text-slate-700">ChatGPT</span>
+                  </div>
+                  <span class="text-sm font-bold text-blue-600">{{ launchBreakdown().gpt }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <img src="assets/gemini.png" alt="Gemini" class="h-5 w-5" />
+                    <span class="text-sm font-semibold text-slate-700">Gemini</span>
+                  </div>
+                  <span class="text-sm font-bold text-blue-600">{{ launchBreakdown().gemini }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <img src="assets/claude.jpeg" alt="Claude" class="h-5 w-5 rounded-full" />
+                    <span class="text-sm font-semibold text-slate-700">Claude</span>
+                  </div>
+                  <span class="text-sm font-bold text-blue-600">{{ launchBreakdown().claude }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-700" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    </svg>
+                    <span class="text-sm font-semibold text-slate-700">Copied</span>
+                  </div>
+                  <span class="text-sm font-bold text-blue-600">{{ launchBreakdown().copied }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
         </div>
       </div>
     </section>

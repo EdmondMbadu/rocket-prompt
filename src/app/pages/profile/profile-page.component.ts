@@ -251,6 +251,22 @@ export class ProfilePageComponent {
     return this.prompts().length;
   });
 
+  readonly totalLaunches = computed(() => {
+    return this.prompts().reduce((sum, prompt) => sum + (prompt.totalLaunch || 0), 0);
+  });
+
+  readonly launchBreakdown = computed(() => {
+    const prompts = this.prompts();
+    return {
+      gpt: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
+      gemini: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
+      claude: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+      copied: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0)
+    };
+  });
+
+  readonly launchBreakdownExpanded = signal(false);
+
   readonly tagSuggestions = computed(() => {
     const term = String(this.tagQueryDebounced()).trim().toLowerCase();
 
@@ -309,6 +325,10 @@ export class ProfilePageComponent {
 
   selectTab(tab: 'prompts' | 'collections') {
     this.activeTab.set(tab);
+  }
+
+  toggleLaunchBreakdown() {
+    this.launchBreakdownExpanded.update(v => !v);
   }
 
   private observeCollections() {
