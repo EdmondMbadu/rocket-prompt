@@ -1,22 +1,23 @@
 <!-- PAGE WRAPPER -->
 <ng-container *ngIf="profile$ | async as profile; else loading">
-  <div class="min-h-screen bg-white text-slate-900">
+  <div class="min-h-screen bg-white text-slate-900 w-full overflow-x-hidden">
 
     <!-- TOP BAR -->
     <header class="bg-white/95 backdrop-blur-xl border-b-2 border-black/5 shadow-md sticky top-0 z-40">
-      <div class="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:px-6 lg:px-8">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="mx-auto max-w-6xl px-2 pb-3 pt-3 sm:px-3 sm:pb-4 sm:pt-4 md:px-4 md:pb-6 md:pt-5 lg:px-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <!-- Brand -->
-          <div class="flex items-center gap-3 text-slate-900">
-            <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-14 w-auto" />
+          <div class="flex items-center gap-2 sm:gap-3 text-slate-900">
+            <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-10 w-auto sm:h-14" />
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
+          <div class="flex items-center justify-end gap-2 self-end sm:gap-3 sm:gap-5">
             <button type="button" (click)="openCreatePromptModal()"
-              class="inline-flex items-center gap-2 rounded-xl bg-white border-2 border-[#DC2626]/30 px-6 py-2.5 text-sm font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md">
-              <span class="text-base">＋</span>
-              New Prompt
+              class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
+              <span class="text-sm sm:text-base">＋</span>
+              <span class="hidden min-[375px]:inline">New Prompt</span>
+              <span class="min-[375px]:hidden">New</span>
             </button>
 
             <div class="relative" data-user-menu>
@@ -73,14 +74,14 @@
         </div>
 
         <!-- Desktop search -->
-        <div class="mt-6 hidden sm:block">
-          <label class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+        <div class="mt-4 hidden sm:block md:mt-6">
+          <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 md:rounded-2xl">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-4 w-4 text-slate-400 group-focus-within:text-[#DC2626] transition-colors md:mx-4 md:h-5 md:w-5">
               <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <input type="search"
-              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+              class="w-full rounded-xl bg-white py-2.5 pr-3 text-sm font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 md:rounded-2xl md:py-3.5 md:pr-4 md:text-[15px]"
               placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
 
           </label>
@@ -88,14 +89,14 @@
       </div>
 
       <!-- Mobile search -->
-      <div class="mx-auto block max-w-6xl px-4 pb-4 sm:hidden sm:px-6 lg:px-8">
-        <label class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+      <div class="mx-auto block max-w-6xl px-2 pb-2 sm:hidden">
+        <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-2.5 h-3.5 w-3.5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
             <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <input type="search"
-            class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+            class="w-full rounded-xl bg-white py-2 pr-2.5 text-xs font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
             placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
 
         </label>
@@ -103,21 +104,21 @@
     </header>
 
     <!-- PROMPT COUNT -->
-    <section class="mx-auto max-w-6xl px-4 pt-8 sm:px-6 lg:px-8">
-      <div class="mb-2 text-sm text-black/70">
+    <section class="mx-auto max-w-6xl px-2 pt-3 sm:px-3 sm:pt-4 md:px-4 md:pt-6 lg:px-8">
+      <div class="mb-1.5 text-[10px] text-black/70 sm:mb-2 sm:text-xs md:text-sm">
         <span class="font-bold">Total prompts: <span class="text-[#DC2626] font-black">{{ userPromptCount() }}</span></span>
       </div>
     </section>
 
     <!-- CATEGORIES - Horizontally Scrollable -->
-    <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+    <section class="mx-auto max-w-6xl px-2 py-3 sm:px-3 sm:py-4 md:px-4 md:py-6 lg:px-8">
       <div class="relative">
         <!-- Scrollable container -->
         <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2 scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
           <div class="flex gap-3 min-w-max">
             <div class="category-chip" *ngFor="let category of categories()">
               <button type="button"
-                class="inline-flex items-center rounded-full border-2 px-6 py-2.5 text-sm font-bold capitalize transition-all duration-200 whitespace-nowrap category-chip__button"
+                class="inline-flex items-center rounded-full border-2 px-4 py-1.5 text-xs font-bold capitalize transition-all duration-200 whitespace-nowrap category-chip__button sm:px-6 sm:py-2.5 sm:text-sm"
                 [ngClass]="
                   selectedCategory() === category.value
                     ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30 scale-105'
@@ -134,30 +135,30 @@
     </section>
 
     <!-- GRID -->
-    <main class="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+    <main class="mx-auto max-w-6xl px-2 pb-8 sm:px-3 sm:pb-12 md:px-4 md:pb-16 lg:px-8 w-full overflow-x-hidden">
       <div *ngIf="loadPromptsError()"
-        class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+        class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-700 shadow-sm sm:mb-6 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm">
         {{ loadPromptsError() }}
       </div>
       <div *ngIf="deleteError()"
-        class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+        class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-700 shadow-sm sm:mb-6 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm">
         {{ deleteError() }}
       </div>
 
       <ng-container *ngIf="isLoadingPrompts(); else promptList">
-        <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg animate-pulse">
-            <div class="h-7 w-28 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
-            <div class="mt-5 h-6 w-3/4 rounded-lg bg-gradient-to-r from-slate-200 to-slate-100"></div>
-            <div class="mt-3 h-4 w-full rounded-lg bg-gradient-to-r from-slate-200/80 to-slate-100/80"></div>
-            <div class="mt-2 h-4 w-11/12 rounded-lg bg-gradient-to-r from-slate-200/60 to-slate-100/60"></div>
-            <div class="mt-6 h-28 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50"></div>
-            <div class="mt-6 flex justify-end gap-2">
-              <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
-              <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
-              <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
-              <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
-              <div class="h-9 w-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-100"></div>
+        <div class="grid gap-3 sm:gap-4 md:gap-6 lg:gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
+          <div *ngFor="let skeleton of [1, 2, 3]" class="rounded-xl border-2 border-black/5 bg-white p-3 shadow-lg animate-pulse sm:rounded-2xl sm:p-4 md:rounded-3xl md:p-6 w-full max-w-full box-border">
+            <div class="h-5 w-24 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-7 sm:w-28"></div>
+            <div class="mt-4 h-5 w-3/4 rounded-lg bg-gradient-to-r from-slate-200 to-slate-100 sm:mt-5 sm:h-6"></div>
+            <div class="mt-2.5 h-3.5 w-full rounded-lg bg-gradient-to-r from-slate-200/80 to-slate-100/80 sm:mt-3 sm:h-4"></div>
+            <div class="mt-2 h-3.5 w-11/12 rounded-lg bg-gradient-to-r from-slate-200/60 to-slate-100/60 sm:h-4"></div>
+            <div class="mt-4 h-24 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 sm:mt-6 sm:h-28 sm:rounded-2xl"></div>
+            <div class="mt-4 flex justify-end gap-1.5 sm:mt-6 sm:gap-2">
+              <div class="h-7 w-7 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-9 sm:w-9"></div>
+              <div class="h-7 w-7 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-9 sm:w-9"></div>
+              <div class="h-7 w-7 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-9 sm:w-9"></div>
+              <div class="h-7 w-7 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-9 sm:w-9"></div>
+              <div class="h-7 w-7 rounded-full bg-gradient-to-r from-slate-200 to-slate-100 sm:h-9 sm:w-9"></div>
             </div>
           </div>
         </div>
@@ -165,19 +166,19 @@
 
       <ng-template #promptList>
         <ng-container *ngIf="filteredPrompts().length > 0; else showEmptyState">
-          <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <div class="grid gap-3 sm:gap-4 md:gap-6 lg:gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
 
             <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-              class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20">
+              class="group flex h-full flex-col rounded-xl border-2 border-black/5 bg-white p-3 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 sm:rounded-2xl sm:p-4 md:rounded-3xl md:p-6 w-full min-w-0 max-w-full overflow-hidden box-border">
 
               <!-- Tag at the top -->
               <span
-                class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-3 py-1.5 text-xs font-bold capitalize text-[#DC2626] shadow-sm">
+                class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-1.5 py-0.5 text-[9px] font-bold capitalize text-[#DC2626] shadow-sm sm:px-2 sm:py-1 md:px-3 md:py-1.5 md:text-xs">
                 {{ prompt.tagLabel }}
               </span>
 
               <!-- Author section -->
-              <div *ngIf="prompt.authorId" class="mt-3 flex items-center gap-2.5">
+              <div *ngIf="prompt.authorId" class="mt-1.5 flex items-center gap-1.5 sm:mt-2 md:mt-3 md:gap-2.5">
                 <button
                   type="button"
                   (click)="navigateToAuthorProfile(prompt.authorId, $event)"
@@ -204,9 +205,9 @@
               </div>
 
               <!-- Likes count between author and title (hidden when zero) -->
-              <div *ngIf="(prompt.likes || 0) > 0" class="mt-3 flex items-center gap-3 text-sm">
-                <span class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 px-3 py-1.5 shadow-sm">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-[#DC2626]" fill="currentColor"
+              <div *ngIf="(prompt.likes || 0) > 0" class="mt-1.5 flex items-center gap-1.5 text-[10px] sm:mt-2 sm:gap-2 md:mt-3 md:gap-3 md:text-xs sm:text-sm">
+                <span class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 px-1.5 py-0.5 shadow-sm sm:gap-1.5 sm:px-2 sm:py-1 md:gap-2 md:px-3 md:py-1.5">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-2.5 w-2.5 text-[#DC2626] sm:h-3 sm:w-3 md:h-4 md:w-4" fill="currentColor"
                     stroke="currentColor" stroke-width="1.6">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
@@ -215,20 +216,20 @@
                 </span>
               </div>
 
-              <h3 class="mt-4 text-xl font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200">
+              <h3 class="mt-2 text-sm font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200 sm:mt-3 sm:text-base md:mt-4 md:text-xl break-words overflow-wrap-anywhere leading-tight">
                 {{ prompt.title }}
               </h3>
 
-              <div *ngIf="prompt.customUrl || prompt.id" class="mt-1.5 prompt-link-wrapper-home">
-                <a [href]="getPromptUrl(prompt)" target="_blank" class="prompt-link-home" title="Open prompt link">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="prompt-link-icon-home" fill="none"
+              <div *ngIf="prompt.customUrl || prompt.id" class="mt-1 prompt-link-wrapper-home min-w-0 sm:mt-1.5">
+                <a [href]="getPromptUrl(prompt)" target="_blank" class="prompt-link-home min-w-0" title="Open prompt link">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="prompt-link-icon-home flex-shrink-0" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                   </svg>
-                  <span class="prompt-link-text-home">{{ getPromptDisplayUrl(prompt) }}</span>
+                  <span class="prompt-link-text-home truncate">{{ getPromptDisplayUrl(prompt) }}</span>
                 </a>
-                <button type="button" class="btn-copy-link-home" (click)="copyPromptUrl(prompt); $event.stopPropagation()"
+                <button type="button" class="btn-copy-link-home flex-shrink-0" (click)="copyPromptUrl(prompt); $event.stopPropagation()"
                   title="Copy prompt link">
                   <ng-container *ngIf="recentlyCopiedUrl().has(prompt.id); else copyIconUrl">
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-home" fill="none"
@@ -248,11 +249,11 @@
                 </button>
               </div>
 
-              <div class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed">
+              <div class="prompt-snippet mt-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-2.5 text-[11px] text-slate-800 min-h-[6rem] leading-relaxed break-words overflow-wrap-anywhere sm:mt-3 sm:rounded-xl sm:p-3 sm:text-xs sm:min-h-[7rem] md:mt-4 md:rounded-2xl md:p-5 md:text-sm md:min-h-[10rem]">
                 {{ prompt.preview }}
               </div>
 
-              <div class="mt-6 mt-auto flex items-center justify-end gap-2.5 text-sm">
+              <div class="mt-3 mt-auto flex items-center justify-end gap-1 text-[10px] sm:mt-4 sm:gap-1.5 md:mt-6 md:gap-2.5 md:text-xs sm:text-sm">
                 <button type="button" class="icon-button" aria-label="Copy prompt" data-tooltip="Copy prompt"
                   title="Copy prompt" (click)="copyPrompt(prompt); $event.stopPropagation()">
                   <ng-container *ngIf="recentlyCopied().has(prompt.id); else copyIcon">
@@ -341,39 +342,39 @@
           </svg>
         </button>
 
-        <header class="pr-8">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">
+        <header class="pr-6 sm:pr-8">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#DC2626] sm:text-sm">
             {{ isEditingPrompt() ? 'Update' : 'Create' }}
           </p>
-          <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+          <h2 class="mt-1.5 text-lg font-semibold text-slate-900 sm:mt-2 sm:text-2xl">
             {{ isEditingPrompt() ? 'Edit Prompt' : 'New Prompt' }}
           </h2>
-          <p class="mt-1 text-sm text-slate-500">
+          <p class="mt-1 text-xs text-slate-500 sm:text-sm">
             {{ isEditingPrompt() ? 'Make adjustments and keep your library fresh.' : 'Capture your best prompt ideas and
             keep them ready to launch.' }}
           </p>
         </header>
 
-        <form class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
-          <div class="grid gap-4 md:grid-cols-2">
+        <form class="mt-4 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
+          <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-slate-600" for="prompt-title">Title</label>
+              <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-title">Title</label>
               <input id="prompt-title" type="text" formControlName="title"
-                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
                 placeholder="e.g. Growth Marketing Sprint" />
               <p *ngIf="createPromptForm.controls.title.invalid && createPromptForm.controls.title.touched"
-                class="mt-1 text-xs text-red-600">
+                class="mt-1 text-[10px] text-red-600 sm:text-xs">
                 A title with at least 3 characters is required.
               </p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-600" for="prompt-tag">Tag</label>
+              <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-tag">Tag</label>
               <input id="prompt-tag" type="text" formControlName="tag" (input)="onTagInput(($any($event.target)).value)"
-                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
                 placeholder="e.g. marketing" />
               <p *ngIf="createPromptForm.controls.tag.invalid && createPromptForm.controls.tag.touched"
-                class="mt-1 text-xs text-red-600">
+                class="mt-1 text-[10px] text-red-600 sm:text-xs">
                 Add a tag so the prompt can be grouped.
               </p>
 
@@ -392,64 +393,64 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-600" for="prompt-custom-url">Custom Short URL (optional)</label>
-            <div class="mt-1 flex items-center gap-2">
-              <span class="text-sm text-slate-500">rocketprompt.io/</span>
+            <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-custom-url">Custom Short URL (optional)</label>
+            <div class="mt-1 flex items-center gap-1.5 sm:gap-2">
+              <span class="text-xs text-slate-500 sm:text-sm">rocketprompt.io/</span>
               <div class="flex-1 relative">
                 <input id="prompt-custom-url" type="text" formControlName="customUrl" 
                   (input)="onCustomUrlInput(($any($event.target)).value)"
-                  class="w-full rounded-xl border px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+                  class="w-full rounded-xl border px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
                   [ngClass]="{
                     'border-red-300': customUrlError(),
                     'border-slate-300': !customUrlError()
                   }"
                   placeholder="my-custom-url" />
-                <div *ngIf="isCheckingCustomUrl()" class="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin text-slate-400">
+                <div *ngIf="isCheckingCustomUrl()" class="absolute right-2 top-1/2 -translate-y-1/2 sm:right-3">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 animate-spin text-slate-400 sm:h-4 sm:w-4">
                     <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
                     <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
                   </svg>
                 </div>
               </div>
             </div>
-            <p *ngIf="customUrlError()" class="mt-1 text-xs text-red-600">
+            <p *ngIf="customUrlError()" class="mt-1 text-[10px] text-red-600 sm:text-xs">
               {{ customUrlError() }}
             </p>
-            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && createPromptForm.controls.customUrl.value" class="mt-1 text-xs text-slate-500">
+            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && createPromptForm.controls.customUrl.value" class="mt-1 text-[10px] text-slate-500 sm:text-xs">
               Your prompt will be available at: rocketprompt.io/{{ createPromptForm.controls.customUrl.value }}
             </p>
-            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-[10px] text-slate-500 sm:text-xs">
               Checking availability...
             </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content</label>
-            <textarea id="prompt-content" rows="6" formControlName="content"
-              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
+            <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-content">Prompt content</label>
+            <textarea id="prompt-content" rows="5" formControlName="content"
+              class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm sm:rows-6"
               placeholder="Write the full prompt here, including instructions or variables."></textarea>
             <p *ngIf="createPromptForm.controls.content.invalid && createPromptForm.controls.content.touched"
-              class="mt-1 text-xs text-red-600">
+              class="mt-1 text-[10px] text-red-600 sm:text-xs">
               Please provide at least 10 characters of content.
             </p>
           </div>
 
           <div *ngIf="promptFormError()"
-            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            class="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 sm:px-4 sm:py-3 sm:text-sm">
             {{ promptFormError() }}
           </div>
 
-          <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+          <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end sm:gap-3">
             <button type="button"
-              class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5 sm:text-sm"
               (click)="closeCreatePromptModal()" [disabled]="isSavingPrompt()">
               Cancel
             </button>
             <button type="submit"
-              class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+              class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 sm:px-6 sm:py-3 sm:text-sm"
               [disabled]="isSavingPrompt()">
               <ng-container *ngIf="isSavingPrompt(); else saveLabel">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-1.5 h-3 w-3 animate-spin sm:mr-2 sm:h-4 sm:w-4">
                   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
                   </circle>
                   <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -477,15 +478,15 @@
 <!-- EMPTY STATE -->
 <ng-template #noResults>
   <div
-    class="mx-auto max-w-6xl rounded-3xl border-2 border-dashed border-black/10 bg-gradient-to-br from-white to-slate-50/50 px-10 py-20 text-center shadow-lg">
-    <div class="text-6xl mb-6">🔍</div>
-    <p class="text-2xl font-black text-black">No prompts found</p>
-    <p class="mt-3 max-w-md mx-auto text-base text-black/60 leading-relaxed">
+    class="mx-auto max-w-6xl rounded-2xl border-2 border-dashed border-black/10 bg-gradient-to-br from-white to-slate-50/50 px-4 py-12 text-center shadow-lg sm:rounded-3xl sm:px-10 sm:py-20">
+    <div class="text-4xl mb-4 sm:text-6xl sm:mb-6">🔍</div>
+    <p class="text-lg font-black text-black sm:text-2xl">No prompts found</p>
+    <p class="mt-2 max-w-md mx-auto text-sm text-black/60 leading-relaxed sm:mt-3 sm:text-base">
       Try a different search term or browse another category.
     </p>
     <button type="button" (click)="openCreatePromptModal()"
-      class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 transition-all duration-200">
-      <span class="text-base">＋</span>
+      class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-4 py-2.5 text-xs font-bold shadow-lg hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 transition-all duration-200 sm:mt-6 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm">
+      <span class="text-sm sm:text-base">＋</span>
       Create Your First Prompt
     </button>
   </div>
@@ -507,47 +508,47 @@
 
 <!-- SHARE PROMPT MODAL -->
 <div *ngIf="shareModalOpen()" class="modal-overlay" (click)="closeShareModal()">
-  <div class="modal-card w-96" (click)="$event.stopPropagation()">
+  <div class="modal-card w-full max-w-sm sm:w-96" (click)="$event.stopPropagation()">
     <button type="button" class="modal-close" aria-label="Close" (click)="closeShareModal()">
-      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 sm:h-4 sm:w-4">
         <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round" />
       </svg>
     </button>
 
-    <header class="pr-8">
-      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">Share</p>
-      <h2 class="mt-2 text-2xl font-semibold text-slate-900">Share prompt</h2>
-      <p class="mt-1 text-sm text-slate-500">Open this prompt in a chatbot or copy its URL.</p>
+    <header class="pr-6 sm:pr-8">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#DC2626] sm:text-sm">Share</p>
+      <h2 class="mt-1.5 text-lg font-semibold text-slate-900 sm:mt-2 sm:text-2xl">Share prompt</h2>
+      <p class="mt-1 text-xs text-slate-500 sm:text-sm">Open this prompt in a chatbot or copy its URL.</p>
     </header>
 
-    <div class="mt-6 space-y-4">
-      <div *ngIf="sharePrompt()" class="text-sm text-slate-700">
+    <div class="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
+      <div *ngIf="sharePrompt()" class="text-xs text-slate-700 sm:text-sm">
         <div class="font-semibold">{{ sharePrompt()?.title }}</div>
-        <div class="mt-2 text-xs text-slate-500">{{ sharePrompt()?.preview }}</div>
+        <div class="mt-1.5 text-[10px] text-slate-500 sm:mt-2 sm:text-xs">{{ sharePrompt()?.preview }}</div>
       </div>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2 sm:gap-3">
         <button type="button"
-          class="inline-flex items-center justify-center rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
+          class="inline-flex items-center justify-center rounded-xl bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-700 sm:px-4 sm:text-sm"
           (click)="openChatbot(createChatGPTUrl(sharePrompt()?.content || ''), 'ChatGPT')">
           Open in ChatGPT
         </button>
 
         <button type="button"
-          class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+          class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 sm:px-4 sm:text-sm"
           (click)="openChatbot(createGeminiUrl(sharePrompt()?.content || ''), 'Gemini')">
           Open in Gemini
         </button>
 
         <button type="button"
-          class="inline-flex items-center justify-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700"
+          class="inline-flex items-center justify-center rounded-xl bg-orange-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-orange-700 sm:px-4 sm:text-sm"
           (click)="openChatbot(createClaudeUrl(sharePrompt()?.content || ''), 'Claude')">
           Open in Claude
         </button>
 
         <button type="button"
-          class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 sm:px-4 sm:text-sm"
           (click)="copyPromptPageUrl()">
           Copy prompt URL
         </button>
