@@ -27,12 +27,34 @@
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+    min-width: 0;
   }
   
   label {
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+    min-width: 0;
+  }
+  
+  /* Ensure header and search bar don't overflow, but allow menu to show */
+  header {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+  
+  header > div {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+  
+  /* Ensure menu container doesn't clip menu */
+  [data-user-menu] {
+    overflow: visible !important;
   }
 }
 
@@ -305,7 +327,64 @@
   position: absolute;
   right: 0;
   top: calc(100% + 0.75rem);
-  z-index: 20;
+  z-index: 50;
+  overflow: visible;
+}
+
+/* Mobile backdrop overlay */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 49;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile-specific menu positioning */
+@media (max-width: 639px) {
+  .menu-panel {
+    position: fixed;
+    right: 0.5rem;
+    top: auto;
+    bottom: 1rem;
+    left: auto;
+    width: calc(100% - 1rem);
+    max-width: 20rem;
+    min-width: 16rem;
+    margin-left: auto;
+    margin-right: 0;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Ensure menu parent container allows overflow */
+[data-user-menu] {
+  overflow: visible;
+  position: relative;
+  z-index: 50;
 }
 
 .menu-header {
@@ -383,7 +462,7 @@
   padding: 1rem;
   background: rgba(15, 23, 42, 0.64);
   backdrop-filter: blur(9px);
-  z-index: 50;
+  z-index: 100;
   overflow-y: auto;
 }
 

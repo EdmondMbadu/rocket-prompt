@@ -3,16 +3,16 @@
   <div class="min-h-screen bg-white text-slate-900 w-full overflow-x-hidden">
 
     <!-- TOP BAR -->
-    <header class="bg-white/95 backdrop-blur-xl border-b-2 border-black/5 shadow-md sticky top-0 z-40">
-      <div class="mx-auto max-w-6xl px-2 pb-3 pt-3 sm:px-3 sm:pb-4 sm:pt-4 md:px-4 md:pb-6 md:pt-5 lg:px-8">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <header class="bg-white/95 backdrop-blur-xl border-b-2 border-black/5 shadow-md sticky top-0 z-40 w-full">
+      <div class="mx-auto max-w-6xl px-2 pb-3 pt-3 sm:px-3 sm:pb-4 sm:pt-4 md:px-4 md:pb-6 md:pt-5 lg:px-8 w-full overflow-x-hidden">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 w-full min-w-0">
           <!-- Brand -->
-          <div class="flex items-center gap-2 sm:gap-3 text-slate-900">
+          <div class="flex items-center gap-2 sm:gap-3 text-slate-900 flex-shrink-0">
             <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-10 w-auto sm:h-14" />
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center justify-end gap-2 self-end sm:gap-3 sm:gap-5">
+          <div class="flex items-center justify-end gap-2 self-end sm:gap-3 sm:gap-5 flex-shrink-0">
             <button type="button" (click)="openCreatePromptModal()"
               class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
               <span class="text-sm sm:text-base">＋</span>
@@ -20,12 +20,15 @@
               <span class="min-[375px]:hidden">New</span>
             </button>
 
-            <div class="relative" data-user-menu>
+            <div class="relative z-50" data-user-menu>
               <button type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
                 aria-haspopup="true">
                 <span class="sr-only">Open user menu</span>
                 <span class="avatar-initials">{{ profileInitials(profile) }}</span>
               </button>
+
+              <!-- Mobile backdrop overlay -->
+              <div *ngIf="menuOpen()" class="menu-backdrop sm:hidden" (click)="closeMenu()"></div>
 
               <div *ngIf="menuOpen()" class="menu-panel" role="menu">
                 <div class="menu-header">
@@ -74,14 +77,14 @@
         </div>
 
         <!-- Desktop search -->
-        <div class="mt-4 hidden sm:block md:mt-6">
-          <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 md:rounded-2xl">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-4 w-4 text-slate-400 group-focus-within:text-[#DC2626] transition-colors md:mx-4 md:h-5 md:w-5">
+        <div class="mt-4 hidden sm:block md:mt-6 w-full min-w-0">
+          <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 md:rounded-2xl min-w-0 max-w-full">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-3 h-4 w-4 text-slate-400 group-focus-within:text-[#DC2626] transition-colors flex-shrink-0 md:mx-4 md:h-5 md:w-5">
               <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <input type="search"
-              class="w-full rounded-xl bg-white py-2.5 pr-3 text-sm font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 md:rounded-2xl md:py-3.5 md:pr-4 md:text-[15px]"
+              class="w-full min-w-0 rounded-xl bg-white py-2.5 pr-3 text-sm font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 md:rounded-2xl md:py-3.5 md:pr-4 md:text-[15px]"
               placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
 
           </label>
@@ -89,14 +92,14 @@
       </div>
 
       <!-- Mobile search -->
-      <div class="mx-auto block max-w-6xl px-2 pb-2 sm:hidden">
-        <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-2.5 h-3.5 w-3.5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+      <div class="mx-auto block max-w-6xl px-2 pb-2 sm:hidden w-full overflow-x-hidden">
+        <label class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 min-w-0 max-w-full">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-2.5 h-3.5 w-3.5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors flex-shrink-0">
             <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <input type="search"
-            class="w-full rounded-xl bg-white py-2 pr-2.5 text-xs font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+            class="w-full min-w-0 rounded-xl bg-white py-2 pr-2.5 text-xs font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
             placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
 
         </label>
@@ -496,7 +499,7 @@
 <ng-template #loading>
   <!-- Full-screen loading overlay to avoid awkward intermediary break-up during navigation -->
   <div role="status" aria-live="polite"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-white text-slate-900">
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-white text-slate-900">
     <div class="w-full max-w-sm px-6 py-8 text-center">
       <div class="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#DC2626]"
         aria-hidden="true"></div>
