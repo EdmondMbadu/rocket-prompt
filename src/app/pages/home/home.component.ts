@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -93,6 +93,9 @@ export class HomeComponent {
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
+  readonly menuTop = signal<number | null>(null);
+  readonly menuRight = signal<number | null>(null);
+  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
   readonly newPromptModalOpen = signal(false);
   readonly shareModalOpen = signal(false);
   readonly sharePrompt = signal<PromptCard | null>(null);
@@ -490,7 +493,29 @@ export class HomeComponent {
       return;
     }
 
+    const isOpening = !this.menuOpen();
     this.menuOpen.update(open => !open);
+    
+    if (isOpening) {
+      // Use setTimeout to ensure ViewChild is available and DOM is updated
+      setTimeout(() => {
+        this.updateMenuPosition();
+      }, 0);
+    }
+  }
+
+  private updateMenuPosition() {
+    if (!this.avatarButtonRef?.nativeElement) {
+      return;
+    }
+
+    const button = this.avatarButtonRef.nativeElement;
+    const rect = button.getBoundingClientRect();
+    // Position menu below the button with some spacing
+    this.menuTop.set(rect.bottom + 12);
+    // Align right edge of menu with right edge of button
+    const viewportWidth = window.innerWidth;
+    this.menuRight.set(Math.max(16, viewportWidth - rect.right));
   }
 
   closeMenu() {

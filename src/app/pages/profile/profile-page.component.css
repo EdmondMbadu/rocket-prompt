@@ -141,7 +141,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 0.75rem);
-  z-index: 20;
+  z-index: 9999;
 }
 
 .menu-header {

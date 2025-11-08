@@ -16,7 +16,7 @@
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
             <ng-container *ngIf="currentUserProfile$ | async as currentUserProfile">
-              <div class="relative" data-user-menu>
+              <div class="relative z-[9999]" data-user-menu>
                 <button type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
                   aria-haspopup="true">
                   <span class="sr-only">Open user menu</span>

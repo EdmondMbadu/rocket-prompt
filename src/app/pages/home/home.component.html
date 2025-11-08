@@ -20,8 +20,8 @@
               <span class="min-[375px]:hidden">New</span>
             </button>
 
-            <div class="relative z-50" data-user-menu>
-              <button type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
+            <div class="relative z-[9999]" data-user-menu>
+              <button #avatarButton type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
                 aria-haspopup="true">
                 <span class="sr-only">Open user menu</span>
                 <span class="avatar-initials">{{ profileInitials(profile) }}</span>
@@ -30,7 +30,9 @@
               <!-- Mobile backdrop overlay -->
               <div *ngIf="menuOpen()" class="menu-backdrop sm:hidden" (click)="closeMenu()"></div>
 
-              <div *ngIf="menuOpen()" class="menu-panel" role="menu">
+              <div *ngIf="menuOpen()" class="menu-panel" role="menu" 
+                [style.top.px]="menuTop() ?? undefined" 
+                [style.right.px]="menuRight() ?? undefined">
                 <div class="menu-header">
                   <p class="menu-name">{{ profile.firstName }} {{ profile.lastName }}</p>
                   <p class="menu-email">{{ profile.email }}</p>

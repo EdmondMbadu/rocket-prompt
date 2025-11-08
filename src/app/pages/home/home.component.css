@@ -324,11 +324,22 @@
   box-shadow: 0 20px 40px -15px rgba(30, 41, 59, 0.45);
   min-width: 15rem;
   padding: 0.75rem;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.75rem);
-  z-index: 50;
+  z-index: 9999;
   overflow: visible;
+}
+
+/* Desktop: use fixed positioning when position is set via JS */
+@media (min-width: 640px) {
+  .menu-panel[style*="top"] {
+    position: fixed;
+  }
+  
+  /* Fallback: use absolute positioning when JS positioning isn't available */
+  .menu-panel:not([style*="top"]) {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.75rem);
+  }
 }
 
 /* Mobile backdrop overlay */
@@ -337,7 +348,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 49;
+  z-index: 9998;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -364,7 +375,7 @@
     margin-left: auto;
     margin-right: 0;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    z-index: 50;
+    z-index: 9999;
     animation: slideUp 0.3s ease-out;
   }
 }
@@ -384,7 +395,7 @@
 [data-user-menu] {
   overflow: visible;
   position: relative;
-  z-index: 50;
+  z-index: 9999;
 }
 
 .menu-header {
