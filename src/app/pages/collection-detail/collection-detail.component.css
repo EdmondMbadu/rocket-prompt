@@ -236,6 +236,19 @@
   color: #9333ea;
 }
 
+.menu-item--profile {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  margin-bottom: 0.5rem;
+}
+
+.menu-item--profile:hover {
+  background: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  color: #1e293b !important;
+}
+
 .collection-bookmark-button {
   display: inline-flex;
   align-items: center;

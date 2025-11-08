@@ -43,6 +43,11 @@
     max-width: 100vw;
     overflow-x: hidden;
     overflow-y: visible;
+    display: block !important;
+    visibility: visible !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 40 !important;
   }
   
   header > div {
@@ -452,16 +457,16 @@
 }
 
 .menu-item--profile {
-  background: rgba(255, 255, 255, 0.5);
-  color: #334155;
-  border-color: rgba(148, 163, 184, 0.2);
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
   margin-bottom: 0.5rem;
 }
 
 .menu-item--profile:hover {
-  background: rgba(248, 250, 252, 0.8);
-  border-color: rgba(148, 163, 184, 0.4);
-  color: #1e293b;
+  background: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  color: #1e293b !important;
 }
 
 .modal-overlay {
