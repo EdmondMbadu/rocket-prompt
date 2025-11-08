@@ -106,6 +106,12 @@
                         <span class="ml-2">{{ prompt()?.likes }}</span>
                     </button>
 
+                    <!-- Launch count with rocket icon -->
+                    <div class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200/50 px-3 py-1.5 shadow-sm">
+                        <span class="text-base">🚀</span>
+                        <span class="font-bold text-blue-600">{{ prompt()?.totalLaunch || 0 }}</span>
+                    </div>
+
                     <!-- Prompt Link -->
                     <div class="prompt-link-wrapper">
                         <a [href]="getPromptUrl()" target="_blank" class="prompt-link" title="Open prompt link">

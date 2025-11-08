@@ -16,6 +16,11 @@ interface LikedPromptCard {
   readonly tag: string;
   readonly tagLabel: string;
   readonly likes: number;
+  readonly launchGpt: number;
+  readonly launchGemini: number;
+  readonly launchClaude: number;
+  readonly copied: number;
+  readonly totalLaunch: number;
   readonly customUrl?: string;
   readonly authorProfile?: UserProfile;
 }
@@ -319,6 +324,11 @@ export class LikedPromptsPageComponent {
       tag,
       tagLabel: this.formatTagLabel(tag),
       likes: prompt.likes ?? 0,
+      launchGpt: prompt.launchGpt ?? 0,
+      launchGemini: prompt.launchGemini ?? 0,
+      launchClaude: prompt.launchClaude ?? 0,
+      copied: prompt.copied ?? 0,
+      totalLaunch: prompt.totalLaunch ?? 0,
       customUrl: prompt.customUrl,
       authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
     };

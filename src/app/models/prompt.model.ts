@@ -7,6 +7,11 @@ export interface Prompt {
   readonly customUrl?: string;
   readonly views: number;
   readonly likes: number;
+  readonly launchGpt: number;
+  readonly launchGemini: number;
+  readonly launchClaude: number;
+  readonly copied: number;
+  readonly totalLaunch: number;
   readonly isInvisible?: boolean;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
@@ -20,6 +25,10 @@ export interface CreatePromptInput {
   readonly customUrl?: string;
   readonly views?: number;
   readonly likes?: number;
+  readonly launchGpt?: number;
+  readonly launchGemini?: number;
+  readonly launchClaude?: number;
+  readonly copied?: number;
 }
 
 export interface UpdatePromptInput {

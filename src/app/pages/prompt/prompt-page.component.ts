@@ -137,10 +137,20 @@ export class PromptPageComponent {
     // ChatGPT supports URL parameters for pre-filling prompts
     // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
     const text = promptText ?? this.prompt()?.content ?? '';
+    const p = this.prompt();
 
     if (chatbotName === 'ChatGPT') {
       // ChatGPT: open directly (it accepts query param)
       window.open(url, '_blank');
+      // Track launch
+      if (p) {
+        try {
+          const result = await this.promptService.trackLaunch(p.id, 'gpt');
+          this.prompt.set({ ...p, ...result } as Prompt);
+        } catch (e) {
+          console.error('Failed to track launch', e);
+        }
+      }
       return;
     }
 
@@ -158,6 +168,17 @@ export class PromptPageComponent {
     }
 
     window.open(url, '_blank');
+
+    // Track launch
+    if (p) {
+      try {
+        const launchType = chatbotName === 'Gemini' ? 'gemini' : 'claude';
+        const result = await this.promptService.trackLaunch(p.id, launchType);
+        this.prompt.set({ ...p, ...result } as Prompt);
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
+    }
   }
 
   copyPromptPageUrl() {
@@ -189,10 +210,26 @@ export class PromptPageComponent {
       await navigator.clipboard.writeText(text);
       this.showCopyMessage('Prompt copied!');
       this.markCopied();
+
+      // Track launch
+      try {
+        const result = await this.promptService.trackLaunch(p.id, 'copied');
+        this.prompt.set({ ...p, ...result } as Prompt);
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
     } catch (e) {
       this.fallbackCopyTextToClipboard(text);
       this.showCopyMessage('Prompt copied!');
       this.markCopied();
+
+      // Track launch
+      try {
+        const result = await this.promptService.trackLaunch(p.id, 'copied');
+        this.prompt.set({ ...p, ...result } as Prompt);
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
     }
   }
 

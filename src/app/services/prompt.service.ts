@@ -134,6 +134,11 @@ export class PromptService {
     const normalizedTag = tag.toLowerCase();
     const views = typeof input.views === 'number' && input.views >= 0 ? input.views : 0;
     const likes = typeof input.likes === 'number' && input.likes >= 0 ? input.likes : 0;
+    const launchGpt = typeof input.launchGpt === 'number' && input.launchGpt >= 0 ? input.launchGpt : 0;
+    const launchGemini = typeof input.launchGemini === 'number' && input.launchGemini >= 0 ? input.launchGemini : 0;
+    const launchClaude = typeof input.launchClaude === 'number' && input.launchClaude >= 0 ? input.launchClaude : 0;
+    const copied = typeof input.copied === 'number' && input.copied >= 0 ? input.copied : 0;
+    const totalLaunch = launchGpt + launchGemini + launchClaude + copied;
     const timestamp = firestoreModule.serverTimestamp();
 
     const payload: Record<string, unknown> = {
@@ -143,6 +148,11 @@ export class PromptService {
       tag: normalizedTag,
       views,
       likes,
+      launchGpt,
+      launchGemini,
+      launchClaude,
+      copied,
+      totalLaunch,
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -240,9 +250,23 @@ export class PromptService {
     const customUrlValue = data['customUrl'];
     const viewsValue = data['views'];
     const likesValue = data['likes'];
+    const launchGptValue = data['launchGpt'];
+    const launchGeminiValue = data['launchGemini'];
+    const launchClaudeValue = data['launchClaude'];
+    const copiedValue = data['copied'];
+    const totalLaunchValue = data['totalLaunch'];
     const isInvisibleValue = data['isInvisible'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
+
+    const launchGpt = typeof launchGptValue === 'number' ? launchGptValue : 0;
+    const launchGemini = typeof launchGeminiValue === 'number' ? launchGeminiValue : 0;
+    const launchClaude = typeof launchClaudeValue === 'number' ? launchClaudeValue : 0;
+    const copied = typeof copiedValue === 'number' ? copiedValue : 0;
+    // Calculate totalLaunch if not present, otherwise use stored value
+    const totalLaunch = typeof totalLaunchValue === 'number' 
+      ? totalLaunchValue 
+      : launchGpt + launchGemini + launchClaude + copied;
 
     return {
       id: doc.id,
@@ -253,6 +277,11 @@ export class PromptService {
       customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,
       views: typeof viewsValue === 'number' ? viewsValue : 0,
       likes: typeof likesValue === 'number' ? likesValue : 0,
+      launchGpt,
+      launchGemini,
+      launchClaude,
+      copied,
+      totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule)
@@ -419,6 +448,85 @@ export class PromptService {
     });
 
     return prompts;
+  }
+
+  /**
+   * Track a launch for a prompt. Increments the appropriate counter and totalLaunch.
+   * @param promptId The prompt ID
+   * @param launchType The type of launch: 'gpt', 'gemini', 'claude', or 'copied'
+   * @returns The updated launch counts
+   */
+  async trackLaunch(promptId: string, launchType: 'gpt' | 'gemini' | 'claude' | 'copied'): Promise<{
+    launchGpt: number;
+    launchGemini: number;
+    launchClaude: number;
+    copied: number;
+    totalLaunch: number;
+  }> {
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const promptDocRef = firestoreModule.doc(firestore, 'prompts', promptId);
+
+    const result = await firestoreModule.runTransaction(firestore, async (tx) => {
+      const promptSnap = await tx.get(promptDocRef as any);
+
+      if (!promptSnap.exists()) {
+        throw new Error('Prompt not found');
+      }
+
+      const promptData = promptSnap.data() as Record<string, unknown> | undefined;
+      const launchGpt = typeof promptData?.['launchGpt'] === 'number' ? promptData['launchGpt'] : 0;
+      const launchGemini = typeof promptData?.['launchGemini'] === 'number' ? promptData['launchGemini'] : 0;
+      const launchClaude = typeof promptData?.['launchClaude'] === 'number' ? promptData['launchClaude'] : 0;
+      const copied = typeof promptData?.['copied'] === 'number' ? promptData['copied'] : 0;
+
+      let newLaunchGpt = launchGpt;
+      let newLaunchGemini = launchGemini;
+      let newLaunchClaude = launchClaude;
+      let newCopied = copied;
+
+      switch (launchType) {
+        case 'gpt':
+          newLaunchGpt = launchGpt + 1;
+          break;
+        case 'gemini':
+          newLaunchGemini = launchGemini + 1;
+          break;
+        case 'claude':
+          newLaunchClaude = launchClaude + 1;
+          break;
+        case 'copied':
+          newCopied = copied + 1;
+          break;
+      }
+
+      const newTotalLaunch = newLaunchGpt + newLaunchGemini + newLaunchClaude + newCopied;
+
+      const updateData = {
+        launchGpt: newLaunchGpt,
+        launchGemini: newLaunchGemini,
+        launchClaude: newLaunchClaude,
+        copied: newCopied,
+        totalLaunch: newTotalLaunch
+      };
+
+      tx.update(promptDocRef as any, updateData as any);
+
+      return {
+        launchGpt: newLaunchGpt,
+        launchGemini: newLaunchGemini,
+        launchClaude: newLaunchClaude,
+        copied: newCopied,
+        totalLaunch: newTotalLaunch
+      };
+    });
+
+    return result as {
+      launchGpt: number;
+      launchGemini: number;
+      launchClaude: number;
+      copied: number;
+      totalLaunch: number;
+    };
   }
 
   /**

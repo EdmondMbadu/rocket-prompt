@@ -26,6 +26,11 @@ interface PromptCard {
   readonly customUrl?: string;
   readonly views: number;
   readonly likes: number;
+  readonly launchGpt: number;
+  readonly launchGemini: number;
+  readonly launchClaude: number;
+  readonly copied: number;
+  readonly totalLaunch: number;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly authorProfile?: UserProfile;
@@ -921,6 +926,11 @@ export class HomeComponent {
       customUrl: prompt.customUrl,
       views: prompt.views ?? 0,
       likes: prompt.likes ?? 0,
+      launchGpt: prompt.launchGpt ?? 0,
+      launchGemini: prompt.launchGemini ?? 0,
+      launchClaude: prompt.launchClaude ?? 0,
+      copied: prompt.copied ?? 0,
+      totalLaunch: prompt.totalLaunch ?? 0,
       createdAt: prompt.createdAt,
       updatedAt: prompt.updatedAt,
       authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
