@@ -9,6 +9,7 @@ import { AdminService, type AdminStats } from '../../services/admin.service';
 import { PromptService } from '../../services/prompt.service';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Prompt } from '../../models/prompt.model';
+import type { User } from 'firebase/auth';
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -48,6 +49,8 @@ export class AdminDashboardComponent {
     readonly assignedAuthorId = signal('');
     readonly isProcessingBulkAction = signal(false);
     readonly promptsError = signal<string | null>(null);
+    readonly isProcessingBulkUpload = signal(false);
+    readonly bulkUploadProgress = signal({ processed: 0, total: 0, success: 0, failed: 0 });
 
     readonly filteredUsers = computed(() => {
         const users = this.users();
@@ -283,6 +286,201 @@ export class AdminDashboardComponent {
         const [year, monthNum] = month.split('-');
         const date = new Date(parseInt(year), parseInt(monthNum) - 1);
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    }
+
+    async onBulkUploadCSV(event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        // Reset file input
+        input.value = '';
+
+        // Get current user
+        const user = await new Promise<User | null>((resolve) => {
+            const sub = this.currentUser$.subscribe(u => {
+                resolve(u);
+                sub.unsubscribe();
+            });
+        });
+
+        if (!user) {
+            this.promptsError.set('You must be logged in to upload prompts.');
+            return;
+        }
+
+        this.isProcessingBulkUpload.set(true);
+        this.promptsError.set(null);
+        this.bulkUploadProgress.set({ processed: 0, total: 0, success: 0, failed: 0 });
+
+        try {
+            const text = await file.text();
+            const rows = this.parseCSV(text);
+
+            if (rows.length === 0) {
+                throw new Error('CSV file is empty or invalid.');
+            }
+
+            // Validate header row
+            const headers = rows[0];
+            const requiredHeaders = ['title', 'content', 'tag'];
+            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h.toLowerCase()));
+
+            if (missingHeaders.length > 0) {
+                throw new Error(`Missing required columns: ${missingHeaders.join(', ')}. Required columns are: title, content, tag. Optional columns: customUrl, views, likes, launchGpt, launchGemini, launchClaude, copied, isInvisible`);
+            }
+
+            // Process data rows (skip header)
+            const dataRows = rows.slice(1);
+            this.bulkUploadProgress.set({ processed: 0, total: dataRows.length, success: 0, failed: 0 });
+
+            let successCount = 0;
+            let failedCount = 0;
+            const errors: string[] = [];
+
+            for (let i = 0; i < dataRows.length; i++) {
+                const row = dataRows[i];
+                const rowData: Record<string, string> = {};
+
+                // Map row values to headers
+                headers.forEach((header, index) => {
+                    rowData[header.toLowerCase()] = row[index]?.trim() || '';
+                });
+
+                try {
+                    const title = rowData['title'];
+                    const content = rowData['content'];
+                    const tag = rowData['tag'];
+                    const customUrl = rowData['customurl'] || rowData['custom_url'] || '';
+                    const views = this.parseNumber(rowData['views'], 0);
+                    const likes = this.parseNumber(rowData['likes'], 0);
+                    const launchGpt = this.parseNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
+                    const launchGemini = this.parseNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
+                    const launchClaude = this.parseNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
+                    const copied = this.parseNumber(rowData['copied'], 0);
+                    const isInvisible = this.parseBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
+
+                    if (!title || !content || !tag) {
+                        throw new Error(`Row ${i + 2}: Missing required fields (title, content, or tag)`);
+                    }
+
+                    const promptId = await this.promptService.createPrompt({
+                        authorId: user.uid,
+                        title,
+                        content,
+                        tag,
+                        customUrl: customUrl || undefined,
+                        views,
+                        likes,
+                        launchGpt,
+                        launchGemini,
+                        launchClaude,
+                        copied
+                    });
+
+                    // If isInvisible is true, update the prompt after creation
+                    if (isInvisible) {
+                        await this.promptService.bulkToggleVisibility([promptId], true);
+                    }
+
+                    successCount++;
+                } catch (error) {
+                    failedCount++;
+                    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                    errors.push(`Row ${i + 2}: ${errorMsg}`);
+                }
+
+                this.bulkUploadProgress.set({
+                    processed: i + 1,
+                    total: dataRows.length,
+                    success: successCount,
+                    failed: failedCount
+                });
+            }
+
+            if (failedCount > 0) {
+                this.promptsError.set(
+                    `Upload completed with ${failedCount} error(s). ${successCount} prompt(s) created successfully. ` +
+                    `Errors: ${errors.slice(0, 5).join('; ')}${errors.length > 5 ? ` (and ${errors.length - 5} more)` : ''}`
+                );
+            } else {
+                this.promptsError.set(null);
+                // Show success message briefly
+                setTimeout(() => {
+                    if (this.promptsError() === null) {
+                        // Could show a success toast here
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Failed to process CSV', error);
+            this.promptsError.set(error instanceof Error ? error.message : 'Failed to process CSV file.');
+        } finally {
+            this.isProcessingBulkUpload.set(false);
+        }
+    }
+
+    private parseCSV(text: string): string[][] {
+        const rows: string[][] = [];
+        let currentRow: string[] = [];
+        let currentField = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const nextChar = text[i + 1];
+
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    // Escaped quote
+                    currentField += '"';
+                    i++; // Skip next quote
+                } else {
+                    // Toggle quote state
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                // End of field
+                currentRow.push(currentField);
+                currentField = '';
+            } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                // End of row
+                if (char === '\r' && nextChar === '\n') {
+                    i++; // Skip \n in \r\n
+                }
+                if (currentField || currentRow.length > 0) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = '';
+                }
+            } else {
+                currentField += char;
+            }
+        }
+
+        // Add last field and row if any
+        if (currentField || currentRow.length > 0) {
+            currentRow.push(currentField);
+            rows.push(currentRow);
+        }
+
+        return rows;
+    }
+
+    private parseNumber(value: string, defaultValue: number): number {
+        if (!value) return defaultValue;
+        const parsed = parseInt(value, 10);
+        return isNaN(parsed) ? defaultValue : Math.max(0, parsed);
+    }
+
+    private parseBoolean(value: string, defaultValue: boolean): boolean {
+        if (!value) return defaultValue;
+        const lower = value.toLowerCase().trim();
+        return lower === 'true' || lower === '1' || lower === 'yes';
     }
 }
 

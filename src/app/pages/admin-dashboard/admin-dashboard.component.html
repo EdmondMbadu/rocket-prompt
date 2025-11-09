@@ -311,31 +311,76 @@
     <!-- Prompts Management Section -->
     <div class="rounded-2xl border border-slate-300 bg-white shadow-sm">
       <div class="p-6 border-b border-slate-200">
-        <button
-          type="button"
-          (click)="isPromptsExpanded.set(!isPromptsExpanded())"
-          class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
-        >
-          <div class="flex items-center gap-3">
-            <h2 class="text-xl font-semibold text-slate-900">All Prompts</h2>
-            <span class="text-sm font-medium text-slate-500">
-              ({{ prompts().length }} prompt{{ prompts().length !== 1 ? 's' : '' }})
-            </span>
-          </div>
-          <svg
-            [class.rotate-180]="isPromptsExpanded()"
-            class="h-5 w-5 text-slate-500 transition-transform duration-200"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
+        <div class="flex items-center justify-between">
+          <button
+            type="button"
+            (click)="isPromptsExpanded.set(!isPromptsExpanded())"
+            class="flex-1 flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+            <div class="flex items-center gap-3">
+              <h2 class="text-xl font-semibold text-slate-900">All Prompts</h2>
+              <span class="text-sm font-medium text-slate-500">
+                ({{ prompts().length }} prompt{{ prompts().length !== 1 ? 's' : '' }})
+              </span>
+            </div>
+            <svg
+              [class.rotate-180]="isPromptsExpanded()"
+              class="h-5 w-5 text-slate-500 transition-transform duration-200"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div class="ml-4">
+            <label
+              for="csv-upload"
+              class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              [class.opacity-50]="isProcessingBulkUpload()"
+              [class.cursor-not-allowed]="isProcessingBulkUpload()"
+            >
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span *ngIf="!isProcessingBulkUpload()">Upload CSV</span>
+              <span *ngIf="isProcessingBulkUpload()">Uploading...</span>
+            </label>
+            <input
+              id="csv-upload"
+              type="file"
+              accept=".csv"
+              (change)="onBulkUploadCSV($event)"
+              [disabled]="isProcessingBulkUpload()"
+              class="hidden"
+            />
+          </div>
+        </div>
       </div>
 
       <div *ngIf="isPromptsExpanded()" class="overflow-hidden">
+        <!-- Upload Progress -->
+        <div *ngIf="isProcessingBulkUpload()" class="mx-6 mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-blue-700">
+              Processing CSV: {{ bulkUploadProgress().processed }} / {{ bulkUploadProgress().total }}
+            </span>
+            <span class="text-sm font-semibold text-blue-900">
+              {{ bulkUploadProgress().total > 0 ? ((bulkUploadProgress().processed / bulkUploadProgress().total) * 100).toFixed(0) : 0 }}%
+            </span>
+          </div>
+          <div class="w-full bg-blue-200 rounded-full h-2">
+            <div
+              class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0"
+            ></div>
+          </div>
+          <div class="mt-2 text-xs text-blue-600">
+            Success: {{ bulkUploadProgress().success }} | Failed: {{ bulkUploadProgress().failed }}
+          </div>
+        </div>
+
         <!-- Error Message -->
         <div *ngIf="promptsError()" class="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {{ promptsError() }}
