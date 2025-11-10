@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-demo-prompt',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './demo-prompt.component.html',
   styleUrl: './demo-prompt.component.css'
 })
