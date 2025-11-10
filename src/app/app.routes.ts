@@ -8,6 +8,11 @@ export const routes: Routes = [
       import('./pages/landing/landing-page.component').then(m => m.LandingPageComponent)
   },
   {
+    path: 'try-rocketprompt',
+    loadComponent: () =>
+      import('./pages/demo-prompt/demo-prompt.component').then(m => m.DemoPromptComponent)
+  },
+  {
     path: 'auth',
     loadComponent: () =>
       import('./pages/auth/auth-page.component').then(m => m.AuthPageComponent)

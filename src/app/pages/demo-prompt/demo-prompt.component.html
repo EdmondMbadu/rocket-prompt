@@ -1,0 +1,154 @@
+<div class="demo-prompt-root">
+    <!-- Hero Header with Gradient Background -->
+    <header class="demo-header">
+        <div class="demo-header-content">
+            <div class="demo-header-top">
+                <button type="button" (click)="navigateToHome()" class="demo-back-button">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Back to Home</span>
+                </button>
+            </div>
+            
+            <div class="demo-hero-section">
+                <div class="demo-badge">
+                    <span class="demo-badge-icon">✨</span>
+                    <span class="demo-badge-text">Try RocketPrompts</span>
+                </div>
+                <h1 class="demo-title">Experience the Magic of One-Click AI Prompts</h1>
+                <p class="demo-subtitle">
+                    See how easy it is to launch powerful prompts across ChatGPT, Gemini, and Claude with just one click. 
+                    No more copying, pasting, or switching tabs.
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="demo-main">
+        <div class="demo-container">
+            <!-- Prompt Card -->
+            <article class="demo-prompt-card">
+                <div class="demo-prompt-header">
+                    <div class="demo-prompt-title-section">
+                        <h2 class="demo-prompt-title">{{ demoPrompt.title }}</h2>
+                        <div class="demo-prompt-tag">{{ demoPrompt.tag | titlecase }}</div>
+                    </div>
+                </div>
+
+                <!-- Launch Section - Prominent -->
+                <div class="demo-launch-section">
+                    <div class="demo-launch-header">
+                        <div class="demo-launch-icon-wrapper">
+                            <span class="demo-launch-emoji">🚀</span>
+                        </div>
+                        <div class="demo-launch-content">
+                            <h3 class="demo-launch-title">Launch This Prompt Now</h3>
+                            <p class="demo-launch-description">Click any button below to instantly open this prompt in your favorite AI tool</p>
+                        </div>
+                    </div>
+                    <div class="demo-launch-buttons">
+                        <button type="button" 
+                            class="demo-ai-button demo-ai-button--gpt"
+                            (click)="openChatbot(createChatGPTUrl(demoPrompt.content), 'ChatGPT', demoPrompt.content)">
+                            <div class="demo-ai-button-icon">
+                                <img src="assets/gpt.png" alt="ChatGPT" class="demo-ai-icon" />
+                            </div>
+                            <div class="demo-ai-button-content">
+                                <span class="demo-ai-button-label">ChatGPT</span>
+                                <span class="demo-ai-button-hint">Opens directly</span>
+                            </div>
+                        </button>
+
+                        <button type="button" 
+                            class="demo-ai-button demo-ai-button--gemini"
+                            (click)="openChatbot(createGeminiUrl(demoPrompt.content), 'Gemini', demoPrompt.content)">
+                            <div class="demo-ai-button-icon">
+                                <img src="assets/gemini.png" alt="Gemini" class="demo-ai-icon" />
+                            </div>
+                            <div class="demo-ai-button-content">
+                                <span class="demo-ai-button-label">Gemini</span>
+                                <span class="demo-ai-button-hint">Copies & opens</span>
+                            </div>
+                        </button>
+
+                        <button type="button" 
+                            class="demo-ai-button demo-ai-button--claude"
+                            (click)="openChatbot(createClaudeUrl(demoPrompt.content), 'Claude', demoPrompt.content)">
+                            <div class="demo-ai-button-icon">
+                                <img src="assets/claude.jpeg" alt="Claude" class="demo-ai-icon demo-ai-icon--rounded" />
+                            </div>
+                            <div class="demo-ai-button-content">
+                                <span class="demo-ai-button-label">Claude</span>
+                                <span class="demo-ai-button-hint">Copies & opens</span>
+                            </div>
+                        </button>
+
+                        <button type="button" 
+                            class="demo-ai-button demo-ai-button--copy"
+                            (click)="copyPrompt()">
+                            <div class="demo-ai-button-icon">
+                                <svg *ngIf="!copied()" aria-hidden="true" viewBox="0 0 24 24" class="demo-ai-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <svg *ngIf="copied()" aria-hidden="true" viewBox="0 0 24 24" class="demo-ai-icon" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="demo-ai-button-content">
+                                <span class="demo-ai-button-label">{{ copied() ? 'Copied!' : 'Copy' }}</span>
+                                <span class="demo-ai-button-hint">For other tools</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Prompt Content -->
+                <div class="demo-prompt-content">
+                    <pre class="demo-prompt-text">{{ demoPrompt.content }}</pre>
+                </div>
+            </article>
+
+            <!-- CTA Section -->
+            <div class="demo-cta-section">
+                <div class="demo-cta-card">
+                    <div class="demo-cta-content">
+                        <div class="demo-cta-icon">🎉</div>
+                        <h3 class="demo-cta-title">Loved the Experience?</h3>
+                        <p class="demo-cta-description">
+                            Create your own prompts, build collections, and share them with your team. 
+                            All with the same one-click magic you just experienced.
+                        </p>
+                        <div class="demo-cta-features">
+                            <div class="demo-cta-feature">
+                                <span class="demo-cta-feature-icon">✓</span>
+                                <span>Create unlimited prompts</span>
+                            </div>
+                            <div class="demo-cta-feature">
+                                <span class="demo-cta-feature-icon">✓</span>
+                                <span>Organize into collections</span>
+                            </div>
+                            <div class="demo-cta-feature">
+                                <span class="demo-cta-feature-icon">✓</span>
+                                <span>Share with one click</span>
+                            </div>
+                            <div class="demo-cta-feature">
+                                <span class="demo-cta-feature-icon">✓</span>
+                                <span>Launch anywhere instantly</span>
+                            </div>
+                        </div>
+                        <button type="button" (click)="navigateToSignUp()" class="demo-cta-button">
+                            <span>Get Started Free</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
