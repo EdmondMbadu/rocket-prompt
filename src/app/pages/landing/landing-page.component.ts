@@ -141,6 +141,25 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
     this.characterCount = 0;
   }
 
+  clearForm() {
+    this.promptForm.reset();
+    this.characterCount = 0;
+    // Scroll to form section
+    setTimeout(() => {
+      const formElement = document.getElementById('signup');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }
+
+  hasFormContent(): boolean {
+    const name = this.promptForm.get('name')?.value || '';
+    const content = this.promptForm.get('content')?.value || '';
+    const customUrl = this.promptForm.get('customUrl')?.value || '';
+    return name.trim().length > 0 || content.trim().length > 0 || customUrl.trim().length > 0;
+  }
+
   private generateShortenedLinks(promptData: PromptData) {
     this.generatedLinks = [
       {
