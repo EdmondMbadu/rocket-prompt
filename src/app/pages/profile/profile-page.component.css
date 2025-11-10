@@ -177,10 +177,102 @@
   box-shadow: 0 20px 40px -15px rgba(30, 41, 59, 0.45);
   min-width: 15rem;
   padding: 0.75rem;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.75rem);
-  z-index: 9999;
+  z-index: 50;
+  overflow: visible;
+}
+
+/* Desktop: use fixed positioning when position is set via JS */
+@media (min-width: 640px) {
+  .menu-panel[style*="top"] {
+    position: fixed;
+  }
+
+  /* Fallback: use absolute positioning when JS positioning isn't available */
+  .menu-panel:not([style*="top"]) {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.75rem);
+  }
+}
+
+/* Mobile backdrop overlay */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile-specific menu positioning */
+@media (max-width: 639px) {
+  .menu-panel {
+    position: fixed !important;
+    /* Let JavaScript positioning work - don't override top/bottom */
+    left: auto !important;
+    width: calc(100% - 2rem) !important;
+    max-width: 20rem !important;
+    min-width: 16rem !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    z-index: 50 !important;
+    animation: slideUp 0.3s ease-out;
+    /* Break out of header's stacking context */
+    transform: translateZ(0);
+    isolation: isolate;
+    /* Ensure it's above all content */
+    contain: layout style paint;
+  }
+
+  /* Ensure menu backdrop is also above everything */
+  .menu-backdrop {
+    z-index: 49 !important;
+    /* Also break out of stacking context */
+    transform: translateZ(0);
+  }
+
+  /* Ensure header doesn't create a stacking context that traps the menu */
+  header {
+    isolation: auto !important;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Ensure menu parent container allows overflow */
+[data-user-menu] {
+  overflow: visible !important;
+  position: relative;
+  z-index: 50;
+}
+
+/* On mobile, ensure the menu container has high z-index */
+@media (max-width: 639px) {
+  [data-user-menu] {
+    z-index: 50 !important;
+  }
 }
 
 .menu-header {

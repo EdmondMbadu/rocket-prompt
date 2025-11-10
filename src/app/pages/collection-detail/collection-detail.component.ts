@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, distinctUntilChanged, switchMap, combineLatest, catchError } from 'rxjs/operators';
@@ -60,6 +60,9 @@ export class CollectionDetailComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly menuOpen = signal(false);
+  readonly menuTop = signal<number | null>(null);
+  readonly menuRight = signal<number | null>(null);
+  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
   readonly bookmarked = signal(false);
   readonly bookmarking = signal(false);
   readonly clientId = signal('');
@@ -204,7 +207,58 @@ export class CollectionDetailComponent {
       return;
     }
 
+    if (this.editModalOpen()) {
+      return;
+    }
+
+    const isOpening = !this.menuOpen();
     this.menuOpen.update(open => !open);
+    
+    if (isOpening) {
+      // Use setTimeout to ensure ViewChild is available and DOM is updated
+      setTimeout(() => {
+        this.updateMenuPosition();
+      }, 0);
+    }
+  }
+
+  private updateMenuPosition() {
+    if (!this.avatarButtonRef?.nativeElement) {
+      return;
+    }
+
+    const button = this.avatarButtonRef.nativeElement;
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth < 640;
+    
+    if (isMobile) {
+      // On mobile, position below the button with some spacing
+      // Ensure it doesn't go off screen at the bottom
+      const menuHeight = 250; // Approximate menu height (increased for safety)
+      const spacing = 12;
+      let topPosition = rect.bottom + spacing;
+      
+      // If menu would go off screen, position it above the button instead
+      if (topPosition + menuHeight > viewportHeight - 16) {
+        topPosition = rect.top - menuHeight - spacing;
+        // Ensure it doesn't go off screen at the top either
+        if (topPosition < 16) {
+          topPosition = 16;
+        }
+      }
+      
+      // Ensure menu is always visible and not cut off
+      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
+      // On mobile, align to right with some margin
+      this.menuRight.set(16);
+    } else {
+      // Desktop: Position menu below the button with some spacing
+      this.menuTop.set(rect.bottom + 12);
+      // Align right edge of menu with right edge of button
+      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
+    }
   }
 
   closeMenu() {
