@@ -20,7 +20,11 @@
                 <button type="button" class="avatar-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()"
                   aria-haspopup="true">
                   <span class="sr-only">Open user menu</span>
-                  <span class="avatar-initials">{{ profileInitials(currentUserProfile) }}</span>
+                  <img *ngIf="currentUserProfile.profilePictureUrl" [src]="currentUserProfile.profilePictureUrl"
+                    [alt]="currentUserProfile.firstName + ' ' + currentUserProfile.lastName"
+                    class="w-full h-full rounded-full object-cover" />
+                  <span *ngIf="!currentUserProfile.profilePictureUrl" class="avatar-initials">{{
+                    profileInitials(currentUserProfile) }}</span>
                 </button>
 
                 <div *ngIf="menuOpen()" class="menu-panel" role="menu">
@@ -101,9 +105,66 @@
     <section class="mx-auto max-w-6xl px-4 pt-8 sm:px-6 lg:px-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8">
         <div class="flex items-center gap-5">
-          <div
-            class="h-24 w-24 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-3xl font-black shadow-xl border-4 border-white">
-            {{ profileInitials(profile) }}
+          <div class="flex items-center gap-3">
+            <div class="relative group">
+              <div
+                class="h-32 w-32 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-4xl font-black shadow-xl border-4 border-white overflow-hidden transition-all duration-300">
+                <img *ngIf="profile.profilePictureUrl" [src]="profile.profilePictureUrl"
+                  [alt]="profile.firstName + ' ' + profile.lastName"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <span *ngIf="!profile.profilePictureUrl">{{ profileInitials(profile) }}</span>
+              </div>
+              <!-- Hover overlay for profile picture (only for own profile) -->
+              <div *ngIf="isViewingOwnProfile() && !uploadingProfilePicture() && !deletingProfilePicture()"
+                class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                <div class="text-white text-center px-3">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 mx-auto mb-1" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p class="text-xs font-semibold">{{ profile.profilePictureUrl ? 'Change' : 'Add' }} Photo</p>
+                </div>
+              </div>
+              <!-- Loading indicator -->
+              <div *ngIf="uploadingProfilePicture() || deletingProfilePicture()"
+                class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full backdrop-blur-sm">
+                <div class="text-center">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8 animate-spin text-white mx-auto mb-2">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25">
+                    </circle>
+                    <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round">
+                    </path>
+                  </svg>
+                  <p class="text-xs font-semibold text-white">{{ uploadingProfilePicture() ? 'Uploading...' :
+                    'Removing...' }}</p>
+                </div>
+              </div>
+            </div>
+            <!-- Profile picture controls (only for own profile) - positioned to the side -->
+            <div *ngIf="isViewingOwnProfile()" class="flex flex-col gap-2">
+              <label class="profile-picture-upload-button" [class.opacity-50]="uploadingProfilePicture()"
+                [class.cursor-not-allowed]="uploadingProfilePicture()"
+                [attr.data-tooltip]="profile.profilePictureUrl ? 'Change photo' : 'Add photo'">
+                <input type="file" accept="image/*" class="hidden" (change)="onProfilePictureSelected($event)"
+                  [disabled]="uploadingProfilePicture() || deletingProfilePicture()" />
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor"
+                  stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </label>
+              <button *ngIf="profile.profilePictureUrl" type="button" class="profile-picture-delete-button"
+                [class.opacity-50]="deletingProfilePicture()" [class.cursor-not-allowed]="deletingProfilePicture()"
+                (click)="deleteProfilePicture()" data-tooltip="Remove photo"
+                [disabled]="uploadingProfilePicture() || deletingProfilePicture()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor"
+                  stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div>
             <h1 class="text-4xl font-black tracking-tight text-slate-900">{{ profile.firstName }} {{ profile.lastName }}
@@ -128,6 +189,11 @@
                   </svg>
                 </ng-template>
               </button>
+            </div>
+            <!-- Profile picture error message -->
+            <div *ngIf="profilePictureError()"
+              class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {{ profilePictureError() }}
             </div>
           </div>
         </div>
@@ -328,7 +394,12 @@
                     class="author-avatar-button"
                     [attr.aria-label]="'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
                     title="View author profile">
-                    <span class="author-avatar-initials">{{ getAuthorInitials(prompt.authorId) }}</span>
+                    <img *ngIf="getAuthorProfile(prompt.authorId)?.profilePictureUrl"
+                      [src]="getAuthorProfile(prompt.authorId)?.profilePictureUrl"
+                      [alt]="(getAuthorProfile(prompt.authorId)?.firstName || '') + ' ' + (getAuthorProfile(prompt.authorId)?.lastName || '')"
+                      class="w-full h-full rounded-full object-cover" />
+                    <span *ngIf="!getAuthorProfile(prompt.authorId)?.profilePictureUrl"
+                      class="author-avatar-initials">{{ getAuthorInitials(prompt.authorId) }}</span>
                   </button>
                   <button type="button" (click)="navigateToAuthorProfile(prompt.authorId, $event)"
                     class="author-name-button"

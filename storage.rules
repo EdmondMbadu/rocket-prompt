@@ -2,6 +2,16 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Profile pictures: users can only write to their own folder
+    match /profile-pictures/{userId}/{allPaths=**} {
+      // Anyone can read profile pictures
+      allow read: if true;
+      
+      // Only the owner can write to their own profile picture folder
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // All other files (collections, etc.)
     match /{allPaths=**} {
       // Allow anyone to read files
       allow read: if true;

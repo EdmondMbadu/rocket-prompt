@@ -117,6 +117,10 @@ export class ProfilePageComponent {
   readonly isCheckingCustomUrl = signal(false);
   private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
+  readonly uploadingProfilePicture = signal(false);
+  readonly profilePictureError = signal<string | null>(null);
+  readonly deletingProfilePicture = signal(false);
+
   readonly currentUser$ = this.authService.currentUser$;
   readonly viewingUserId = signal<string | null>(null);
   readonly isViewingOwnProfile = computed(() => {
@@ -1119,6 +1123,66 @@ export class ProfilePageComponent {
     if (additions.length) {
       additions.sort((a, b) => a.label.localeCompare(b.label));
       this.categories.set([...existing, ...additions]);
+    }
+  }
+
+  async onProfilePictureSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.profilePictureError.set('You must be signed in to upload a profile picture.');
+      return;
+    }
+
+    this.uploadingProfilePicture.set(true);
+    this.profilePictureError.set(null);
+
+    try {
+      await this.authService.uploadProfilePicture(currentUser.uid, file);
+      // The profile$ observable will automatically update when Firestore changes
+    } catch (error) {
+      console.error('Failed to upload profile picture', error);
+      this.profilePictureError.set(
+        error instanceof Error ? error.message : 'Failed to upload profile picture. Please try again.'
+      );
+    } finally {
+      this.uploadingProfilePicture.set(false);
+      // Reset the input
+      input.value = '';
+    }
+  }
+
+  async deleteProfilePicture() {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.profilePictureError.set('You must be signed in to delete a profile picture.');
+      return;
+    }
+
+    const confirmed = window.confirm('Are you sure you want to remove your profile picture?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingProfilePicture.set(true);
+    this.profilePictureError.set(null);
+
+    try {
+      await this.authService.deleteProfilePicture(currentUser.uid);
+      // The profile$ observable will automatically update when Firestore changes
+    } catch (error) {
+      console.error('Failed to delete profile picture', error);
+      this.profilePictureError.set(
+        error instanceof Error ? error.message : 'Failed to delete profile picture. Please try again.'
+      );
+    } finally {
+      this.deletingProfilePicture.set(false);
     }
   }
 }

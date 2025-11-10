@@ -139,33 +139,63 @@ export class AuthService {
   }
 
   userProfile$(uid: string) {
-    return defer(() => this.getFirestoreContext()).pipe(
-      switchMap(({ firestore, firestoreModule }) =>
-        from(firestoreModule.getDoc(firestoreModule.doc(firestore, 'users', uid))).pipe(
-          switchMap(snapshot => {
-            if (!snapshot.exists()) {
-              return of(undefined);
+    return new Observable<UserProfile | undefined>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+      let usernameUpdateInProgress = false;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const docRef = firestoreModule.doc(firestore, 'users', uid);
+          
+          unsubscribe = firestoreModule.onSnapshot(
+            docRef,
+            (snapshot) => {
+              if (!snapshot.exists()) {
+                subscriber.next(undefined);
+                return;
+              }
+
+              const data = snapshot.data() as Omit<UserProfile, 'id'>;
+              const profile = {
+                id: snapshot.id,
+                ...data
+              };
+
+              // Ensure username exists - generate and store if missing
+              if (!profile.username && profile.firstName && profile.lastName && !usernameUpdateInProgress) {
+                usernameUpdateInProgress = true;
+                const username = generateDisplayUsername(profile.firstName, profile.lastName, profile.userId || profile.id);
+                firestoreModule.updateDoc(docRef, { username })
+                  .then(() => {
+                    usernameUpdateInProgress = false;
+                  })
+                  .catch((error) => {
+                    console.warn('Failed to update username:', error);
+                    usernameUpdateInProgress = false;
+                  });
+                // Still emit the profile, username will be updated on next snapshot
+                subscriber.next({ ...profile, username });
+              } else {
+                subscriber.next(profile);
+              }
+            },
+            (error) => {
+              console.error('Error in userProfile$:', error);
+              subscriber.error(error);
             }
+          );
+        })
+        .catch((error) => {
+          console.error('Failed to get Firestore context:', error);
+          subscriber.error(error);
+        });
 
-            const data = snapshot.data() as Omit<UserProfile, 'id'>;
-            const profile = {
-              id: snapshot.id,
-              ...data
-            };
-
-            // Ensure username exists - generate and store if missing
-            if (!profile.username && profile.firstName && profile.lastName) {
-              const username = generateDisplayUsername(profile.firstName, profile.lastName, profile.userId || profile.id);
-              const docRef = firestoreModule.doc(firestore, 'users', uid);
-              return from(firestoreModule.updateDoc(docRef, { username })).pipe(
-                map(() => ({ ...profile, username }))
-              );
-            }
-
-            return of(profile);
-          })
-        )
-      ),
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    }).pipe(
       catchError(() => of(undefined))
     );
   }
@@ -249,6 +279,145 @@ export class AuthService {
       },
       { merge: true }
     );
+  }
+
+  async uploadProfilePicture(uid: string, file: File): Promise<string> {
+    const trimmedUid = uid?.trim();
+
+    if (!trimmedUid) {
+      throw new Error('A user id is required to upload a profile picture.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+
+    // Check if user is authenticated and matches the uid
+    const currentUser = this.currentUser;
+    if (!currentUser) {
+      throw new Error('You must be logged in to upload a profile picture.');
+    }
+
+    if (currentUser.uid !== trimmedUid) {
+      throw new Error('You can only upload a profile picture for your own account.');
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Delete old profile picture if it exists
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'users', trimmedUid);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const userData = docSnap.data() as UserProfile;
+      if (userData.profilePictureUrl) {
+        try {
+          // Extract the path from the download URL
+          const url = new URL(userData.profilePictureUrl);
+          const pathMatch = url.pathname.match(/\/o\/(.+)/);
+          if (pathMatch) {
+            const encodedPath = pathMatch[1];
+            const decodedPath = decodeURIComponent(encodedPath);
+            const oldStorageRef = storageModule.ref(storage, decodedPath);
+            await storageModule.deleteObject(oldStorageRef);
+          }
+        } catch (error) {
+          // Ignore errors when deleting old image (might not exist)
+          console.warn('Failed to delete old profile picture:', error);
+        }
+      }
+    }
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `profile-pictures/${trimmedUid}/profile-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the user profile with the new image URL
+    await firestoreModule.updateDoc(docRef, {
+      profilePictureUrl: downloadURL
+    });
+
+    return downloadURL;
+  }
+
+  async deleteProfilePicture(uid: string): Promise<void> {
+    const trimmedUid = uid?.trim();
+
+    if (!trimmedUid) {
+      throw new Error('A user id is required to delete a profile picture.');
+    }
+
+    // Check if user is authenticated and matches the uid
+    const currentUser = this.currentUser;
+    if (!currentUser) {
+      throw new Error('You must be logged in to delete a profile picture.');
+    }
+
+    if (currentUser.uid !== trimmedUid) {
+      throw new Error('You can only delete a profile picture for your own account.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'users', trimmedUid);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('User profile not found.');
+    }
+
+    const userData = docSnap.data() as UserProfile;
+    const profilePictureUrl = userData.profilePictureUrl;
+
+    if (!profilePictureUrl) {
+      // No profile picture to delete
+      return;
+    }
+
+    // Delete from Storage
+    try {
+      const storageModule = await import('firebase/storage');
+      const storage = storageModule.getStorage(this.app);
+      
+      // Extract the path from the download URL
+      // URL format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encodedPath}?alt=media&token=...
+      const url = new URL(profilePictureUrl);
+      const pathMatch = url.pathname.match(/\/o\/(.+)/);
+      if (pathMatch) {
+        const encodedPath = pathMatch[1];
+        const decodedPath = decodeURIComponent(encodedPath);
+        const storageRef = storageModule.ref(storage, decodedPath);
+        await storageModule.deleteObject(storageRef);
+      }
+    } catch (error) {
+      console.warn('Failed to delete profile picture from storage:', error);
+      // Continue to remove the URL from Firestore even if storage deletion fails
+    }
+
+    // Remove the URL from Firestore
+    await firestoreModule.updateDoc(docRef, {
+      profilePictureUrl: firestoreModule.deleteField()
+    });
   }
 
   get currentUser(): User | null {
