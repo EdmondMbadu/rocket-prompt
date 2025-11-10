@@ -1,27 +1,66 @@
 .avatar-button {
   align-items: center;
   background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  border: 2px solid #cbd5e1;
   border-radius: 9999px;
   color: #0f172a;
   cursor: pointer;
   display: inline-flex;
-  height: 2.5rem;
+  height: 3rem;
   justify-content: center;
-  padding: 0.25rem;
-  transition: all 160ms ease;
-  width: 2.5rem;
+  padding: 0;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 3rem;
+  overflow: visible;
 }
 
 .avatar-button:hover {
   background: #e2e8f0;
   border-color: #94a3b8;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-button:active {
+  transform: scale(0.98);
+}
+
+.avatar-button[aria-expanded="true"] {
+  background: #e2e8f0;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .avatar-initials {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: 0.05em;
+}
+
+.avatar-dropdown-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 0.875rem;
+  height: 0.875rem;
+  background: #ffffff;
+  border-radius: 9999px;
+  padding: 0.125rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #dc2626;
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.avatar-button:hover .avatar-dropdown-icon {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.avatar-button[aria-expanded="true"] .avatar-dropdown-icon {
+  transform: rotate(180deg);
+  color: #dc2626;
 }
 
 .menu-panel {

@@ -25,6 +25,10 @@
                     class="w-full h-full rounded-full object-cover" />
                   <span *ngIf="!currentUserProfile.profilePictureUrl" class="avatar-initials">{{
                     profileInitials(currentUserProfile) }}</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="avatar-dropdown-icon" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
 
                 <div *ngIf="menuOpen()" class="menu-panel" role="menu">

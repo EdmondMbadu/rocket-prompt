@@ -16,12 +16,12 @@
     max-width: 100vw;
     width: 100%;
   }
-  
+
   .grid {
     width: 100%;
     max-width: 100%;
   }
-  
+
   /* Ensure search input doesn't overflow */
   input[type="search"] {
     max-width: 100%;
@@ -29,14 +29,14 @@
     box-sizing: border-box;
     min-width: 0;
   }
-  
+
   label {
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
     min-width: 0;
   }
-  
+
   /* Ensure header and search bar don't overflow, but allow menu to show */
   header {
     width: 100%;
@@ -49,14 +49,14 @@
     top: 0 !important;
     z-index: 40 !important;
   }
-  
-  header > div {
+
+  header>div {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
     overflow-y: visible;
   }
-  
+
   /* Ensure menu container doesn't clip menu */
   [data-user-menu] {
     overflow: visible !important;
@@ -299,27 +299,66 @@
 .avatar-button {
   align-items: center;
   background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  border: 2px solid #cbd5e1;
   border-radius: 9999px;
   color: #0f172a;
   cursor: pointer;
   display: inline-flex;
-  height: 2.5rem;
+  height: 3rem;
   justify-content: center;
-  padding: 0.25rem;
-  transition: all 160ms ease;
-  width: 2.5rem;
+  padding: 0;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 3rem;
+  overflow: visible;
 }
 
 .avatar-button:hover {
   background: #e2e8f0;
   border-color: #94a3b8;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-button:active {
+  transform: scale(0.98);
+}
+
+.avatar-button[aria-expanded="true"] {
+  background: #e2e8f0;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .avatar-initials {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: 0.05em;
+}
+
+.avatar-dropdown-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 0.875rem;
+  height: 0.875rem;
+  background: #ffffff;
+  border-radius: 9999px;
+  padding: 0.125rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #dc2626;
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.avatar-button:hover .avatar-dropdown-icon {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.avatar-button[aria-expanded="true"] .avatar-dropdown-icon {
+  transform: rotate(180deg);
+  color: #dc2626;
 }
 
 .menu-panel {
@@ -338,7 +377,7 @@
   .menu-panel[style*="top"] {
     position: fixed;
   }
-  
+
   /* Fallback: use absolute positioning when JS positioning isn't available */
   .menu-panel:not([style*="top"]) {
     position: absolute;
@@ -361,6 +400,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -386,14 +426,14 @@
     /* Ensure it's above all content */
     contain: layout style paint;
   }
-  
+
   /* Ensure menu backdrop is also above everything */
   .menu-backdrop {
     z-index: 49 !important;
     /* Also break out of stacking context */
     transform: translateZ(0);
   }
-  
+
   /* Ensure header doesn't create a stacking context that traps the menu */
   header {
     isolation: auto !important;
@@ -405,6 +445,7 @@
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
