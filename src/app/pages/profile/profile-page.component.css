@@ -878,3 +878,66 @@
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* Hide profile picture edit/remove buttons on mobile */
+@media (max-width: 639px) {
+
+  /* Hide the upload and delete buttons directly */
+  .profile-picture-upload-button,
+  .profile-picture-delete-button {
+    display: none !important;
+  }
+
+  /* Hide the entire container that holds upload/delete buttons (profile picture controls) */
+  .flex.items-center.gap-3>.flex.flex-col.gap-2 {
+    display: none !important;
+  }
+
+  /* Hide the hover overlay that shows "Change Photo" / "Add Photo" on mobile */
+  .group>div[class*="absolute"][class*="inset-0"][class*="bg-black"] {
+    display: none !important;
+  }
+
+  /* Also prevent hover effects on mobile */
+  .group:hover>div[class*="absolute"][class*="inset-0"] {
+    display: none !important;
+  }
+}
+
+/* Ensure profile header fits on mobile */
+@media (max-width: 639px) {
+
+  /* Make profile header more compact on mobile */
+  section.mx-auto.max-w-6xl.px-4.pt-8 {
+    padding-top: 1.5rem;
+  }
+
+  /* Adjust profile picture size on mobile if needed */
+  .h-32.w-32 {
+    height: 5rem;
+    width: 5rem;
+  }
+
+  /* Ensure profile name and username fit */
+  .text-4xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  /* Make the stats badge fit better on mobile */
+  .inline-flex.items-center.gap-3.rounded-2xl {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Ensure profile header section doesn't overflow */
+  .flex.flex-col.sm\\:flex-row.items-start.sm\\:items-center.gap-6 {
+    gap: 1rem;
+  }
+
+  /* Make sure the profile info section wraps properly */
+  .flex.items-center.gap-5 {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+}
