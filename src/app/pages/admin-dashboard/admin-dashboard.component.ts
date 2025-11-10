@@ -91,6 +91,21 @@ export class AdminDashboardComponent {
                0;
     }
 
+    navigateToUserProfile(user: UserProfile, event: Event): void {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (user.username) {
+            void this.router.navigate(['/profile', user.username]);
+        } else {
+            // Fallback to userId if username not available
+            const userId = user.id || user.userId;
+            if (userId) {
+                void this.router.navigate(['/profile'], { queryParams: { userId } });
+            }
+        }
+    }
+
     constructor() {
         this.loadData();
         this.observeUsers();

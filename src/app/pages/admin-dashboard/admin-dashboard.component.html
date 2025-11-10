@@ -185,9 +185,12 @@
                           {{ user.firstName.charAt(0).toUpperCase() || '' }}{{ user.lastName.charAt(0).toUpperCase() || '' }}
                         </div>
                         <div class="ml-4">
-                          <div class="text-sm font-medium text-slate-900">
+                          <a
+                            (click)="navigateToUserProfile(user, $event)"
+                            class="text-sm font-medium text-slate-900 hover:text-red-600 hover:underline transition-colors cursor-pointer"
+                          >
                             {{ user.firstName }} {{ user.lastName }}
-                          </div>
+                          </a>
                         </div>
                       </div>
                     </td>
