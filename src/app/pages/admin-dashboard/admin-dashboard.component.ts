@@ -71,6 +71,26 @@ export class AdminDashboardComponent {
         this.users().filter(user => user.role === 'admin' || user.admin).length
     );
 
+    readonly promptCountsByUserId = computed(() => {
+        const prompts = this.prompts();
+        const counts = new Map<string, number>();
+        
+        prompts.forEach(prompt => {
+            if (prompt.authorId) {
+                counts.set(prompt.authorId, (counts.get(prompt.authorId) || 0) + 1);
+            }
+        });
+        
+        return counts;
+    });
+
+    getPromptCount(user: UserProfile): number {
+        // Match by user.id (document ID, which is the Firebase Auth UID) or user.userId
+        return this.promptCountsByUserId().get(user.id) || 
+               this.promptCountsByUserId().get(user.userId) || 
+               0;
+    }
+
     constructor() {
         this.loadData();
         this.observeUsers();
