@@ -192,7 +192,12 @@
                   class="author-avatar-button"
                   [attr.aria-label]="'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
                   title="View author profile">
-                  <span class="author-avatar-initials">{{ getAuthorInitials(prompt.authorId) }}</span>
+                  <img *ngIf="getAuthorProfile(prompt.authorId)?.profilePictureUrl"
+                    [src]="getAuthorProfile(prompt.authorId)?.profilePictureUrl"
+                    [alt]="(getAuthorProfile(prompt.authorId)?.firstName || '') + ' ' + (getAuthorProfile(prompt.authorId)?.lastName || '')"
+                    class="w-full h-full rounded-full object-cover" />
+                  <span *ngIf="!getAuthorProfile(prompt.authorId)?.profilePictureUrl" class="author-avatar-initials">{{
+                    getAuthorInitials(prompt.authorId) }}</span>
                 </button>
                 <button type="button" (click)="navigateToAuthorProfile(prompt.authorId, $event)"
                   class="author-name-button"
