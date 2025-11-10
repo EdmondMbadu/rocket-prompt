@@ -196,6 +196,9 @@
     max-width: 900px;
     margin: 34px auto;
     padding: 0 20px;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: auto;
 }
 
 @media (max-width: 640px) {
@@ -218,7 +221,10 @@
     box-shadow: 0 20px 60px rgba(9, 30, 66, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.03);
     padding: 36px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .card::before {
@@ -243,6 +249,8 @@
     /* keep header full width and allow inner wrapper to control layout */
     width: 100%;
     margin-bottom: 6px;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .card-header-inner {
@@ -253,6 +261,8 @@
     justify-content: space-between;
     /* stack by default for small screens */
     flex-direction: column;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .title {
@@ -269,6 +279,8 @@
     letter-spacing: -0.02em;
     /* constrain width on small screens so tag can sit below without overflowing */
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
 }
 
 @media (max-width: 640px) {
@@ -286,14 +298,15 @@
     border-radius: 999px;
     font-weight: 700;
     font-size: 0.8125rem;
-    white-space: nowrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
     border: 2px solid rgba(220, 38, 38, 0.3);
     box-shadow: 0 2px 6px rgba(220, 38, 38, 0.12);
     /* place tag centered under title on small screens */
     margin-top: 8px;
+    display: inline-block;
 }
 
 /* Larger screens: place title and tag on the same row and left-align the title */
@@ -301,17 +314,22 @@
     .card-header-inner {
         flex-direction: row;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
     .title {
         text-align: left;
         /* allow title to take remaining space while leaving room for tag */
-        max-width: calc(100% - 140px);
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .tag {
         margin-top: 0;
-        flex-shrink: 0;
+        flex-shrink: 1;
+        min-width: 0;
     }
 }
 
@@ -404,6 +422,8 @@
     flex-wrap: wrap;
     flex: 1;
     min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .meta-right {
@@ -448,6 +468,9 @@
     transition: all 0.15s ease;
     max-width: 100%;
     min-width: 0;
+    flex-wrap: wrap;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {
@@ -488,17 +511,18 @@
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     letter-spacing: 0.02em;
     color: #475569;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-all;
+    overflow-wrap: anywhere;
     min-width: 0;
     flex: 1;
+    max-width: 100%;
 }
 
 @media (max-width: 640px) {
     .prompt-link-text {
         font-size: 11px;
-        max-width: calc(100% - 60px);
+        max-width: 100%;
+        word-break: break-all;
     }
 }
 
@@ -573,6 +597,16 @@
     display: flex;
     justify-content: flex-end;
     color: rgba(15, 23, 42, 0.45);
+    min-width: 0;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.card-footer code {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    max-width: 100%;
 }
 
 @media (max-width: 640px) {
