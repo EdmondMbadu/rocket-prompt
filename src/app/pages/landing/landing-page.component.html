@@ -486,7 +486,7 @@
           <div class="mb-6 sm:mb-8">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Plus</h3>
             <div class="flex items-baseline mb-3 sm:mb-4">
-              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$29.99</span>
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$19.99</span>
               <span class="text-black/60 ml-2 text-base sm:text-lg">lifetime</span>
             </div>
             <p class="text-black/60 text-sm sm:text-base">For power users</p>
@@ -512,6 +512,14 @@
             <li class="flex items-start">
               <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
               <span class="text-black/80 text-base">Share prompts via short custom URLs</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
+              <span class="text-black/80 text-base font-bold">Bulk upload prompts</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
+              <span class="text-black/80 text-base font-bold">Make your prompts private</span>
             </li>
             <li class="flex items-center">
               <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
@@ -579,6 +587,14 @@
               <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
               <span class="text-black/80 text-base">Share prompts via short custom URLs</span>
             </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
+              <span class="text-black/80 text-base font-bold">Bulk upload prompts</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
+              <span class="text-black/80 text-base font-bold">Make your prompts private</span>
+            </li>
             <li class="flex items-center">
               <span class="text-[#DC2626] mr-3 text-xl font-bold">✓</span>
               <span class="text-black/80 text-base mr-2">Launch prompts in</span>
@@ -594,6 +610,62 @@
           <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
             class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
             <span class="relative z-10">Upgrade to Pro</span>
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Enterprise Section -->
+      <div class="mt-12 md:mt-16 max-w-4xl mx-auto">
+        <div
+          class="group relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl border-2 border-slate-700 p-8 sm:p-10 md:p-12 lg:p-14 flex flex-col hover:border-[#DC2626]/50 transition-all hover:shadow-2xl hover:shadow-red-500/20 hover:-translate-y-2 w-full">
+          <div class="mb-8 sm:mb-10">
+            <div class="inline-block mb-4 px-4 py-2 rounded-full bg-[#DC2626]/20 border border-[#DC2626]/40">
+              <span class="text-sm font-semibold text-[#DC2626]">Enterprise</span>
+            </div>
+            <h3 class="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 sm:mb-4">Enterprise Solutions</h3>
+            <p class="text-slate-300 text-base sm:text-lg md:text-xl">Custom AI agents and enterprise-grade features for
+              your organization</p>
+          </div>
+
+          <ul class="flex-1 space-y-5 mb-10">
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Custom AI agents for your
+                enterprise</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Dedicated account management</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Advanced security and compliance</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">SSO and team integrations</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Custom branding and white-label
+                options</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Priority support and SLA guarantees</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-[#DC2626] mr-4 text-2xl font-bold">✓</span>
+              <span class="text-slate-200 text-base sm:text-lg font-semibold">Unlimited users and prompts</span>
+            </li>
+          </ul>
+
+          <a href="mailto:ainfo@rocketprompt.io?subject=Enterprise Inquiry"
+            class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-8 py-5 text-lg font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/50 hover:scale-105">
+            <span class="relative z-10">Contact Us for Enterprise</span>
             <div
               class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
             </div>
