@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { map, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import type { Prompt } from '../../models/prompt.model';
@@ -35,7 +37,7 @@ interface LikedPromptCard {
 export class LikedPromptsPageComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly likedPrompts = signal<LikedPromptCard[]>([]);
@@ -46,6 +48,22 @@ export class LikedPromptsPageComponent {
   readonly clientId = signal('');
   readonly likingPrompts = signal<Set<string>>(new Set());
   readonly isAuthenticated = signal(false);
+  readonly menuOpen = signal(false);
+  readonly menuTop = signal<number | null>(null);
+  readonly menuRight = signal<number | null>(null);
+  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
+
+  readonly currentUser$ = this.authService.currentUser$;
+  readonly profile$ = this.currentUser$.pipe(
+    switchMap(user => {
+      if (!user) {
+        return of<UserProfile | undefined>(undefined);
+      }
+
+      return this.authService.userProfile$(user.uid);
+    }),
+    map(profile => profile ? profile : undefined)
+  );
 
   private loadRequestId = 0;
   private lastLoadedActor: string | null = null;
@@ -354,6 +372,99 @@ export class LikedPromptsPageComponent {
       .filter(Boolean)
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
+  }
+
+  toggleMenu() {
+    const isOpening = !this.menuOpen();
+    this.menuOpen.update(open => !open);
+    
+    if (isOpening) {
+      // Use setTimeout to ensure ViewChild is available and DOM is updated
+      setTimeout(() => {
+        this.updateMenuPosition();
+      }, 0);
+    }
+  }
+
+  private updateMenuPosition() {
+    if (!this.avatarButtonRef?.nativeElement) {
+      return;
+    }
+
+    const button = this.avatarButtonRef.nativeElement;
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth < 640;
+    
+    if (isMobile) {
+      // On mobile, position below the button with some spacing
+      // Ensure it doesn't go off screen at the bottom
+      const menuHeight = 250; // Approximate menu height (increased for safety)
+      const spacing = 12;
+      let topPosition = rect.bottom + spacing;
+      
+      // If menu would go off screen, position it above the button instead
+      if (topPosition + menuHeight > viewportHeight - 16) {
+        topPosition = rect.top - menuHeight - spacing;
+        // Ensure it doesn't go off screen at the top either
+        if (topPosition < 16) {
+          topPosition = 16;
+        }
+      }
+      
+      // Ensure menu is always visible and not cut off
+      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
+      // On mobile, align to right with some margin
+      this.menuRight.set(16);
+    } else {
+      // Desktop: Position menu below the button with some spacing
+      this.menuTop.set(rect.bottom + 12);
+      // Align right edge of menu with right edge of button
+      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
+    }
+  }
+
+  closeMenu() {
+    this.menuOpen.set(false);
+  }
+
+  profileInitials(profile: UserProfile | undefined) {
+    if (!profile) {
+      return 'RP';
+    }
+
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  async signOut() {
+    this.closeMenu();
+    await this.authService.signOut();
+    await this.router.navigate(['/']);
+  }
+
+  @HostListener('document:click', ['$event'])
+  handleDocumentClick(event: Event) {
+    if (!this.menuOpen()) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+
+    if (!target?.closest('[data-user-menu]')) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscape() {
+    if (this.menuOpen()) {
+      this.closeMenu();
+    }
   }
 }
 

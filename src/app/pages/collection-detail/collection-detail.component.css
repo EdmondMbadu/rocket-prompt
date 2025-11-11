@@ -586,6 +586,7 @@
     opacity: 0;
     transform: scale(0.5);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -610,4 +611,3 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-

@@ -38,7 +38,7 @@ export class SidebarComponent {
       exact: true
     },
     {
-      label: 'Your Collections',
+      label: 'Collections',
       icon: 'collections',
       route: '/collections'
     },
