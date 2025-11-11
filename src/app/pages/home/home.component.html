@@ -75,37 +75,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Desktop search -->
-        <div class="mt-4 hidden sm:block md:mt-6 w-full min-w-0">
-          <label
-            class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 md:rounded-2xl min-w-0 max-w-full">
-            <svg aria-hidden="true" viewBox="0 0 24 24"
-              class="mx-3 h-4 w-4 text-slate-400 group-focus-within:text-[#DC2626] transition-colors flex-shrink-0 md:mx-4 md:h-5 md:w-5">
-              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <input type="search"
-              class="w-full min-w-0 rounded-xl bg-white py-2.5 pr-3 text-sm font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 md:rounded-2xl md:py-3.5 md:pr-4 md:text-[15px]"
-              placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
-
-          </label>
-        </div>
-      </div>
-
-      <!-- Mobile search -->
-      <div class="mx-auto block max-w-6xl px-4 pb-4 sm:hidden sm:px-6 lg:px-8">
-        <label
-          class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-          <svg aria-hidden="true" viewBox="0 0 24 24"
-            class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
-            <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <input type="search"
-            class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
-            placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
-        </label>
       </div>
     </header>
 
@@ -237,6 +206,39 @@
         <div
           class="absolute right-0 top-0 bottom-2 w-20 pointer-events-none bg-gradient-to-l from-white to-transparent">
         </div>
+      </div>
+    </section>
+
+    <!-- SEARCH BAR -->
+    <section class="mx-auto max-w-6xl px-2 pb-3 sm:px-3 sm:pb-4 md:px-4 md:pb-6 lg:px-8">
+      <!-- Desktop search -->
+      <div class="hidden sm:block w-full min-w-0">
+        <label
+          class="group relative flex w-full items-center rounded-xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200 md:rounded-2xl min-w-0 max-w-full">
+          <svg aria-hidden="true" viewBox="0 0 24 24"
+            class="mx-3 h-4 w-4 text-slate-400 group-focus-within:text-[#DC2626] transition-colors flex-shrink-0 md:mx-4 md:h-5 md:w-5">
+            <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <input type="search"
+            class="w-full min-w-0 rounded-xl bg-white py-2.5 pr-3 text-sm font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 md:rounded-2xl md:py-3.5 md:pr-4 md:text-[15px]"
+            placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
+        </label>
+      </div>
+
+      <!-- Mobile search -->
+      <div class="block sm:hidden w-full">
+        <label
+          class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+          <svg aria-hidden="true" viewBox="0 0 24 24"
+            class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+            <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <input type="search"
+            class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+            placeholder="Search prompts..." [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)" />
+        </label>
       </div>
     </section>
 
