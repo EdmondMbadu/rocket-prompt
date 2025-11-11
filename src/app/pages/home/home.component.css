@@ -821,3 +821,134 @@
 .author-name-button:hover .author-name-text {
   color: #dc2626;
 }
+
+/* Hero Banner Styles */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Hero banner animations */
+
+/* Lamp/Lightbulb glow animation for Daily Tip */
+@keyframes glow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes flicker {
+
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  25% {
+    opacity: 0.9;
+    filter: brightness(1.1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.2);
+  }
+
+  75% {
+    opacity: 0.95;
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+/* Rocket launch animation for Prompt of the Day */
+@keyframes rocket-launch {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-2px) rotate(-5deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(0deg);
+  }
+
+  75% {
+    transform: translateY(-2px) rotate(5deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes rocket-trail {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: translateX(-50%) scaleY(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.5);
+  }
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.animate-flicker {
+  animation: flicker 4s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animate-rocket-launch {
+  animation: rocket-launch 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+.animate-rocket-trail {
+  animation: rocket-trail 2s ease-in-out infinite;
+}

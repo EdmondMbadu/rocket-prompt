@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,8 +7,10 @@ import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
+import { HomeContentService } from '../../services/home-content.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { DailyTip } from '../../models/home-content.model';
 
 interface PromptCategory {
   readonly label: string;
@@ -46,6 +48,7 @@ interface PromptCard {
 export class HomeComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
+  private readonly homeContentService = inject(HomeContentService);
   readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
@@ -116,6 +119,11 @@ export class HomeComponent {
   readonly recentlyCopied = signal<Set<string>>(new Set());
   // Track prompt ids that were recently copied (for URL copying)
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
+
+  // Home content (daily tip and prompt of the day)
+  readonly dailyTip = signal<DailyTip | null>(null);
+  readonly promptOfTheDayId = signal<string | null>(null);
+  readonly promptOfTheDay = signal<PromptCard | null>(null);
 
   // Map of timers for each copied prompt so we can clear them if the user copies again
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -234,6 +242,7 @@ export class HomeComponent {
 
   constructor() {
     this.observePrompts();
+    this.observeHomeContent();
   }
 
   openShareModal(prompt: PromptCard) {
@@ -1078,5 +1087,77 @@ export class HomeComponent {
       clearTimeout(this.customUrlTimer);
       this.customUrlTimer = null;
     }
+  }
+
+  private observeHomeContent() {
+    this.homeContentService
+      .homeContent$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: async (content) => {
+          if (content?.dailyTip) {
+            // Get today's tip or previous one
+            const tip = await this.homeContentService.getDailyTip();
+            this.dailyTip.set(tip);
+          } else {
+            this.dailyTip.set(null);
+          }
+
+          if (content?.promptOfTheDayId) {
+            // Get today's prompt or previous one
+            const promptId = await this.homeContentService.getPromptOfTheDay();
+            this.promptOfTheDayId.set(promptId);
+
+            // Find the prompt card
+            if (promptId) {
+              const prompt = this.prompts().find(p => p.id === promptId || p.id.startsWith(promptId));
+              this.promptOfTheDay.set(prompt || null);
+            } else {
+              this.promptOfTheDay.set(null);
+            }
+          } else {
+            this.promptOfTheDayId.set(null);
+            this.promptOfTheDay.set(null);
+          }
+        },
+        error: (error) => {
+          console.error('Failed to observe home content', error);
+        }
+      });
+
+    // Also watch prompts to update prompt of the day when prompts change
+    effect(() => {
+      const promptId = this.promptOfTheDayId();
+      const prompts = this.prompts(); // Read the signal to track changes
+      if (promptId) {
+        const prompt = prompts.find(p => p.id === promptId || p.id.startsWith(promptId));
+        this.promptOfTheDay.set(prompt || null);
+      }
+    });
+  }
+
+  getGreeting(profile: UserProfile | undefined): string {
+    if (!profile) {
+      return 'Welcome!';
+    }
+
+    const hour = new Date().getHours();
+    let timeGreeting = 'Welcome';
+    
+    if (hour < 12) {
+      timeGreeting = 'Good morning';
+    } else if (hour < 17) {
+      timeGreeting = 'Good afternoon';
+    } else {
+      timeGreeting = 'Good evening';
+    }
+
+    return `${timeGreeting}, ${profile.firstName}!`;
+  }
+
+  getTodayDateString(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    return now.toLocaleDateString('en-US', options);
   }
 }

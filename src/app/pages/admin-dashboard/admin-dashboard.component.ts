@@ -7,8 +7,10 @@ import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AdminService, type AdminStats } from '../../services/admin.service';
 import { PromptService } from '../../services/prompt.service';
+import { HomeContentService } from '../../services/home-content.service';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Prompt } from '../../models/prompt.model';
+import type { HomeContent } from '../../models/home-content.model';
 import type { User } from 'firebase/auth';
 
 @Component({
@@ -22,6 +24,7 @@ export class AdminDashboardComponent {
     private readonly authService = inject(AuthService);
     private readonly adminService = inject(AdminService);
     private readonly promptService = inject(PromptService);
+    private readonly homeContentService = inject(HomeContentService);
     readonly router = inject(Router);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -52,6 +55,17 @@ export class AdminDashboardComponent {
     readonly isProcessingBulkUpload = signal(false);
     readonly bulkUploadProgress = signal({ processed: 0, total: 0, success: 0, failed: 0 });
 
+    // Home content management
+    readonly isHomeContentExpanded = signal(false);
+    readonly homeContent = signal<HomeContent | null>(null);
+    readonly dailyTipText = signal('');
+    readonly dailyTipAuthor = signal('');
+    readonly promptOfTheDayId = signal('');
+    readonly promptSearchTerm = signal('');
+    readonly isSavingHomeContent = signal(false);
+    readonly homeContentError = signal<string | null>(null);
+    readonly homeContentSuccess = signal<string | null>(null);
+
     readonly filteredUsers = computed(() => {
         const users = this.users();
         const term = this.searchTerm().trim().toLowerCase();
@@ -65,6 +79,21 @@ export class AdminDashboardComponent {
             const email = user.email?.toLowerCase() || '';
             return fullName.includes(term) || email.includes(term);
         });
+    });
+
+    readonly filteredPromptsForSelection = computed(() => {
+        const prompts = this.prompts();
+        const term = this.promptSearchTerm().trim().toLowerCase();
+
+        if (!term) {
+            return prompts.slice(0, 10); // Show first 10 if no search
+        }
+
+        return prompts.filter(prompt => {
+            const title = prompt.title?.toLowerCase() || '';
+            const tag = prompt.tag?.toLowerCase() || '';
+            return title.includes(term) || tag.includes(term);
+        }).slice(0, 20); // Limit to 20 results
     });
 
     readonly adminCount = computed(() =>
@@ -110,6 +139,7 @@ export class AdminDashboardComponent {
         this.loadData();
         this.observeUsers();
         this.observePrompts();
+        this.observeHomeContent();
     }
 
     loadData() {
@@ -516,6 +546,153 @@ export class AdminDashboardComponent {
         if (!value) return defaultValue;
         const lower = value.toLowerCase().trim();
         return lower === 'true' || lower === '1' || lower === 'yes';
+    }
+
+    private observeHomeContent() {
+        this.homeContentService
+            .homeContent$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (content) => {
+                    this.homeContent.set(content);
+                    if (content?.dailyTip) {
+                        this.dailyTipText.set(content.dailyTip.text);
+                        this.dailyTipAuthor.set(content.dailyTip.author || '');
+                    } else {
+                        this.dailyTipText.set('');
+                        this.dailyTipAuthor.set('');
+                    }
+                    if (content?.promptOfTheDayId) {
+                        this.promptOfTheDayId.set(content.promptOfTheDayId);
+                        this.promptSearchTerm.set(''); // Clear search when prompt is loaded
+                    } else {
+                        this.promptOfTheDayId.set('');
+                        this.promptSearchTerm.set('');
+                    }
+                },
+                error: (error) => {
+                    console.error('Failed to observe home content', error);
+                }
+            });
+    }
+
+    async saveHomeContent() {
+        const currentUser = this.authService.currentUser;
+        if (!currentUser) {
+            this.homeContentError.set('You must be logged in to save home content.');
+            return;
+        }
+
+        this.isSavingHomeContent.set(true);
+        this.homeContentError.set(null);
+        this.homeContentSuccess.set(null);
+
+        try {
+            // Normalize prompt ID to full ID if partial ID was entered
+            let promptId = this.promptOfTheDayId().trim();
+            if (promptId) {
+                const prompt = this.prompts().find(p => p.id === promptId || p.id.startsWith(promptId));
+                if (prompt) {
+                    promptId = prompt.id; // Use full ID
+                } else {
+                    this.homeContentError.set('Prompt not found. Please check the prompt ID.');
+                    this.isSavingHomeContent.set(false);
+                    return;
+                }
+            }
+
+            await this.homeContentService.updateHomeContent(
+                {
+                    dailyTip: {
+                        text: this.dailyTipText().trim(),
+                        author: this.dailyTipAuthor().trim() || undefined
+                    },
+                    promptOfTheDayId: promptId || undefined
+                },
+                currentUser.uid
+            );
+
+            this.homeContentSuccess.set('Home content saved successfully!');
+            setTimeout(() => {
+                this.homeContentSuccess.set(null);
+            }, 3000);
+        } catch (error) {
+            console.error('Failed to save home content', error);
+            this.homeContentError.set(
+                error instanceof Error ? error.message : 'Failed to save home content. Please try again.'
+            );
+        } finally {
+            this.isSavingHomeContent.set(false);
+        }
+    }
+
+    getPromptTitle(promptId: string): string {
+        if (!promptId.trim()) {
+            return '';
+        }
+        // Support both full ID and partial ID (first 8 characters)
+        const prompt = this.prompts().find(p => p.id === promptId.trim() || p.id.startsWith(promptId.trim()));
+        return prompt?.title || 'Prompt not found';
+    }
+
+    getTodayDateString(): string {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    selectPromptForDay(prompt: Prompt) {
+        this.promptOfTheDayId.set(prompt.id);
+        this.promptSearchTerm.set(''); // Clear search after selection
+    }
+
+    onPromptSearch(term: string) {
+        this.promptSearchTerm.set(term);
+    }
+
+    async clearAllHomeContent() {
+        const currentUser = this.authService.currentUser;
+        if (!currentUser) {
+            this.homeContentError.set('You must be logged in to clear home content.');
+            return;
+        }
+
+        // Clear local fields first
+        this.dailyTipText.set('');
+        this.dailyTipAuthor.set('');
+        this.promptOfTheDayId.set('');
+        this.promptSearchTerm.set('');
+        this.homeContentError.set(null);
+        this.homeContentSuccess.set(null);
+
+        // Also save empty values to Firestore to persist the clear
+        this.isSavingHomeContent.set(true);
+        try {
+            await this.homeContentService.updateHomeContent(
+                {
+                    dailyTip: {
+                        text: '',
+                        author: undefined
+                    },
+                    promptOfTheDayId: '' // Pass empty string to trigger clearing in service
+                },
+                currentUser.uid
+            );
+
+            this.homeContentSuccess.set('All fields cleared successfully!');
+            setTimeout(() => {
+                this.homeContentSuccess.set(null);
+            }, 3000);
+        } catch (error) {
+            console.error('Failed to clear home content', error);
+            this.homeContentError.set(
+                error instanceof Error ? error.message : 'Failed to clear home content. Please try again.'
+            );
+        } finally {
+            this.isSavingHomeContent.set(false);
+        }
     }
 }
 
