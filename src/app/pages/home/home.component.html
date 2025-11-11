@@ -132,15 +132,20 @@
           <!-- Daily Tip Card -->
           <div *ngIf="dailyTip()"
             class="group relative overflow-hidden rounded-xl border border-[#DC2626]/15 bg-gradient-to-br from-red-50/40 via-white to-white p-4 transition-all duration-200 hover:border-[#DC2626]/25 hover:shadow-md sm:p-5">
-            <!-- Glow effect -->
+            <!-- Flame glow effect -->
             <div
-              class="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-[#DC2626]/20 blur-2xl opacity-60 animate-pulse-slow">
+              class="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-gradient-to-br from-orange-400/30 via-red-500/20 to-transparent blur-2xl opacity-50 animate-pulse-slow">
             </div>
             <div class="relative flex items-start gap-3">
               <div class="flex-shrink-0 relative">
-                <div class="absolute inset-0 rounded-lg bg-[#DC2626]/20 blur-md animate-glow"></div>
+                <!-- Flame glow layers -->
                 <div
-                  class="relative rounded-lg bg-[#DC2626]/10 p-2.5 transition-all duration-300 group-hover:bg-[#DC2626]/15 group-hover:scale-110">
+                  class="absolute inset-0 rounded-lg bg-gradient-to-t from-orange-400/30 via-red-500/20 to-transparent blur-lg animate-glow">
+                </div>
+                <div class="absolute inset-0 rounded-lg bg-[#DC2626]/15 blur-sm animate-glow"
+                  style="animation-delay: 0.3s;"></div>
+                <div
+                  class="relative rounded-lg bg-gradient-to-br from-red-50/80 via-orange-50/60 to-[#DC2626]/10 p-2.5 transition-all duration-300 group-hover:from-red-100/90 group-hover:via-orange-100/70 group-hover:to-[#DC2626]/15 group-hover:scale-110">
                   <svg viewBox="0 0 24 24" class="h-4 w-4 text-[#DC2626] animate-flicker" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round"
