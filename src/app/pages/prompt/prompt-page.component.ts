@@ -53,6 +53,19 @@ export class PromptPageComponent {
     return !!this.currentUser();
   });
 
+  // Check if current user is the author
+  readonly isAuthor = computed(() => {
+    const p = this.prompt();
+    const user = this.currentUser();
+    return p && user && p.authorId === user.uid;
+  });
+
+  // Check if prompt is private and user is not the author
+  readonly isPrivateAndNotAuthor = computed(() => {
+    const p = this.prompt();
+    return p?.isPrivate && !this.isAuthor();
+  });
+
   // Provide a small computed short id for sharing (first 8 chars)
   readonly shortId = computed(() => {
     const p = this.prompt();

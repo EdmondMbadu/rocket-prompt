@@ -566,6 +566,164 @@
     font-size: 17px;
     color: #0f172a;
     line-height: 1.8;
+    position: relative;
+}
+
+.content--blurred {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Private Prompt Banner (top of card) */
+.private-prompt-banner {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+}
+
+.private-prompt-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.private-prompt-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.private-prompt-banner-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #92400e;
+    line-height: 1.4;
+}
+
+.private-prompt-banner-subtitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #b45309;
+    line-height: 1.4;
+}
+
+/* Private Overlay (on content area) */
+.private-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(254, 243, 199, 0.95) 100%);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    border-radius: 12px;
+    border: 2px solid rgba(251, 191, 36, 0.3);
+}
+
+.private-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    max-width: 600px;
+}
+
+.private-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(254, 243, 199, 0.5);
+    border-radius: 50%;
+    border: 3px solid rgba(251, 191, 36, 0.3);
+}
+
+.private-overlay-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #92400e;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.private-overlay-message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.private-overlay-text-primary {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #b45309;
+    line-height: 1.6;
+}
+
+.private-overlay-text-secondary {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #d97706;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .private-prompt-banner {
+        padding: 0.875rem 1.25rem;
+        margin-bottom: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .private-prompt-banner-title {
+        font-size: 0.9375rem;
+    }
+
+    .private-prompt-banner-subtitle {
+        font-size: 0.8125rem;
+    }
+
+    .private-overlay-content {
+        padding: 3rem 1.5rem;
+    }
+
+    .private-icon-wrapper {
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .private-icon-wrapper svg {
+        height: 4rem;
+        width: 4rem;
+    }
+
+    .private-overlay-title {
+        font-size: 1.5rem;
+        margin-bottom: 0.875rem;
+    }
+
+    .private-overlay-text-primary {
+        font-size: 1rem;
+    }
+
+    .private-overlay-text-secondary {
+        font-size: 0.9375rem;
+    }
+}
+
+.card--blurred .content--blurred {
+    filter: blur(8px);
 }
 
 .content pre {
