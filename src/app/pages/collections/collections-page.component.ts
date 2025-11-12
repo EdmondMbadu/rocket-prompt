@@ -87,6 +87,7 @@ export class CollectionsPageComponent {
     readonly brandLogoUploadError = signal<string | null>(null);
     readonly brandLogoUrl = signal<string | null>(null);
     private brandLogoFile: File | null = null;
+    readonly brandingSectionExpanded = signal(false);
     readonly menuOpen = signal(false);
     readonly menuTop = signal<number | null>(null);
     readonly menuRight = signal<number | null>(null);
@@ -346,6 +347,7 @@ export class CollectionsPageComponent {
         this.brandLogoUrl.set(null);
         this.brandLogoUploadError.set(null);
         this.brandLogoFile = null;
+        this.brandingSectionExpanded.set(false);
         this.collectionForm.markAsPristine();
         this.collectionForm.markAsUntouched();
     }

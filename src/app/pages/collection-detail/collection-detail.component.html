@@ -827,20 +827,30 @@
               </p>
             </div>
 
-            <!-- Branding Section - At the bottom -->
+            <!-- Branding Section - At the bottom (Expandable) -->
             <div class="border-t-2 border-purple-200 pt-6 mt-6">
-              <div class="border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-white p-5">
-                <div class="flex items-center gap-3 mb-4">
+              <button type="button"
+                class="w-full flex items-center justify-between p-4 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white hover:from-purple-100 hover:to-purple-50 transition-all duration-200 group"
+                (click)="brandingSectionExpanded.set(!brandingSectionExpanded())">
+                <div class="flex items-center gap-3">
                   <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-md">
                     <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white">
                       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <div>
+                  <div class="text-left">
                     <p class="text-xs font-semibold uppercase tracking-wider text-purple-600">Branding</p>
-                    <h3 class="mt-0.5 text-base font-bold text-slate-900">Add Company Branding</h3>
+                    <h3 class="mt-0.5 text-base font-bold text-slate-900">Add Company Branding (Optional)</h3>
                   </div>
                 </div>
+                <svg aria-hidden="true" viewBox="0 0 24 24" 
+                  class="h-5 w-5 text-purple-600 transition-transform duration-200"
+                  [class.rotate-180]="brandingSectionExpanded()">
+                  <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              
+              <div *ngIf="brandingSectionExpanded()" class="mt-4 border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-white p-5">
                 <p class="text-sm text-slate-600 mb-5 leading-relaxed">
                   Add your company logo, link, and a short description to brand this collection.
                 </p>

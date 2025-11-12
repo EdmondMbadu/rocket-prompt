@@ -98,6 +98,7 @@ export class CollectionDetailComponent {
   readonly brandLogoUploadError = signal<string | null>(null);
   readonly editBrandLink = signal('');
   readonly editBrandSubtext = signal('');
+  readonly brandingSectionExpanded = signal(false);
   
   readonly brandSubtextWordCount = computed(() => {
     const text = this.editBrandSubtext().trim();
@@ -856,6 +857,7 @@ export class CollectionDetailComponent {
     this.editCollectionBlurb.set(collection?.blurb ?? '');
     this.editBrandLink.set(collection?.brandLink ?? '');
     this.editBrandSubtext.set(collection?.brandSubtext ?? '');
+    this.brandingSectionExpanded.set(false);
     this.editCustomUrlError.set(null);
     this.brandLogoUploadError.set(null);
     this.clearCustomUrlDebounce();
