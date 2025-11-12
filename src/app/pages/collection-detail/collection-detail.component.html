@@ -784,60 +784,8 @@
         <!-- Settings Section -->
         <ng-container *ngIf="editModalTab() === 'settings'">
           <div class="space-y-5 mb-6">
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-name">Collection
-                name</label>
-              <input id="edit-collection-name" type="text"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-                [value]="editCollectionName()" (input)="editCollectionName.set(($any($event.target)).value)"
-                [disabled]="isUpdatingCollection()" placeholder="e.g. Launch Campaign Toolkit" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-tag">Collection
-                tag</label>
-              <input id="edit-collection-tag" type="text"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-                [value]="editCollectionTag()" (input)="editCollectionTag.set(($any($event.target)).value)"
-                [disabled]="isUpdatingCollection()" placeholder="e.g. marketing" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-custom-url">Custom URL
-                (optional)</label>
-              <input id="edit-collection-custom-url" type="text"
-                class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-                [class.border-red-300]="editCustomUrlError()" [class.border-slate-300]="!editCustomUrlError()"
-                [class.focus:border-[#DC2626]]="!editCustomUrlError()" [value]="editCollectionCustomUrl()"
-                (input)="onEditCustomUrlInput(($any($event.target)).value)" [disabled]="isUpdatingCollection()"
-                placeholder="e.g. my-awesome-collection" />
-              <p *ngIf="editCustomUrlError()" class="mt-1 text-xs text-red-600">
-                {{ editCustomUrlError() }}
-              </p>
-              <p *ngIf="!editCustomUrlError() && !isCheckingCustomUrl() && editCollectionCustomUrl()"
-                class="mt-1 text-xs text-slate-500">
-                Your collection will be available at: rocketprompt.io/collection/{{ editCollectionCustomUrl() }}
-              </p>
-              <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
-                Checking availability...
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-blurb">Description
-                (optional)</label>
-              <textarea id="edit-collection-blurb"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md resize-none"
-                [value]="editCollectionBlurb()" (input)="editCollectionBlurb.set(($any($event.target)).value)"
-                [disabled]="isUpdatingCollection()" rows="4"
-                placeholder="Add a brief description of what this collection is about..."></textarea>
-              <p class="mt-1 text-xs text-slate-500">
-                Help others understand what this collection contains.
-              </p>
-            </div>
-
-            <!-- Branding Section - At the bottom (Expandable) -->
-            <div class="border-t-2 border-purple-200 pt-6 mt-6">
+            <!-- Branding Section - At the top -->
+            <div class="border-b-2 border-purple-200 pb-6 mb-6">
               <button type="button"
                 class="w-full flex items-center justify-between p-4 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white hover:from-purple-100 hover:to-purple-50 transition-all duration-200 group"
                 (click)="brandingSectionExpanded.set(!brandingSectionExpanded())">
@@ -958,6 +906,58 @@
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-name">Collection
+                name</label>
+              <input id="edit-collection-name" type="text"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [value]="editCollectionName()" (input)="editCollectionName.set(($any($event.target)).value)"
+                [disabled]="isUpdatingCollection()" placeholder="e.g. Launch Campaign Toolkit" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-tag">Collection
+                tag</label>
+              <input id="edit-collection-tag" type="text"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [value]="editCollectionTag()" (input)="editCollectionTag.set(($any($event.target)).value)"
+                [disabled]="isUpdatingCollection()" placeholder="e.g. marketing" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-custom-url">Custom URL
+                (optional)</label>
+              <input id="edit-collection-custom-url" type="text"
+                class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
+                [class.border-red-300]="editCustomUrlError()" [class.border-slate-300]="!editCustomUrlError()"
+                [class.focus:border-[#DC2626]]="!editCustomUrlError()" [value]="editCollectionCustomUrl()"
+                (input)="onEditCustomUrlInput(($any($event.target)).value)" [disabled]="isUpdatingCollection()"
+                placeholder="e.g. my-awesome-collection" />
+              <p *ngIf="editCustomUrlError()" class="mt-1 text-xs text-red-600">
+                {{ editCustomUrlError() }}
+              </p>
+              <p *ngIf="!editCustomUrlError() && !isCheckingCustomUrl() && editCollectionCustomUrl()"
+                class="mt-1 text-xs text-slate-500">
+                Your collection will be available at: rocketprompt.io/collection/{{ editCollectionCustomUrl() }}
+              </p>
+              <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
+                Checking availability...
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-collection-blurb">Description
+                (optional)</label>
+              <textarea id="edit-collection-blurb"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md resize-none"
+                [value]="editCollectionBlurb()" (input)="editCollectionBlurb.set(($any($event.target)).value)"
+                [disabled]="isUpdatingCollection()" rows="4"
+                placeholder="Add a brief description of what this collection is about..."></textarea>
+              <p class="mt-1 text-xs text-slate-500">
+                Help others understand what this collection contains.
+              </p>
             </div>
           </div>
         </ng-container>
