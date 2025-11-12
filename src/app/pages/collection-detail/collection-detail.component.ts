@@ -21,6 +21,12 @@ interface PromptCard {
   readonly tagLabel: string;
   readonly customUrl?: string;
   readonly authorProfile?: UserProfile;
+  // Fork-related fields
+  readonly forkedFromPromptId?: string;
+  readonly forkedFromAuthorId?: string;
+  readonly forkedFromTitle?: string;
+  readonly forkedFromCustomUrl?: string;
+  readonly forkCount?: number;
 }
 
 interface PromptOption {
@@ -652,7 +658,12 @@ export class CollectionDetailComponent {
       tag,
       tagLabel: this.formatTagLabel(tag),
       customUrl: prompt.customUrl,
-      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
+      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined,
+      forkedFromPromptId: prompt.forkedFromPromptId,
+      forkedFromAuthorId: prompt.forkedFromAuthorId,
+      forkedFromTitle: prompt.forkedFromTitle,
+      forkedFromCustomUrl: prompt.forkedFromCustomUrl,
+      forkCount: prompt.forkCount
     };
   }
 
@@ -1199,6 +1210,33 @@ export class CollectionDetailComponent {
       );
     } finally {
       this.isUpdatingCollection.set(false);
+    }
+  }
+
+  getOriginalPromptUrl(prompt: PromptCard): string | null {
+    if (!prompt.forkedFromPromptId) {
+      return null;
+    }
+    
+    if (prompt.forkedFromCustomUrl) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/${prompt.forkedFromCustomUrl}`;
+    }
+    
+    if (prompt.forkedFromPromptId) {
+      const short = prompt.forkedFromPromptId.slice(0, 8);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/prompt/${short}`;
+    }
+    
+    return null;
+  }
+
+  navigateToOriginalPrompt(prompt: PromptCard, event: Event) {
+    event.stopPropagation();
+    const url = this.getOriginalPromptUrl(prompt);
+    if (url) {
+      void this.router.navigateByUrl(url.replace(window.location.origin, ''));
     }
   }
 }
