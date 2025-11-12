@@ -209,8 +209,17 @@
                 <!-- Branding Section - Below Title -->
                 <div *ngIf="collection()?.brandLogoUrl || collection()?.brandLink || collection()?.brandSubtext" 
                      class="mt-4 mb-2">
-                  <div class="inline-flex items-center gap-3 sm:gap-4 transition-all duration-300"
-                       [class.hover:scale-[1.02]]="collection()?.brandLink">
+                  <div class="inline-flex items-center gap-3 sm:gap-4 px-4 py-3 sm:px-5 sm:py-4 rounded-2xl transition-all duration-300 backdrop-blur-sm"
+                       [class.bg-white/10]="collection()?.heroImageUrl"
+                       [class.bg-white/95]="!collection()?.heroImageUrl"
+                       [class.border-2]="true"
+                       [class.border-white/40]="collection()?.heroImageUrl"
+                       [class.border-purple-300/60]="!collection()?.heroImageUrl"
+                       [class.shadow-2xl]="collection()?.heroImageUrl"
+                       [class.shadow-lg]="!collection()?.heroImageUrl"
+                       [class.hover:scale-[1.02]]="collection()?.brandLink"
+                       [class.hover:border-purple-400/80]="collection()?.brandLink && !collection()?.heroImageUrl"
+                       [class.hover:shadow-xl]="collection()?.brandLink">
                     <!-- Brand Logo -->
                     <div *ngIf="collection()?.brandLogoUrl" class="flex-shrink-0">
                       <a *ngIf="collection()?.brandLink" 
