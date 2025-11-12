@@ -28,7 +28,7 @@ export class PromptService {
             (snapshot) => {
               const prompts = snapshot.docs
                 .map((doc) => this.mapPrompt(doc, firestoreModule))
-                .filter((prompt) => !prompt.isInvisible); // Filter out invisible prompts
+                .filter((prompt) => !prompt.isInvisible && !prompt.isPrivate); // Filter out invisible and private prompts
               subscriber.next(prompts);
             },
             (error) => subscriber.error(error)
@@ -69,8 +69,10 @@ export class PromptService {
 
   /**
    * Get prompts by authorId (for profile page)
+   * @param authorId The author's user ID
+   * @param currentUserId Optional. If provided and matches authorId, private prompts will be included
    */
-  promptsByAuthor$(authorId: string): Observable<Prompt[]> {
+  promptsByAuthor$(authorId: string, currentUserId?: string): Observable<Prompt[]> {
     return new Observable<Prompt[]>((subscriber) => {
       let unsubscribe: (() => void) | undefined;
 
@@ -79,6 +81,8 @@ export class PromptService {
         subscriber.next([]);
         return () => unsubscribe?.();
       }
+
+      const isViewingOwnProfile = currentUserId && currentUserId === trimmedAuthorId;
 
       this.getFirestoreContext()
         .then(({ firestore, firestoreModule }) => {
@@ -94,7 +98,13 @@ export class PromptService {
             (snapshot) => {
               const prompts = snapshot.docs
                 .map((doc) => this.mapPrompt(doc, firestoreModule))
-                .filter((prompt) => !prompt.isInvisible); // Filter out invisible prompts
+                .filter((prompt) => {
+                  // Filter out invisible prompts
+                  if (prompt.isInvisible) return false;
+                  // Filter out private prompts unless viewing own profile
+                  if (prompt.isPrivate && !isViewingOwnProfile) return false;
+                  return true;
+                });
               subscriber.next(prompts);
             },
             (error) => subscriber.error(error)
@@ -159,6 +169,11 @@ export class PromptService {
 
     if (customUrl) {
       payload['customUrl'] = customUrl;
+    }
+
+    // Add isPrivate if provided
+    if (typeof input.isPrivate === 'boolean') {
+      payload['isPrivate'] = input.isPrivate;
     }
 
     // Add fork-related fields if this is a fork
@@ -262,6 +277,11 @@ export class PromptService {
       updatePayload['customUrl'] = firestoreModule.deleteField();
     }
 
+    // Add isPrivate if provided
+    if (typeof input.isPrivate === 'boolean') {
+      updatePayload['isPrivate'] = input.isPrivate;
+    }
+
     await firestoreModule.updateDoc(docRef, updatePayload);
   }
 
@@ -284,6 +304,7 @@ export class PromptService {
     const copiedValue = data['copied'];
     const totalLaunchValue = data['totalLaunch'];
     const isInvisibleValue = data['isInvisible'];
+    const isPrivateValue = data['isPrivate'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
     const forkedFromPromptIdValue = data['forkedFromPromptId'];
@@ -316,6 +337,7 @@ export class PromptService {
       copied,
       totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
+      isPrivate: typeof isPrivateValue === 'boolean' ? isPrivateValue : false,
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule),
       forkedFromPromptId: typeof forkedFromPromptIdValue === 'string' ? forkedFromPromptIdValue : undefined,
@@ -472,8 +494,8 @@ export class PromptService {
 
       promptSnapshot.docs.forEach(doc => {
         const prompt = this.mapPrompt(doc as QueryDocumentSnapshot, firestoreModule);
-        // Filter out invisible prompts
-        if (!prompt.isInvisible) {
+        // Filter out invisible and private prompts
+        if (!prompt.isInvisible && !prompt.isPrivate) {
           prompts.push(prompt);
         }
       });

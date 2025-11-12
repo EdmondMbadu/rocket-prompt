@@ -8,7 +8,7 @@ import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import { HomeContentService } from '../../services/home-content.service';
-import type { Prompt } from '../../models/prompt.model';
+import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { DailyTip } from '../../models/home-content.model';
 
@@ -42,6 +42,7 @@ interface PromptCard {
   readonly forkedFromTitle?: string;
   readonly forkedFromCustomUrl?: string;
   readonly forkCount?: number;
+  readonly isPrivate?: boolean;
 }
 
 @Component({
@@ -63,7 +64,8 @@ export class HomeComponent {
     title: '',
     tag: '',
     customUrl: '',
-    content: ''
+    content: '',
+    isPrivate: false
   } as const;
 
   readonly currentUser$ = this.authService.currentUser$;
@@ -141,7 +143,8 @@ export class HomeComponent {
     title: ['', [Validators.required, Validators.minLength(3)]],
     tag: ['', [Validators.required]],
     customUrl: [''],
-    content: ['', [Validators.required, Validators.minLength(10)]]
+    content: ['', [Validators.required, Validators.minLength(10)]],
+    isPrivate: [false]
   });
 
   // Current tag input text mirrored as a signal so suggestions recompute on every keystroke.
@@ -637,7 +640,8 @@ export class HomeComponent {
       title: prompt.title,
       tag: prompt.tag,
       customUrl: '',
-      content: prompt.content
+      content: prompt.content,
+      isPrivate: false // Forks are not private by default
     });
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
@@ -668,7 +672,8 @@ export class HomeComponent {
       title: prompt.title,
       tag: prompt.tag,
       customUrl: prompt.customUrl ?? '',
-      content: prompt.content
+      content: prompt.content,
+      isPrivate: prompt.isPrivate ?? false
     });
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
@@ -723,7 +728,7 @@ export class HomeComponent {
       return;
     }
 
-    const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
+    const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
     const trimmedCustomUrl = (customUrl ?? '').trim();
 
     // Validate custom URL if provided
@@ -766,18 +771,24 @@ export class HomeComponent {
         throw new Error('You must be signed in to create a prompt.');
       }
 
+      // Check if user is admin
+      const profile = await this.authService.fetchUserProfile(currentUser.uid);
+      const isAdmin = profile && (profile.role === 'admin' || profile.admin);
+
       if (this.isEditingPrompt() && this.editingPromptId()) {
-        await this.promptService.updatePrompt(this.editingPromptId()!, {
+        const updateInput: UpdatePromptInput = {
           title,
           content,
           tag,
-          customUrl: trimmedCustomUrl
-        }, currentUser.uid);
+          customUrl: trimmedCustomUrl,
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
       } else if (this.forkingPromptId()) {
         // Forking a prompt
         const originalPrompt = this.prompts().find(p => p.id === this.forkingPromptId());
         if (originalPrompt) {
-          await this.promptService.createPrompt({
+          const createInput: CreatePromptInput = {
             authorId: currentUser.uid,
             title,
             content,
@@ -786,19 +797,23 @@ export class HomeComponent {
             forkedFromPromptId: originalPrompt.id,
             forkedFromAuthorId: originalPrompt.authorId,
             forkedFromTitle: originalPrompt.title,
-            forkedFromCustomUrl: originalPrompt.customUrl
-          });
+            forkedFromCustomUrl: originalPrompt.customUrl,
+            ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          };
+          await this.promptService.createPrompt(createInput);
         } else {
           throw new Error('Original prompt not found.');
         }
       } else {
-        await this.promptService.createPrompt({
+        const createInput: CreatePromptInput = {
           authorId: currentUser.uid,
           title,
           content,
           tag,
-          customUrl: trimmedCustomUrl || undefined
-        });
+          customUrl: trimmedCustomUrl || undefined,
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.createPrompt(createInput);
       }
 
       // If the user entered a new tag that isn't already in categories, add it locally
@@ -1004,7 +1019,8 @@ export class HomeComponent {
       forkedFromAuthorId: prompt.forkedFromAuthorId,
       forkedFromTitle: prompt.forkedFromTitle,
       forkedFromCustomUrl: prompt.forkedFromCustomUrl,
-      forkCount: prompt.forkCount
+      forkCount: prompt.forkCount,
+      isPrivate: prompt.isPrivate
     };
   }
 

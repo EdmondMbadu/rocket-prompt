@@ -351,6 +351,14 @@
                     {{ prompt.forkedFromTitle || 'original' }}
                   </span>
                 </div>
+                <!-- Minimal private indicator -->
+                <div *ngIf="prompt.isPrivate" class="flex items-center gap-1.5 text-xs text-slate-600">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 text-slate-500" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span class="text-slate-600 font-medium">Private</span>
+                </div>
               </div>
 
               <!-- Stats row (likes, launches, forks) -->
@@ -623,6 +631,15 @@
               class="mt-1 text-[10px] text-red-600 sm:text-xs">
               Please provide at least 10 characters of content.
             </p>
+          </div>
+
+          <div *ngIf="(profile$ | async)?.role === 'admin' || (profile$ | async)?.admin"
+            class="flex items-center gap-2">
+            <input id="prompt-is-private" type="checkbox" formControlName="isPrivate"
+              class="h-4 w-4 rounded border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/40" />
+            <label for="prompt-is-private" class="text-xs font-medium text-slate-600 sm:text-sm cursor-pointer">
+              Make this prompt private
+            </label>
           </div>
 
           <div *ngIf="promptFormError()"

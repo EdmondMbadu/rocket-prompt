@@ -8,7 +8,7 @@ import { of, combineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import { CollectionService } from '../../services/collection.service';
-import type { Prompt } from '../../models/prompt.model';
+import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
@@ -43,6 +43,7 @@ interface PromptCard {
   readonly forkedFromTitle?: string;
   readonly forkedFromCustomUrl?: string;
   readonly forkCount?: number;
+  readonly isPrivate?: boolean;
 }
 
 @Component({
@@ -108,14 +109,16 @@ export class ProfilePageComponent {
     title: '',
     tag: '',
     customUrl: '',
-    content: ''
+    content: '',
+    isPrivate: false
   } as const;
 
   readonly createPromptForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     tag: ['', [Validators.required]],
     customUrl: [''],
-    content: ['', [Validators.required, Validators.minLength(10)]]
+    content: ['', [Validators.required, Validators.minLength(10)]],
+    isPrivate: [false]
   });
 
   readonly tagQuery = signal('');
@@ -749,7 +752,8 @@ export class ProfilePageComponent {
       title: prompt.title,
       tag: prompt.tag,
       customUrl: prompt.customUrl ?? '',
-      content: prompt.content
+      content: prompt.content,
+      isPrivate: prompt.isPrivate ?? false
     });
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
@@ -813,7 +817,7 @@ export class ProfilePageComponent {
       return;
     }
 
-    const { title, tag, customUrl, content } = this.createPromptForm.getRawValue();
+    const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
     const trimmedCustomUrl = (customUrl ?? '').trim();
 
     if (trimmedCustomUrl) {
@@ -852,13 +856,19 @@ export class ProfilePageComponent {
         throw new Error('You must be signed in to update a prompt.');
       }
 
+      // Check if user is admin
+      const profile = await this.authService.fetchUserProfile(currentUser.uid);
+      const isAdmin = profile && (profile.role === 'admin' || profile.admin);
+
       if (this.isEditingPrompt() && this.editingPromptId()) {
-        await this.promptService.updatePrompt(this.editingPromptId()!, {
+        const updateInput: UpdatePromptInput = {
           title,
           content,
           tag,
-          customUrl: trimmedCustomUrl
-        }, currentUser.uid);
+          customUrl: trimmedCustomUrl,
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
       }
 
       const trimmedTag = (tag ?? '').trim();
@@ -991,7 +1001,13 @@ export class ProfilePageComponent {
           return this.authService.userProfileByUsername$(username).pipe(
             switchMap(profile => {
               if (profile && profile.userId) {
-                return this.promptService.promptsByAuthor$(profile.userId);
+                // Pass currentUserId to show private prompts if viewing own profile
+                return this.currentUser$.pipe(
+                  switchMap(currentUser => {
+                    const currentUserId = currentUser?.uid;
+                    return this.promptService.promptsByAuthor$(profile.userId, currentUserId);
+                  })
+                );
               }
               // If username not found, show own prompts
               return this.currentUser$.pipe(
@@ -1000,7 +1016,7 @@ export class ProfilePageComponent {
                     this.isLoadingPrompts.set(false);
                     return of<Prompt[]>([]);
                   }
-                  return this.promptService.promptsByAuthor$(user.uid);
+                  return this.promptService.promptsByAuthor$(user.uid, user.uid);
                 })
               );
             })
@@ -1009,7 +1025,13 @@ export class ProfilePageComponent {
         
         if (userId) {
           // Viewing profile by userId (backward compatibility)
-          return this.promptService.promptsByAuthor$(userId);
+          // Pass currentUserId to show private prompts if viewing own profile
+          return this.currentUser$.pipe(
+            switchMap(currentUser => {
+              const currentUserId = currentUser?.uid;
+              return this.promptService.promptsByAuthor$(userId, currentUserId);
+            })
+          );
         }
         
         // Viewing own profile - show own prompts
@@ -1019,7 +1041,7 @@ export class ProfilePageComponent {
               this.isLoadingPrompts.set(false);
               return of<Prompt[]>([]);
             }
-            return this.promptService.promptsByAuthor$(user.uid);
+            return this.promptService.promptsByAuthor$(user.uid, user.uid);
           })
         );
       }),
@@ -1139,7 +1161,8 @@ export class ProfilePageComponent {
       forkedFromAuthorId: prompt.forkedFromAuthorId,
       forkedFromTitle: prompt.forkedFromTitle,
       forkedFromCustomUrl: prompt.forkedFromCustomUrl,
-      forkCount: prompt.forkCount
+      forkCount: prompt.forkCount,
+      isPrivate: prompt.isPrivate
     };
   }
 

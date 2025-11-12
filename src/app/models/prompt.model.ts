@@ -13,6 +13,7 @@ export interface Prompt {
   readonly copied: number;
   readonly totalLaunch: number;
   readonly isInvisible?: boolean;
+  readonly isPrivate?: boolean;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   // Fork-related fields
@@ -40,6 +41,7 @@ export interface CreatePromptInput {
   readonly forkedFromAuthorId?: string;
   readonly forkedFromTitle?: string;
   readonly forkedFromCustomUrl?: string;
+  readonly isPrivate?: boolean;
 }
 
 export interface UpdatePromptInput {
@@ -47,4 +49,5 @@ export interface UpdatePromptInput {
   readonly content: string;
   readonly tag: string;
   readonly customUrl?: string;
+  readonly isPrivate?: boolean;
 }
