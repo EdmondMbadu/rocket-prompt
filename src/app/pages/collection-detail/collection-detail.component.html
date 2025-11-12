@@ -226,19 +226,35 @@
                          [href]="collection()?.brandLink" 
                          target="_blank" 
                          rel="noopener noreferrer" 
-                         class="block transition-transform duration-300 hover:scale-110">
+                         class="block p-2 sm:p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                         [class.bg-white/20]="collection()?.heroImageUrl"
+                         [class.bg-white]="!collection()?.heroImageUrl"
+                         [class.border-2]="true"
+                         [class.border-white/50]="collection()?.heroImageUrl"
+                         [class.border-purple-300/80]="!collection()?.heroImageUrl"
+                         [class.hover:border-purple-400]="!collection()?.heroImageUrl"
+                         [class.hover:border-white/80]="collection()?.heroImageUrl"
+                         [class.hover:bg-white/30]="collection()?.heroImageUrl"
+                         [class.hover:bg-purple-50]="!collection()?.heroImageUrl">
                         <img [src]="collection()?.brandLogoUrl" 
                              alt="Brand logo" 
                              [class.drop-shadow-2xl]="collection()?.heroImageUrl"
                              [class.[filter:_drop-shadow(0_2px_8px_rgb(0_0_0_/_60%))]]="collection()?.heroImageUrl"
                              class="h-12 sm:h-14 w-auto object-contain" />
                       </a>
-                      <img *ngIf="!collection()?.brandLink" 
-                           [src]="collection()?.brandLogoUrl" 
-                           alt="Brand logo" 
-                           [class.drop-shadow-2xl]="collection()?.heroImageUrl"
-                           [class.[filter:_drop-shadow(0_2px_8px_rgb(0_0_0_/_60%))]]="collection()?.heroImageUrl"
-                           class="h-12 sm:h-14 w-auto object-contain" />
+                      <div *ngIf="!collection()?.brandLink"
+                           class="p-2 sm:p-2.5 rounded-xl"
+                           [class.bg-white/20]="collection()?.heroImageUrl"
+                           [class.bg-white]="!collection()?.heroImageUrl"
+                           [class.border-2]="true"
+                           [class.border-white/50]="collection()?.heroImageUrl"
+                           [class.border-purple-300/80]="!collection()?.heroImageUrl">
+                        <img [src]="collection()?.brandLogoUrl" 
+                             alt="Brand logo" 
+                             [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                             [class.[filter:_drop-shadow(0_2px_8px_rgb(0_0_0_/_60%))]]="collection()?.heroImageUrl"
+                             class="h-12 sm:h-14 w-auto object-contain" />
+                      </div>
                     </div>
                     <!-- Brand Info -->
                     <div class="flex-1 min-w-0">
