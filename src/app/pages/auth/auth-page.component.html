@@ -74,6 +74,13 @@
         {{ successMessage }}
       </div>
 
+      <div *ngIf="mode() === 'signup'" class="text-center text-xs text-slate-600">
+        By creating an account, you agree to our
+        <a routerLink="/community-guidelines" class="font-semibold text-[#DC2626] hover:text-[#B91C1C] transition underline">
+          Terms of Service
+        </a>
+      </div>
+
       <button type="submit" [disabled]="authForm.invalid || isSubmitting"
         class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DC2626] px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-white/50">
         <ng-container *ngIf="isSubmitting; else defaultIcon">
