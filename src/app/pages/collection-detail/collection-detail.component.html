@@ -205,6 +205,59 @@
                     </button>
                   </div>
                 </div>
+
+                <!-- Branding Section - Below Title -->
+                <div *ngIf="collection()?.brandLogoUrl || collection()?.brandLink || collection()?.brandSubtext" 
+                     class="mt-4 mb-2">
+                  <div class="inline-flex items-center gap-3 sm:gap-4 transition-all duration-300"
+                       [class.hover:scale-[1.02]]="collection()?.brandLink">
+                    <!-- Brand Logo -->
+                    <div *ngIf="collection()?.brandLogoUrl" class="flex-shrink-0">
+                      <a *ngIf="collection()?.brandLink" 
+                         [href]="collection()?.brandLink" 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         class="block transition-transform duration-300 hover:scale-110">
+                        <img [src]="collection()?.brandLogoUrl" 
+                             alt="Brand logo" 
+                             [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                             [class.[filter:_drop-shadow(0_2px_8px_rgb(0_0_0_/_60%))]]="collection()?.heroImageUrl"
+                             class="h-12 sm:h-14 w-auto object-contain" />
+                      </a>
+                      <img *ngIf="!collection()?.brandLink" 
+                           [src]="collection()?.brandLogoUrl" 
+                           alt="Brand logo" 
+                           [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                           [class.[filter:_drop-shadow(0_2px_8px_rgb(0_0_0_/_60%))]]="collection()?.heroImageUrl"
+                           class="h-12 sm:h-14 w-auto object-contain" />
+                    </div>
+                    <!-- Brand Info -->
+                    <div class="flex-1 min-w-0">
+                      <a *ngIf="collection()?.brandLink" 
+                         [href]="collection()?.brandLink" 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         class="block group">
+                        <p *ngIf="collection()?.brandSubtext" 
+                           [class.text-white]="collection()?.heroImageUrl"
+                           [class.text-slate-800]="!collection()?.heroImageUrl"
+                           [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                           [class.[text-shadow:_0_2px_20px_rgb(0_0_0_/_60%)]]="collection()?.heroImageUrl"
+                           class="text-sm sm:text-base font-semibold leading-relaxed transition-colors duration-300 group-hover:text-purple-400">
+                          {{ collection()?.brandSubtext }}
+                        </p>
+                      </a>
+                      <p *ngIf="!collection()?.brandLink && collection()?.brandSubtext" 
+                         [class.text-white]="collection()?.heroImageUrl"
+                         [class.text-slate-800]="!collection()?.heroImageUrl"
+                         [class.drop-shadow-2xl]="collection()?.heroImageUrl"
+                         [class.[text-shadow:_0_2px_20px_rgb(0_0_0_/_60%)]]="collection()?.heroImageUrl"
+                         class="text-sm sm:text-base font-semibold leading-relaxed">
+                        {{ collection()?.brandSubtext }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -528,8 +581,8 @@
     <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" (click)="closeEditModal()"></div>
 
     <!-- Modal -->
-    <div class="relative z-10 w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
-      <div class="px-6 py-5 sm:px-8 sm:py-6">
+    <div class="relative z-10 w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all max-h-[90vh] flex flex-col">
+      <div class="px-6 py-5 sm:px-8 sm:py-6 overflow-y-auto flex-1 min-h-0">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-2xl font-semibold text-slate-900" id="modal-title">
@@ -583,7 +636,7 @@
           Select prompts to add to this collection. Prompts already in the collection are not shown.
         </p>
         <p class="mb-6 text-sm text-slate-600" *ngIf="editModalTab() === 'settings'">
-          Update collection name, tag, and custom URL.
+          Update collection name, tag, custom URL, description, and branding.
         </p>
 
         <!-- Remove Prompts Section -->
@@ -773,11 +826,127 @@
                 Help others understand what this collection contains.
               </p>
             </div>
+
+            <!-- Branding Section - At the bottom -->
+            <div class="border-t-2 border-purple-200 pt-6 mt-6">
+              <div class="border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-white p-5">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-md">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white">
+                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-purple-600">Branding</p>
+                    <h3 class="mt-0.5 text-base font-bold text-slate-900">Add Company Branding</h3>
+                  </div>
+                </div>
+                <p class="text-sm text-slate-600 mb-5 leading-relaxed">
+                  Add your company logo, link, and a short description to brand this collection.
+                </p>
+
+                <!-- Brand Logo Upload -->
+                <div class="mb-5">
+                  <label class="block text-sm font-semibold text-slate-700 mb-2">Company Logo (optional)</label>
+                  <div *ngIf="!collection()?.brandLogoUrl && !uploadingBrandLogo() && !deletingBrandLogo()" class="flex items-center gap-3">
+                    <label class="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer transition hover:border-purple-400 hover:bg-purple-50">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>Upload Logo</span>
+                      <input type="file" accept="image/*" class="hidden" (change)="onBrandLogoSelected($event)" [disabled]="isUpdatingCollection()" />
+                    </label>
+                  </div>
+                  <div *ngIf="uploadingBrandLogo()" class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-500">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 animate-spin">
+                      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+                      <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                    <span>Uploading...</span>
+                  </div>
+                  <div *ngIf="collection()?.brandLogoUrl && !uploadingBrandLogo() && !deletingBrandLogo()" class="flex items-center gap-3">
+                    <div class="relative">
+                      <img [src]="collection()?.brandLogoUrl" alt="Brand logo" class="h-16 w-auto rounded-lg border-2 border-slate-200 object-contain bg-white p-2" />
+                    </div>
+                    <label class="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 cursor-pointer transition hover:bg-slate-50">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>Change</span>
+                      <input type="file" accept="image/*" class="hidden" (change)="onBrandLogoSelected($event)" [disabled]="isUpdatingCollection()" />
+                    </label>
+                    <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600" (click)="deleteBrandLogo()" [disabled]="isUpdatingCollection()">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                  <div *ngIf="deletingBrandLogo()" class="inline-flex items-center gap-2 rounded-xl bg-red-500/90 px-4 py-3 text-sm font-semibold text-white opacity-50">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 animate-spin">
+                      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+                      <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                    <span>Removing...</span>
+                  </div>
+                  <p *ngIf="brandLogoUploadError()" class="mt-2 text-xs text-red-600">
+                    {{ brandLogoUploadError() }}
+                  </p>
+                  <p *ngIf="!brandLogoUploadError()" class="mt-1 text-xs text-slate-500">
+                    Upload your company logo (max 5MB, PNG, JPG, or GIF)
+                  </p>
+                </div>
+
+                <!-- Brand Link -->
+                <div class="mb-5">
+                  <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-brand-link">Company Link (optional)</label>
+                  <input id="edit-brand-link" type="url"
+                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:shadow-md"
+                    [value]="editBrandLink()" (input)="editBrandLink.set(($any($event.target)).value)"
+                    [disabled]="isUpdatingCollection()" placeholder="https://example.com" />
+                  <p class="mt-1 text-xs text-slate-500">
+                    Link to your company website or landing page.
+                  </p>
+                </div>
+
+                <!-- Brand Subtext -->
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-2" for="edit-brand-subtext">Brand Description (optional)</label>
+                  <textarea id="edit-brand-subtext"
+                    class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:shadow-md resize-none"
+                    [class.border-red-300]="brandSubtextWordCount() > 50"
+                    [class.border-slate-300]="brandSubtextWordCount() <= 50"
+                    [class.focus:border-purple-500]="brandSubtextWordCount() <= 50"
+                    [value]="editBrandSubtext()" (input)="editBrandSubtext.set(($any($event.target)).value)"
+                    [disabled]="isUpdatingCollection()" rows="2"
+                    placeholder="A short description about your company or brand..."></textarea>
+                  <div class="mt-1 flex items-center justify-between">
+                    <p class="text-xs text-slate-500">
+                      A brief explanation about your company or brand (appears in the hero image area).
+                    </p>
+                    <p class="text-xs font-medium"
+                       [class.text-red-600]="brandSubtextWordCount() > 50"
+                       [class.text-slate-500]="brandSubtextWordCount() <= 50">
+                      {{ brandSubtextWordCount() }}/50 words
+                    </p>
+                  </div>
+                  <p *ngIf="brandSubtextWordCount() > 50" class="mt-1 text-xs text-red-600 font-medium">
+                    Brand description must be 50 words or less.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </ng-container>
+      </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+      <!-- Actions -->
+      <div class="px-6 py-5 sm:px-8 sm:py-6 border-t border-slate-200 flex-shrink-0 bg-white">
+        <div class="flex items-center justify-end gap-3">
           <button type="button"
             class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             (click)="closeEditModal()" [disabled]="isUpdatingCollection()">
@@ -798,7 +967,7 @@
           </button>
           <button *ngIf="editModalTab() === 'settings'" type="button"
             class="rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            (click)="updateCollectionSettings()" [disabled]="isUpdatingCollection() || editCustomUrlError() !== null">
+            (click)="updateCollectionSettings()" [disabled]="isUpdatingCollection() || editCustomUrlError() !== null || brandSubtextWordCount() > 50">
             <span *ngIf="!isUpdatingCollection()">Save Changes</span>
             <span *ngIf="isUpdatingCollection()">Saving...</span>
           </button>

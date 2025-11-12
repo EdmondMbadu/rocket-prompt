@@ -11,6 +11,9 @@ export interface PromptCollection {
   readonly heroImageUrl?: string;
   readonly customUrl?: string;
   readonly blurb?: string;
+  readonly brandLogoUrl?: string;
+  readonly brandLink?: string;
+  readonly brandSubtext?: string;
 }
 
 export interface CreateCollectionInput {
@@ -19,6 +22,9 @@ export interface CreateCollectionInput {
   readonly promptIds: readonly string[];
   readonly customUrl?: string;
   readonly blurb?: string;
+  readonly brandLogoUrl?: string;
+  readonly brandLink?: string;
+  readonly brandSubtext?: string;
 }
 
 export interface UpdateCollectionInput {
@@ -28,5 +34,8 @@ export interface UpdateCollectionInput {
   readonly heroImageUrl?: string;
   readonly customUrl?: string;
   readonly blurb?: string;
+  readonly brandLogoUrl?: string;
+  readonly brandLink?: string;
+  readonly brandSubtext?: string;
 }
 

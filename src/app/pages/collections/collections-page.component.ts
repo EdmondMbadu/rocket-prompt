@@ -82,6 +82,11 @@ export class CollectionsPageComponent {
     readonly customUrlError = signal<string | null>(null);
     readonly isCheckingCustomUrl = signal(false);
     private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
+    readonly uploadingBrandLogo = signal(false);
+    readonly deletingBrandLogo = signal(false);
+    readonly brandLogoUploadError = signal<string | null>(null);
+    readonly brandLogoUrl = signal<string | null>(null);
+    private brandLogoFile: File | null = null;
     readonly menuOpen = signal(false);
     readonly menuTop = signal<number | null>(null);
     readonly menuRight = signal<number | null>(null);
@@ -123,7 +128,9 @@ export class CollectionsPageComponent {
             validators: [this.promptSelectionValidator]
         }),
         customUrl: [''],
-        blurb: ['']
+        blurb: [''],
+        brandLink: [''],
+        brandSubtext: ['']
     });
 
     readonly filteredCollections = computed(() => {
@@ -313,11 +320,18 @@ export class CollectionsPageComponent {
         this.collectionForm.reset({
             name: '',
             tag: '',
-            promptIds: []
+            promptIds: [],
+            customUrl: '',
+            blurb: '',
+            brandLink: '',
+            brandSubtext: ''
         });
         this.collectionForm.markAsPristine();
         this.collectionForm.markAsUntouched();
         this.collectionFormError.set(null);
+        this.brandLogoUrl.set(null);
+        this.brandLogoUploadError.set(null);
+        this.brandLogoFile = null;
         this.promptSearchTerm.set(''); // Reset prompt search when opening modal
         this.newCollectionModalOpen.set(true);
     }
@@ -329,6 +343,9 @@ export class CollectionsPageComponent {
 
         this.newCollectionModalOpen.set(false);
         this.collectionFormError.set(null);
+        this.brandLogoUrl.set(null);
+        this.brandLogoUploadError.set(null);
+        this.brandLogoFile = null;
         this.collectionForm.markAsPristine();
         this.collectionForm.markAsUntouched();
     }
@@ -352,13 +369,28 @@ export class CollectionsPageComponent {
         return this.collectionForm.controls.promptIds.value.includes(promptId);
     }
 
+    readonly brandSubtextWordCount = computed(() => {
+        const text = this.collectionForm.controls.brandSubtext.value?.trim() || '';
+        if (!text) return 0;
+        return text.split(/\s+/).filter(word => word.length > 0).length;
+    });
+
     async submitCollectionForm() {
         if (this.collectionForm.invalid || this.customUrlError()) {
             this.collectionForm.markAllAsTouched();
             return;
         }
 
-        const { name, tag, promptIds, customUrl, blurb } = this.collectionForm.getRawValue();
+        const { name, tag, promptIds, customUrl, blurb, brandLink, brandSubtext } = this.collectionForm.getRawValue();
+        
+        // Validate brand subtext word limit (50 words)
+        if (brandSubtext?.trim()) {
+            const wordCount = brandSubtext.trim().split(/\s+/).filter(word => word.length > 0).length;
+            if (wordCount > 50) {
+                this.collectionFormError.set('Brand description must be 50 words or less.');
+                return;
+            }
+        }
         const currentUser = this.authService.currentUser;
         const authorId = currentUser?.uid;
 
@@ -366,13 +398,28 @@ export class CollectionsPageComponent {
         this.collectionFormError.set(null);
 
         try {
-            await this.collectionService.createCollection({
+            // Create collection first
+            const collectionId = await this.collectionService.createCollection({
                 name,
                 tag,
                 promptIds,
                 customUrl: customUrl?.trim() || undefined,
-                blurb: blurb?.trim() || undefined
+                blurb: blurb?.trim() || undefined,
+                brandLink: brandLink?.trim() || undefined,
+                brandSubtext: brandSubtext?.trim() || undefined
             }, authorId);
+
+            // Upload brand logo if file was selected
+            if (this.brandLogoFile && authorId) {
+                try {
+                    const logoUrl = await this.collectionService.uploadBrandLogo(collectionId, this.brandLogoFile, authorId);
+                    // Update collection with logo URL
+                    await this.collectionService.updateCollection(collectionId, { brandLogoUrl: logoUrl }, authorId);
+                } catch (logoError) {
+                    console.error('Failed to upload brand logo', logoError);
+                    // Don't fail the whole operation if logo upload fails
+                }
+            }
 
             this.newCollectionModalOpen.set(false);
             this.collectionForm.reset({
@@ -380,11 +427,16 @@ export class CollectionsPageComponent {
                 tag: '',
                 promptIds: [],
                 customUrl: '',
-                blurb: ''
+                blurb: '',
+                brandLink: '',
+                brandSubtext: ''
             });
             this.collectionForm.markAsPristine();
             this.collectionForm.markAsUntouched();
             this.customUrlError.set(null);
+            this.brandLogoUrl.set(null);
+            this.brandLogoUploadError.set(null);
+            this.brandLogoFile = null;
             this.clearCustomUrlDebounce();
         } catch (error) {
             console.error('Failed to create collection', error);
@@ -711,6 +763,66 @@ export class CollectionsPageComponent {
         } catch (error) {
             console.error('Failed to refresh collection bookmarks', error);
         }
+    }
+
+    async onBrandLogoSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        
+        if (!file) {
+            return;
+        }
+
+        // We need a collection ID to upload, but we're creating a new collection
+        // So we'll store the file temporarily and upload it after collection creation
+        // For now, let's just validate and show preview
+        this.uploadingBrandLogo.set(true);
+        this.brandLogoUploadError.set(null);
+
+        try {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                throw new Error('Only image files are allowed.');
+            }
+
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                throw new Error('Image size must be less than 5MB.');
+            }
+
+            // Store the file for later upload
+            this.brandLogoFile = file;
+
+            // Create a preview URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target?.result as string;
+                if (result) {
+                    this.brandLogoUrl.set(result);
+                }
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Failed to process brand logo', error);
+            this.brandLogoUploadError.set(
+                error instanceof Error ? error.message : 'Failed to process image. Please try again.'
+            );
+        } finally {
+            this.uploadingBrandLogo.set(false);
+            // Reset the input
+            input.value = '';
+        }
+    }
+
+    async deleteBrandLogo() {
+        if (!confirm('Are you sure you want to remove the brand logo?')) {
+            return;
+        }
+
+        this.brandLogoUrl.set(null);
+        this.brandLogoUploadError.set(null);
+        this.brandLogoFile = null;
     }
 }
 

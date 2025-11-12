@@ -93,6 +93,17 @@ export class CollectionDetailComponent {
   readonly editCustomUrlError = signal<string | null>(null);
   readonly isCheckingCustomUrl = signal(false);
   private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly uploadingBrandLogo = signal(false);
+  readonly deletingBrandLogo = signal(false);
+  readonly brandLogoUploadError = signal<string | null>(null);
+  readonly editBrandLink = signal('');
+  readonly editBrandSubtext = signal('');
+  
+  readonly brandSubtextWordCount = computed(() => {
+    const text = this.editBrandSubtext().trim();
+    if (!text) return 0;
+    return text.split(/\s+/).filter(word => word.length > 0).length;
+  });
 
   readonly actorId = computed(() => {
     const user = this.authService.currentUser;
@@ -843,7 +854,10 @@ export class CollectionDetailComponent {
     this.editCollectionTag.set(collection?.tag ?? '');
     this.editCollectionCustomUrl.set(collection?.customUrl ?? '');
     this.editCollectionBlurb.set(collection?.blurb ?? '');
+    this.editBrandLink.set(collection?.brandLink ?? '');
+    this.editBrandSubtext.set(collection?.brandSubtext ?? '');
     this.editCustomUrlError.set(null);
+    this.brandLogoUploadError.set(null);
     this.clearCustomUrlDebounce();
   }
 
@@ -861,7 +875,10 @@ export class CollectionDetailComponent {
     this.editCollectionTag.set('');
     this.editCollectionCustomUrl.set('');
     this.editCollectionBlurb.set('');
+    this.editBrandLink.set('');
+    this.editBrandSubtext.set('');
     this.editCustomUrlError.set(null);
+    this.brandLogoUploadError.set(null);
     this.clearCustomUrlDebounce();
   }
 
@@ -1175,6 +1192,8 @@ export class CollectionDetailComponent {
     const tag = this.editCollectionTag().trim();
     const customUrl = this.editCollectionCustomUrl().trim();
     const blurb = this.editCollectionBlurb().trim();
+    const brandLink = this.editBrandLink().trim();
+    const brandSubtext = this.editBrandSubtext().trim();
 
     if (!name || name.length < 3) {
       this.updateCollectionError.set('Collection name must be at least 3 characters.');
@@ -1186,20 +1205,45 @@ export class CollectionDetailComponent {
       return;
     }
 
+    // Validate brand subtext word limit (50 words)
+    if (brandSubtext) {
+      const wordCount = brandSubtext.split(/\s+/).filter(word => word.length > 0).length;
+      if (wordCount > 50) {
+        this.updateCollectionError.set('Brand description must be 50 words or less.');
+        return;
+      }
+    }
+
     this.isUpdatingCollection.set(true);
     this.updateCollectionError.set(null);
 
     try {
+      const updateData: any = {
+        name,
+        tag,
+        customUrl: customUrl || undefined,
+        blurb: blurb || undefined,
+        brandLink: brandLink || '',
+        brandSubtext: brandSubtext || ''
+      };
+
       await this.collectionService.updateCollection(
         collection.id,
-        {
-          name,
-          tag,
-          customUrl: customUrl || undefined,
-          blurb: blurb || undefined
-        },
+        updateData,
         currentUser.uid
       );
+      
+      // Manually update the collection signal to reflect changes immediately
+      this.collection.set({
+        ...collection,
+        name,
+        tag,
+        customUrl: customUrl || undefined,
+        blurb: blurb || undefined,
+        brandLink: brandLink || undefined,
+        brandSubtext: brandSubtext || undefined
+      });
+      
       // Reload collection to get updated data
       // The observable will automatically update
       this.closeEditModal();
@@ -1237,6 +1281,73 @@ export class CollectionDetailComponent {
     const url = this.getOriginalPromptUrl(prompt);
     if (url) {
       void this.router.navigateByUrl(url.replace(window.location.origin, ''));
+    }
+  }
+
+  async onBrandLogoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    this.uploadingBrandLogo.set(true);
+    this.brandLogoUploadError.set(null);
+
+    try {
+      const logoUrl = await this.collectionService.uploadBrandLogo(collection.id, file, currentUser.uid);
+      this.collection.set({ ...collection, brandLogoUrl: logoUrl });
+    } catch (error) {
+      console.error('Failed to upload brand logo', error);
+      this.brandLogoUploadError.set(
+        error instanceof Error ? error.message : 'Failed to upload logo. Please try again.'
+      );
+    } finally {
+      this.uploadingBrandLogo.set(false);
+      // Reset the input
+      input.value = '';
+    }
+  }
+
+  async deleteBrandLogo() {
+    const collection = this.collection();
+    if (!collection || !collection.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to remove the brand logo?')) {
+      return;
+    }
+
+    this.deletingBrandLogo.set(true);
+    this.brandLogoUploadError.set(null);
+
+    try {
+      await this.collectionService.deleteBrandLogo(collection.id, currentUser.uid);
+      this.collection.set({ ...collection, brandLogoUrl: undefined });
+    } catch (error) {
+      console.error('Failed to delete brand logo', error);
+      this.brandLogoUploadError.set(
+        error instanceof Error ? error.message : 'Failed to delete logo. Please try again.'
+      );
+    } finally {
+      this.deletingBrandLogo.set(false);
     }
   }
 }

@@ -121,6 +121,8 @@ export class CollectionService {
     const promptIds = Array.isArray(input.promptIds) ? input.promptIds.filter(Boolean) : [];
     const customUrl = input.customUrl?.trim();
     const blurb = input.blurb?.trim();
+    const brandLink = input.brandLink?.trim();
+    const brandSubtext = input.brandSubtext?.trim();
 
     if (!name) {
       throw new Error('A name is required to create a collection.');
@@ -172,6 +174,18 @@ export class CollectionService {
 
     if (blurb) {
       payload['blurb'] = blurb;
+    }
+
+    if (input.brandLogoUrl) {
+      payload['brandLogoUrl'] = input.brandLogoUrl;
+    }
+
+    if (brandLink) {
+      payload['brandLink'] = brandLink;
+    }
+
+    if (brandSubtext) {
+      payload['brandSubtext'] = brandSubtext;
     }
 
     const docRef = await firestoreModule.addDoc(
@@ -274,6 +288,36 @@ export class CollectionService {
       }
     }
 
+    if (typeof input.brandLogoUrl === 'string') {
+      const brandLogoUrl = input.brandLogoUrl.trim();
+      if (brandLogoUrl) {
+        updatePayload['brandLogoUrl'] = brandLogoUrl;
+      } else {
+        // Remove brandLogoUrl if empty string
+        updatePayload['brandLogoUrl'] = firestoreModule.deleteField();
+      }
+    }
+
+    if (typeof input.brandLink === 'string') {
+      const brandLink = input.brandLink.trim();
+      if (brandLink) {
+        updatePayload['brandLink'] = brandLink;
+      } else {
+        // Remove brandLink if empty string
+        updatePayload['brandLink'] = firestoreModule.deleteField();
+      }
+    }
+
+    if (typeof input.brandSubtext === 'string') {
+      const brandSubtext = input.brandSubtext.trim();
+      if (brandSubtext) {
+        updatePayload['brandSubtext'] = brandSubtext;
+      } else {
+        // Remove brandSubtext if empty string
+        updatePayload['brandSubtext'] = firestoreModule.deleteField();
+      }
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -346,6 +390,9 @@ export class CollectionService {
     const heroImageUrlValue = data['heroImageUrl'];
     const customUrlValue = data['customUrl'];
     const blurbValue = data['blurb'];
+    const brandLogoUrlValue = data['brandLogoUrl'];
+    const brandLinkValue = data['brandLink'];
+    const brandSubtextValue = data['brandSubtext'];
 
     return {
       id,
@@ -361,7 +408,10 @@ export class CollectionService {
       collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined,
       heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined,
       customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,
-      blurb: typeof blurbValue === 'string' ? blurbValue : undefined
+      blurb: typeof blurbValue === 'string' ? blurbValue : undefined,
+      brandLogoUrl: typeof brandLogoUrlValue === 'string' ? brandLogoUrlValue : undefined,
+      brandLink: typeof brandLinkValue === 'string' ? brandLinkValue : undefined,
+      brandSubtext: typeof brandSubtextValue === 'string' ? brandSubtextValue : undefined
     };
   }
 
@@ -605,6 +655,136 @@ export class CollectionService {
     // Remove the heroImageUrl from Firestore
     await firestoreModule.updateDoc(docRef, {
       heroImageUrl: null,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
+  }
+
+  async uploadBrandLogo(collectionId: string, file: File, userId: string): Promise<string> {
+    const trimmedId = collectionId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A collection id is required to upload a brand logo.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to upload images.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only upload images for collections you created.');
+      }
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `collections/${trimmedId}/brand-logo-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the collection with the new logo URL
+    await firestoreModule.updateDoc(docRef, {
+      brandLogoUrl: downloadURL,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
+
+    return downloadURL;
+  }
+
+  async deleteBrandLogo(collectionId: string, userId: string): Promise<void> {
+    const trimmedId = collectionId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A collection id is required to delete a brand logo.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'collections', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Collection not found.');
+    }
+
+    const collectionData = docSnap.data() as Record<string, unknown>;
+    const authorId = collectionData['authorId'] as string | undefined;
+    const brandLogoUrl = collectionData['brandLogoUrl'] as string | undefined;
+
+    // Check if user is the author
+    if (authorId) {
+      if (!userId) {
+        throw new Error('You must be logged in to delete images.');
+      }
+      if (authorId !== userId) {
+        throw new Error('You can only delete images for collections you created.');
+      }
+    }
+
+    // Delete from Storage if URL exists
+    if (brandLogoUrl) {
+      try {
+        const storageModule = await import('firebase/storage');
+        const storage = storageModule.getStorage(this.app);
+        
+        // Extract the path from the URL
+        try {
+          const url = new URL(brandLogoUrl);
+          const pathMatch = url.pathname.match(/\/o\/(.+)\?/);
+          if (pathMatch && pathMatch[1]) {
+            const decodedPath = decodeURIComponent(pathMatch[1]);
+            const imageRef = storageModule.ref(storage, decodedPath);
+            await storageModule.deleteObject(imageRef);
+          } else {
+            console.warn('Could not extract path from storage URL:', brandLogoUrl);
+          }
+        } catch (urlError) {
+          // If URL parsing fails, log the error
+          console.warn('Failed to parse storage URL:', urlError);
+        }
+      } catch (error) {
+        // If deletion from storage fails, continue to remove from Firestore
+        console.warn('Failed to delete image from storage:', error);
+      }
+    }
+
+    // Remove the brandLogoUrl from Firestore
+    await firestoreModule.updateDoc(docRef, {
+      brandLogoUrl: null,
       updatedAt: firestoreModule.serverTimestamp()
     });
   }
