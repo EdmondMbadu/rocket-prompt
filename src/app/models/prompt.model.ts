@@ -15,6 +15,12 @@ export interface Prompt {
   readonly isInvisible?: boolean;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
+  // Fork-related fields
+  readonly forkedFromPromptId?: string;
+  readonly forkedFromAuthorId?: string;
+  readonly forkedFromTitle?: string;
+  readonly forkedFromCustomUrl?: string;
+  readonly forkCount?: number;
 }
 
 export interface CreatePromptInput {
@@ -29,6 +35,11 @@ export interface CreatePromptInput {
   readonly launchGemini?: number;
   readonly launchClaude?: number;
   readonly copied?: number;
+  // Fork-related fields
+  readonly forkedFromPromptId?: string;
+  readonly forkedFromAuthorId?: string;
+  readonly forkedFromTitle?: string;
+  readonly forkedFromCustomUrl?: string;
 }
 
 export interface UpdatePromptInput {

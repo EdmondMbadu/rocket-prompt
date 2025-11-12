@@ -161,6 +161,34 @@ export class PromptService {
       payload['customUrl'] = customUrl;
     }
 
+    // Add fork-related fields if this is a fork
+    if (input.forkedFromPromptId) {
+      payload['forkedFromPromptId'] = input.forkedFromPromptId;
+      if (input.forkedFromAuthorId) {
+        payload['forkedFromAuthorId'] = input.forkedFromAuthorId;
+      }
+      if (input.forkedFromTitle) {
+        payload['forkedFromTitle'] = input.forkedFromTitle;
+      }
+      if (input.forkedFromCustomUrl) {
+        payload['forkedFromCustomUrl'] = input.forkedFromCustomUrl;
+      }
+
+      // Increment forkCount on the original prompt
+      const originalPromptRef = firestoreModule.doc(firestore, 'prompts', input.forkedFromPromptId);
+      await firestoreModule.runTransaction(firestore, async (tx) => {
+        const originalSnap = await tx.get(originalPromptRef as any);
+        if (originalSnap.exists()) {
+          const originalData = originalSnap.data() as Record<string, unknown>;
+          const currentForkCount = typeof originalData['forkCount'] === 'number' ? originalData['forkCount'] : 0;
+          const newForkCount = currentForkCount + 1;
+          tx.update(originalPromptRef as any, { 
+            forkCount: firestoreModule.increment ? firestoreModule.increment(1) : newForkCount 
+          });
+        }
+      });
+    }
+
     const docRef = await firestoreModule.addDoc(firestoreModule.collection(firestore, 'prompts'), payload);
 
     return docRef.id;
@@ -258,6 +286,11 @@ export class PromptService {
     const isInvisibleValue = data['isInvisible'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
+    const forkedFromPromptIdValue = data['forkedFromPromptId'];
+    const forkedFromAuthorIdValue = data['forkedFromAuthorId'];
+    const forkedFromTitleValue = data['forkedFromTitle'];
+    const forkedFromCustomUrlValue = data['forkedFromCustomUrl'];
+    const forkCountValue = data['forkCount'];
 
     const launchGpt = typeof launchGptValue === 'number' ? launchGptValue : 0;
     const launchGemini = typeof launchGeminiValue === 'number' ? launchGeminiValue : 0;
@@ -284,7 +317,12 @@ export class PromptService {
       totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
       createdAt: this.toDate(createdAtValue, firestoreModule),
-      updatedAt: this.toDate(updatedAtValue, firestoreModule)
+      updatedAt: this.toDate(updatedAtValue, firestoreModule),
+      forkedFromPromptId: typeof forkedFromPromptIdValue === 'string' ? forkedFromPromptIdValue : undefined,
+      forkedFromAuthorId: typeof forkedFromAuthorIdValue === 'string' ? forkedFromAuthorIdValue : undefined,
+      forkedFromTitle: typeof forkedFromTitleValue === 'string' ? forkedFromTitleValue : undefined,
+      forkedFromCustomUrl: typeof forkedFromCustomUrlValue === 'string' ? forkedFromCustomUrlValue : undefined,
+      forkCount: typeof forkCountValue === 'number' ? forkCountValue : undefined
     };
   }
 

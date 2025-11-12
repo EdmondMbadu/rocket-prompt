@@ -473,4 +473,24 @@ export class PromptPageComponent {
       }
     }
   }
+
+  getOriginalPromptUrl(): string | null {
+    const p = this.prompt();
+    if (!p?.forkedFromPromptId) {
+      return null;
+    }
+
+    if (p.forkedFromCustomUrl) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/${p.forkedFromCustomUrl}`;
+    }
+
+    if (p.forkedFromPromptId) {
+      const short = p.forkedFromPromptId.slice(0, 8);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/prompt/${short}`;
+    }
+
+    return null;
+  }
 }

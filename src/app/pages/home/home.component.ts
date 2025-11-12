@@ -36,6 +36,12 @@ interface PromptCard {
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly authorProfile?: UserProfile;
+  // Fork-related fields
+  readonly forkedFromPromptId?: string;
+  readonly forkedFromAuthorId?: string;
+  readonly forkedFromTitle?: string;
+  readonly forkedFromCustomUrl?: string;
+  readonly forkCount?: number;
 }
 
 @Component({
@@ -119,6 +125,8 @@ export class HomeComponent {
   readonly recentlyCopied = signal<Set<string>>(new Set());
   // Track prompt ids that were recently copied (for URL copying)
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
+  // Fork-related state
+  readonly forkingPromptId = signal<string | null>(null);
 
   // Home content (daily tip and prompt of the day)
   readonly dailyTip = signal<DailyTip | null>(null);
@@ -600,10 +608,39 @@ export class HomeComponent {
     this.closeMenu();
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
     this.resetCreatePromptForm();
+    this.tagQuery.set('');
+    this.newPromptModalOpen.set(true);
+  }
+
+  openForkPromptModal(prompt: PromptCard) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to fork a prompt.');
+      return;
+    }
+
+    this.closeMenu();
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.forkingPromptId.set(prompt.id);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    
+    // Pre-fill form with prompt data (but clear customUrl - forks need unique URLs)
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: '',
+      content: prompt.content
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
     this.tagQuery.set('');
     this.newPromptModalOpen.set(true);
   }
@@ -674,6 +711,7 @@ export class HomeComponent {
     this.newPromptModalOpen.set(false);
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -735,6 +773,24 @@ export class HomeComponent {
           tag,
           customUrl: trimmedCustomUrl
         }, currentUser.uid);
+      } else if (this.forkingPromptId()) {
+        // Forking a prompt
+        const originalPrompt = this.prompts().find(p => p.id === this.forkingPromptId());
+        if (originalPrompt) {
+          await this.promptService.createPrompt({
+            authorId: currentUser.uid,
+            title,
+            content,
+            tag,
+            customUrl: trimmedCustomUrl || undefined,
+            forkedFromPromptId: originalPrompt.id,
+            forkedFromAuthorId: originalPrompt.authorId,
+            forkedFromTitle: originalPrompt.title,
+            forkedFromCustomUrl: originalPrompt.customUrl
+          });
+        } else {
+          throw new Error('Original prompt not found.');
+        }
       } else {
         await this.promptService.createPrompt({
           authorId: currentUser.uid,
@@ -756,6 +812,7 @@ export class HomeComponent {
       this.resetCreatePromptForm();
       this.isEditingPrompt.set(false);
       this.editingPromptId.set(null);
+      this.forkingPromptId.set(null);
       this.newPromptModalOpen.set(false);
     } catch (error) {
       console.error('Failed to save prompt', error);
@@ -942,7 +999,12 @@ export class HomeComponent {
       totalLaunch: prompt.totalLaunch ?? 0,
       createdAt: prompt.createdAt,
       updatedAt: prompt.updatedAt,
-      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined
+      authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined,
+      forkedFromPromptId: prompt.forkedFromPromptId,
+      forkedFromAuthorId: prompt.forkedFromAuthorId,
+      forkedFromTitle: prompt.forkedFromTitle,
+      forkedFromCustomUrl: prompt.forkedFromCustomUrl,
+      forkCount: prompt.forkCount
     };
   }
 
@@ -1159,5 +1221,41 @@ export class HomeComponent {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
     return now.toLocaleDateString('en-US', options);
+  }
+
+  getOriginalPromptUrl(prompt: PromptCard): string | null {
+    if (!prompt.forkedFromPromptId) {
+      return null;
+    }
+    
+    if (prompt.forkedFromCustomUrl) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/${prompt.forkedFromCustomUrl}`;
+    }
+    
+    if (prompt.forkedFromPromptId) {
+      const short = prompt.forkedFromPromptId.slice(0, 8);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/prompt/${short}`;
+    }
+    
+    return null;
+  }
+
+  navigateToOriginalPrompt(prompt: PromptCard, event: Event) {
+    event.stopPropagation();
+    const url = this.getOriginalPromptUrl(prompt);
+    if (url) {
+      void this.router.navigateByUrl(url.replace(window.location.origin, ''));
+    }
+  }
+
+  getForkingPromptTitle(): string {
+    const forkingId = this.forkingPromptId();
+    if (!forkingId) {
+      return 'Original prompt';
+    }
+    const prompt = this.prompts().find(p => p.id === forkingId);
+    return prompt?.title || 'Original prompt';
   }
 }
