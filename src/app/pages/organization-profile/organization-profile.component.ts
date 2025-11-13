@@ -53,8 +53,10 @@ export class OrganizationProfileComponent {
   });
 
   readonly descriptionForm = this.fb.nonNullable.group({
-    description: ['', [Validators.maxLength(500)]]
+    description: ['', [Validators.maxLength(10000)]]
   });
+  
+  readonly organizationUrlCopied = signal(false);
 
   readonly isViewingOwnOrganization = computed(() => {
     const currentUser = this.authService.currentUser;
@@ -217,6 +219,13 @@ export class OrganizationProfileComponent {
       return;
     }
 
+    // Check word count
+    const wordCount = this.getDescriptionWordCount();
+    if (wordCount > 1000) {
+      this.saveError.set('Description must be 1000 words or less.');
+      return;
+    }
+
     const org = this.organization();
     const currentUser = this.authService.currentUser;
     if (!org || !currentUser) {
@@ -258,6 +267,72 @@ export class OrganizationProfileComponent {
     const trimmed = value.trim();
     if (!trimmed) return 0;
     return trimmed.split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  getOrganizationUrl(organization: Organization | null): string {
+    if (!organization) return '';
+    
+    const username = organization.username;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    
+    if (username) {
+      return `${origin}/organization/${username}`;
+    }
+    
+    // Fallback to ID if no username
+    return `${origin}/organizations/${organization.id}`;
+  }
+
+  async copyOrganizationUrl() {
+    const org = this.organization();
+    if (!org) return;
+
+    const url = this.getOrganizationUrl(org);
+
+    try {
+      await navigator.clipboard.writeText(url);
+      this.showCopyMessage('Organization URL copied!');
+      this.markOrganizationUrlAsCopied();
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Organization URL copied!');
+      this.markOrganizationUrlAsCopied();
+    }
+  }
+
+  private markOrganizationUrlAsCopied() {
+    this.organizationUrlCopied.set(true);
+
+    const DURATION = 2500;
+
+    setTimeout(() => {
+      this.organizationUrlCopied.set(false);
+    }, DURATION);
+  }
+
+  private showCopyMessage(messageText: string) {
+    const message = document.createElement('div');
+    message.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-all';
+    message.textContent = messageText;
+
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
   }
 
   // Menu methods

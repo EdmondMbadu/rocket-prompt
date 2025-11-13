@@ -268,3 +268,46 @@
   color: #1e293b !important;
 }
 
+/* Copy URL Button */
+.btn-copy-org-url {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-copy-org-url:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+}
+
+.btn-copy-org-url:active {
+  transform: scale(0.95);
+}
+
+.copy-icon-org {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* Description textarea - larger on bigger screens */
+.description-textarea {
+  min-height: 8rem;
+}
+
+@media (min-width: 1024px) {
+  .description-textarea {
+    min-height: 16rem;
+  }
+}
+

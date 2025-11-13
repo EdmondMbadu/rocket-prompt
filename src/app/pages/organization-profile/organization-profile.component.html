@@ -277,9 +277,31 @@
                 </p>
               </ng-template>
 
-              <p *ngIf="organization()!.username" class="text-base font-semibold text-slate-600 mt-2">
-                @{{ organization()!.username }}
-              </p>
+              <div *ngIf="organization()!.username" class="flex items-center gap-2 mt-2">
+                <p class="text-base font-semibold text-slate-600">
+                  @{{ organization()!.username }}
+                </p>
+                <button type="button" 
+                  class="btn-copy-org-url" 
+                  (click)="copyOrganizationUrl()"
+                  title="Copy organization URL">
+                  <ng-container *ngIf="organizationUrlCopied(); else copyIconOrg">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-org" fill="none"
+                      stroke="currentColor" stroke-width="2.2">
+                      <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </ng-container>
+                  <ng-template #copyIconOrg>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-org" fill="none"
+                      stroke="currentColor" stroke-width="1.8">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    </svg>
+                  </ng-template>
+                </button>
+              </div>
 
               <!-- Description -->
               <div class="mt-3 max-w-2xl">
@@ -322,16 +344,16 @@
                     <textarea 
                       formControlName="description"
                       rows="4"
-                      class="w-full text-base text-slate-600 bg-white border-2 border-[#DC2626] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 resize-none"
+                      class="w-full text-base text-slate-600 bg-white border-2 border-[#DC2626] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 resize-none description-textarea"
                       [class.border-red-300]="descriptionForm.controls.description.invalid && descriptionForm.controls.description.touched"
                       placeholder="Tell us about your organization..."></textarea>
                     <div class="flex items-center justify-between">
                       <p class="text-xs text-slate-500">
-                        {{ getDescriptionWordCount() }} words
+                        {{ getDescriptionWordCount() }} / 1000 words
                       </p>
                       <div class="flex items-center gap-2">
                         <button type="submit"
-                          [disabled]="isSaving() || descriptionForm.invalid"
+                          [disabled]="isSaving() || descriptionForm.invalid || getDescriptionWordCount() > 1000"
                           class="px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           Save
                         </button>
@@ -343,8 +365,11 @@
                         </button>
                       </div>
                     </div>
-                    <p *ngIf="descriptionForm.controls.description.invalid && descriptionForm.controls.description.touched" class="text-xs text-red-600">
-                      Description must be less than 500 characters.
+                    <p *ngIf="getDescriptionWordCount() > 1000" class="text-xs text-red-600">
+                      Description must be 1000 words or less. Currently {{ getDescriptionWordCount() }} words.
+                    </p>
+                    <p *ngIf="descriptionForm.controls.description.invalid && descriptionForm.controls.description.touched && getDescriptionWordCount() <= 1000" class="text-xs text-red-600">
+                      Description must be less than 10000 characters.
                     </p>
                   </form>
                 </ng-template>
