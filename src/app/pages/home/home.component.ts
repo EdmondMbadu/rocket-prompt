@@ -134,10 +134,25 @@ export class HomeComponent {
   // Fork-related state
   readonly forkingPromptId = signal<string | null>(null);
 
-  // Home content (daily tip and prompt of the day)
+  // Home content (daily tip and most launched prompt)
   readonly dailyTip = signal<DailyTip | null>(null);
-  readonly promptOfTheDayId = signal<string | null>(null);
-  readonly promptOfTheDay = signal<PromptCard | null>(null);
+  readonly mostLaunchedPrompt = computed<PromptCard | null>(() => {
+    const prompts = this.prompts();
+    if (prompts.length === 0) {
+      return null;
+    }
+    
+    // Find the prompt with the highest totalLaunch count
+    let mostLaunched = prompts[0];
+    for (const prompt of prompts) {
+      if ((prompt.totalLaunch || 0) > (mostLaunched.totalLaunch || 0)) {
+        mostLaunched = prompt;
+      }
+    }
+    
+    // Only return if it has at least one launch
+    return (mostLaunched.totalLaunch || 0) > 0 ? mostLaunched : null;
+  });
 
   // Map of timers for each copied prompt so we can clear them if the user copies again
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -1186,38 +1201,12 @@ export class HomeComponent {
           } else {
             this.dailyTip.set(null);
           }
-
-          if (content?.promptOfTheDayId) {
-            // Get today's prompt or previous one
-            const promptId = await this.homeContentService.getPromptOfTheDay();
-            this.promptOfTheDayId.set(promptId);
-
-            // Find the prompt card
-            if (promptId) {
-              const prompt = this.prompts().find(p => p.id === promptId || p.id.startsWith(promptId));
-              this.promptOfTheDay.set(prompt || null);
-            } else {
-              this.promptOfTheDay.set(null);
-            }
-          } else {
-            this.promptOfTheDayId.set(null);
-            this.promptOfTheDay.set(null);
-          }
+          // Most launched prompt is computed from prompts list, no need to fetch from home content
         },
         error: (error) => {
           console.error('Failed to observe home content', error);
         }
       });
-
-    // Also watch prompts to update prompt of the day when prompts change
-    effect(() => {
-      const promptId = this.promptOfTheDayId();
-      const prompts = this.prompts(); // Read the signal to track changes
-      if (promptId) {
-        const prompt = prompts.find(p => p.id === promptId || p.id.startsWith(promptId));
-        this.promptOfTheDay.set(prompt || null);
-      }
-    });
   }
 
   getGreeting(profile: UserProfile | undefined): string {
