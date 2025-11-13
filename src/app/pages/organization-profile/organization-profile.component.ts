@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, HostListener, ViewChild, ElementRef, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,6 +35,18 @@ export class OrganizationProfileComponent {
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly showFullDescription = signal(false);
+  
+  // Menu state
+  readonly menuOpen = signal(false);
+  readonly menuTop = signal<number | null>(null);
+  readonly menuRight = signal<number | null>(null);
+  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
+  
+  // Image upload state
+  readonly uploadingLogo = signal(false);
+  readonly uploadingCover = signal(false);
+  readonly logoError = signal<string | null>(null);
+  readonly coverError = signal<string | null>(null);
 
   readonly nameForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]]
@@ -246,6 +258,183 @@ export class OrganizationProfileComponent {
     const trimmed = value.trim();
     if (!trimmed) return 0;
     return trimmed.split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  // Menu methods
+  toggleMenu() {
+    const isOpening = !this.menuOpen();
+    this.menuOpen.update(open => !open);
+
+    if (isOpening) {
+      setTimeout(() => {
+        this.updateMenuPosition();
+      }, 0);
+    }
+  }
+
+  private updateMenuPosition() {
+    if (!this.avatarButtonRef?.nativeElement) {
+      return;
+    }
+
+    const button = this.avatarButtonRef.nativeElement;
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth < 640;
+
+    if (isMobile) {
+      const menuHeight = 250;
+      const spacing = 12;
+      let topPosition = rect.bottom + spacing;
+
+      if (topPosition + menuHeight > viewportHeight - 16) {
+        topPosition = rect.top - menuHeight - spacing;
+        if (topPosition < 16) {
+          topPosition = 16;
+        }
+      }
+
+      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
+      this.menuRight.set(16);
+    } else {
+      this.menuTop.set(rect.bottom + 12);
+      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
+    }
+  }
+
+  closeMenu() {
+    this.menuOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  handleDocumentClick(event: Event) {
+    if (!this.menuOpen()) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+
+    if (!target?.closest('[data-user-menu]')) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscape() {
+    if (this.menuOpen()) {
+      this.closeMenu();
+    }
+  }
+
+  async signOut() {
+    if (!this.currentUserProfile()) {
+      await this.router.navigate(['/auth'], {
+        queryParams: { redirectTo: this.router.url }
+      });
+      return;
+    }
+
+    this.closeMenu();
+    await this.authService.signOut();
+    await this.router.navigate(['/']);
+  }
+
+  profileInitials(profile: UserProfile | null | undefined) {
+    if (!profile) {
+      return 'RP';
+    }
+
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  // Image upload methods
+  async onLogoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    if (!org || !currentUser) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.logoError.set('Only image files are allowed.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.logoError.set('Image size must be less than 5MB.');
+      return;
+    }
+
+    this.uploadingLogo.set(true);
+    this.logoError.set(null);
+
+    try {
+      await this.organizationService.uploadLogo(org.id, file, currentUser.uid);
+    } catch (error) {
+      console.error('Failed to upload logo', error);
+      this.logoError.set(error instanceof Error ? error.message : 'Failed to upload logo. Please try again.');
+    } finally {
+      this.uploadingLogo.set(false);
+      // Reset the input
+      input.value = '';
+    }
+  }
+
+  async onCoverSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    if (!org || !currentUser) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.coverError.set('Only image files are allowed.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.coverError.set('Image size must be less than 5MB.');
+      return;
+    }
+
+    this.uploadingCover.set(true);
+    this.coverError.set(null);
+
+    try {
+      await this.organizationService.uploadCoverImage(org.id, file, currentUser.uid);
+    } catch (error) {
+      console.error('Failed to upload cover image', error);
+      this.coverError.set(error instanceof Error ? error.message : 'Failed to upload cover image. Please try again.');
+    } finally {
+      this.uploadingCover.set(false);
+      // Reset the input
+      input.value = '';
+    }
   }
 }
 
