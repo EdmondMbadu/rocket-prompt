@@ -10,7 +10,7 @@ import { OrganizationService } from '../../services/organization.service';
 import { PromptService } from '../../services/prompt.service';
 import type { Organization } from '../../models/organization.model';
 import type { UserProfile } from '../../models/user-profile.model';
-import type { CreatePromptInput } from '../../models/prompt.model';
+import type { CreatePromptInput, Prompt } from '../../models/prompt.model';
 
 @Component({
   selector: 'app-organization-profile',
@@ -33,6 +33,11 @@ export class OrganizationProfileComponent {
   readonly organization = signal<Organization | null>(null);
   readonly organizationLoaded = signal(false);
   readonly currentUserProfile = signal<UserProfile | null>(null);
+  
+  // Organization prompts
+  readonly organizationPrompts = signal<Prompt[]>([]);
+  readonly isLoadingPrompts = signal(false);
+  readonly loadPromptsError = signal<string | null>(null);
   readonly editingName = signal(false);
   readonly editingDescription = signal(false);
   readonly isSaving = signal(false);
@@ -119,6 +124,8 @@ export class OrganizationProfileComponent {
           // Initialize forms with current values
           this.nameForm.patchValue({ name: org.name });
           this.descriptionForm.patchValue({ description: org.description || '' });
+          // Load organization prompts
+          this.loadOrganizationPrompts(org.id);
         }
         this.organizationLoaded.set(true);
       });
@@ -644,6 +651,10 @@ export class OrganizationProfileComponent {
 
       this.resetCreatePromptForm();
       this.newPromptModalOpen.set(false);
+      // Reload prompts to show the new one
+      if (org) {
+        this.loadOrganizationPrompts(org.id);
+      }
     } catch (error) {
       console.error('Failed to save prompt', error);
       this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
@@ -709,6 +720,61 @@ export class OrganizationProfileComponent {
     if (this.customUrlTimer) {
       clearTimeout(this.customUrlTimer);
       this.customUrlTimer = null;
+    }
+  }
+
+  private loadOrganizationPrompts(organizationId: string) {
+    this.isLoadingPrompts.set(true);
+    this.loadPromptsError.set(null);
+
+    this.promptService.promptsByOrganization$(organizationId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (prompts) => {
+          this.organizationPrompts.set(prompts);
+          this.isLoadingPrompts.set(false);
+          this.loadPromptsError.set(null);
+        },
+        error: (error) => {
+          console.error('Failed to load organization prompts', error);
+          this.isLoadingPrompts.set(false);
+          this.loadPromptsError.set('Failed to load organization prompts. Please try again.');
+        }
+      });
+  }
+
+  buildPreview(content: string): string {
+    const normalized = content?.trim() ?? '';
+    if (normalized.length <= 240) {
+      return normalized;
+    }
+    return `${normalized.slice(0, 240).trimEnd()}…`;
+  }
+
+  formatTagLabel(tag: string): string {
+    if (!tag) {
+      return 'General';
+    }
+    return tag
+      .split(/[\s_-]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  getPromptUrl(prompt: Prompt): string {
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+  }
+
+  openPrompt(prompt: Prompt) {
+    if (prompt.customUrl) {
+      void this.router.navigate([`/${prompt.customUrl}`]);
+    } else {
+      const short = (prompt?.id ?? '').slice(0, 8);
+      if (!short) return;
+      void this.router.navigate(['/prompt', short]);
     }
   }
 }

@@ -103,6 +103,54 @@ export class PromptService {
                   if (prompt.isInvisible) return false;
                   // Filter out private prompts unless viewing own profile
                   if (prompt.isPrivate && !isViewingOwnProfile) return false;
+                  // Filter out prompts that belong to an organization (they should only show on org page)
+                  if (prompt.organizationId) return false;
+                  return true;
+                });
+              subscriber.next(prompts);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
+   * Get prompts by organizationId (for organization page)
+   * @param organizationId The organization's ID
+   */
+  promptsByOrganization$(organizationId: string): Observable<Prompt[]> {
+    return new Observable<Prompt[]>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      const trimmedOrgId = organizationId?.trim();
+      if (!trimmedOrgId) {
+        subscriber.next([]);
+        return () => unsubscribe?.();
+      }
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('organizationId', '==', trimmedOrgId),
+            firestoreModule.orderBy('createdAt', 'desc')
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const prompts = snapshot.docs
+                .map((doc) => this.mapPrompt(doc, firestoreModule))
+                .filter((prompt) => {
+                  // Filter out invisible prompts
+                  if (prompt.isInvisible) return false;
+                  // Filter out private prompts (organization prompts should be public)
+                  if (prompt.isPrivate) return false;
                   return true;
                 });
               subscriber.next(prompts);
