@@ -6,6 +6,7 @@ export interface Organization {
   readonly coverImageUrl?: string;
   readonly createdBy: string; // userId of the creator
   readonly members: readonly string[]; // array of userIds
+  readonly admins?: readonly string[]; // array of admin userIds (only creator can manage)
   readonly username?: string; // Display username for URLs (e.g., "AcmeCorp")
   readonly allowOpenJoin?: boolean; // If true, anyone can join without invitation
   readonly createdAt?: Date;
@@ -27,6 +28,7 @@ export interface UpdateOrganizationInput {
   readonly coverImageUrl?: string;
   readonly username?: string;
   readonly members?: readonly string[];
+  readonly admins?: readonly string[];
   readonly allowOpenJoin?: boolean;
 }
 

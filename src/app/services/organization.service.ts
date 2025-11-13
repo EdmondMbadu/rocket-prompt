@@ -319,10 +319,24 @@ export class OrganizationService {
     const existingData = docSnap.data() as Record<string, unknown>;
     const existingCreatedBy = typeof existingData['createdBy'] === 'string' ? existingData['createdBy'] : '';
     const existingMembers = Array.isArray(existingData['members']) ? existingData['members'] as string[] : [];
+    const existingAdmins = Array.isArray(existingData['admins']) ? existingData['admins'] as string[] : [];
 
-    // Check if user is the creator or a member
-    if (existingCreatedBy !== trimmedUserId && !existingMembers.includes(trimmedUserId)) {
-      throw new Error('You do not have permission to update this organization.');
+    // Check if user is the creator or an admin (for general updates)
+    const isCreator = existingCreatedBy === trimmedUserId;
+    const isAdmin = existingAdmins.includes(trimmedUserId);
+    const canEdit = isCreator || isAdmin;
+
+    // For general updates (name, description, logo, cover, username), creator or admin can update
+    // For members and admins, only creator can update
+    const hasGeneralUpdates = input.name !== undefined || 
+                              input.description !== undefined || 
+                              input.logoUrl !== undefined || 
+                              input.coverImageUrl !== undefined || 
+                              input.username !== undefined ||
+                              input.allowOpenJoin !== undefined;
+    
+    if (hasGeneralUpdates && !canEdit) {
+      throw new Error('Only the creator or admins can update organization details.');
     }
 
     const updatePayload: Record<string, unknown> = {
@@ -384,13 +398,21 @@ export class OrganizationService {
     }
 
     if (input.allowOpenJoin !== undefined) {
-      // Only creator can update allowOpenJoin
-      if (existingCreatedBy !== trimmedUserId) {
-        throw new Error('Only the organization creator can update open join settings.');
+      // Only creator or admin can update allowOpenJoin
+      if (!canEdit) {
+        throw new Error('Only the creator or admins can update open join settings.');
       }
       // Explicitly set to boolean value (true or false), not undefined
       updatePayload['allowOpenJoin'] = input.allowOpenJoin === true;
       console.log('Setting allowOpenJoin in Firestore to:', updatePayload['allowOpenJoin']);
+    }
+
+    if (input.admins !== undefined) {
+      // Only creator can update admins
+      if (!isCreator) {
+        throw new Error('Only the organization creator can manage admin roles.');
+      }
+      updatePayload['admins'] = input.admins;
     }
 
     await firestoreModule.updateDoc(docRef, updatePayload);
@@ -487,6 +509,7 @@ export class OrganizationService {
     const coverImageUrlValue = data['coverImageUrl'];
     const createdByValue = data['createdBy'];
     const membersValue = data['members'];
+    const adminsValue = data['admins'];
     const usernameValue = data['username'];
     const allowOpenJoinValue = data['allowOpenJoin'];
     const createdAtValue = data['createdAt'];
@@ -500,6 +523,7 @@ export class OrganizationService {
       coverImageUrl: typeof coverImageUrlValue === 'string' ? coverImageUrlValue : undefined,
       createdBy: typeof createdByValue === 'string' ? createdByValue : '',
       members: Array.isArray(membersValue) ? membersValue.filter((m): m is string => typeof m === 'string') : [],
+      admins: Array.isArray(adminsValue) ? adminsValue.filter((a): a is string => typeof a === 'string') : undefined,
       username: typeof usernameValue === 'string' ? usernameValue : undefined,
       allowOpenJoin: typeof allowOpenJoinValue === 'boolean' ? allowOpenJoinValue : undefined,
       createdAt: this.toDate(createdAtValue, firestoreModule),
@@ -580,10 +604,11 @@ export class OrganizationService {
     const orgData = docSnap.data() as Record<string, unknown>;
     const createdBy = orgData['createdBy'] as string | undefined;
     const members = Array.isArray(orgData['members']) ? orgData['members'] as string[] : [];
+    const admins = Array.isArray(orgData['admins']) ? orgData['admins'] as string[] : [];
 
-    // Check if user is the creator or a member
-    if (createdBy !== userId && !members.includes(userId)) {
-      throw new Error('You do not have permission to upload images for this organization.');
+    // Check if user is the creator or an admin
+    if (createdBy !== userId && !admins.includes(userId)) {
+      throw new Error('Only the creator or admins can upload images for this organization.');
     }
 
     // Import Firebase Storage
@@ -661,10 +686,11 @@ export class OrganizationService {
     const orgData = docSnap.data() as Record<string, unknown>;
     const createdBy = orgData['createdBy'] as string | undefined;
     const members = Array.isArray(orgData['members']) ? orgData['members'] as string[] : [];
+    const admins = Array.isArray(orgData['admins']) ? orgData['admins'] as string[] : [];
 
-    // Check if user is the creator or a member
-    if (createdBy !== userId && !members.includes(userId)) {
-      throw new Error('You do not have permission to upload images for this organization.');
+    // Check if user is the creator or an admin
+    if (createdBy !== userId && !admins.includes(userId)) {
+      throw new Error('Only the creator or admins can upload images for this organization.');
     }
 
     // Import Firebase Storage

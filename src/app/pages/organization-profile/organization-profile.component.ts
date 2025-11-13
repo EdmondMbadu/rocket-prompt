@@ -137,7 +137,9 @@ export class OrganizationProfileComponent {
     const currentUser = this.authService.currentUser;
     const org = this.organization();
     if (!currentUser || !org) return false;
-    return org.createdBy === currentUser.uid || org.members.includes(currentUser.uid);
+    return org.createdBy === currentUser.uid || 
+           org.members.includes(currentUser.uid) || 
+           (org.admins?.includes(currentUser.uid) ?? false);
   });
 
   readonly isCurrentUserMember = computed(() => {
@@ -148,9 +150,8 @@ export class OrganizationProfileComponent {
   });
 
   readonly canInviteMembers = computed(() => {
-    const profile = this.currentUserProfile();
-    if (!profile) return false;
-    return profile.role === 'admin' || profile.admin === true;
+    // Allow creator or admins to invite members
+    return this.isCreator() || this.isAdmin();
   });
 
   readonly isCreator = computed(() => {
@@ -159,6 +160,17 @@ export class OrganizationProfileComponent {
     if (!currentUser || !org) return false;
     return org.createdBy === currentUser.uid;
   });
+
+  readonly isAdmin = computed(() => {
+    const currentUser = this.authService.currentUser;
+    const org = this.organization();
+    if (!currentUser || !org) return false;
+    return org.admins?.includes(currentUser.uid) ?? false;
+  });
+
+  readonly canEditOrganization = computed(() => {
+    return this.isCreator() || this.isAdmin();
+  });
   
   // Members list
   readonly organizationMembers = signal<UserProfile[]>([]);
@@ -166,6 +178,10 @@ export class OrganizationProfileComponent {
   readonly membersSectionExpanded = signal(false);
   readonly membersListExpanded = signal(false);
   readonly inviteSectionExpanded = signal(false);
+  readonly removingMemberId = signal<string | null>(null);
+  readonly removeMemberError = signal<string | null>(null);
+  readonly managingAdminId = signal<string | null>(null);
+  readonly adminManagementError = signal<string | null>(null);
   
   // Settings section
   readonly settingsSectionExpanded = signal(false);
@@ -1674,6 +1690,191 @@ export class OrganizationProfileComponent {
     const org = this.organization();
     if (!org) return false;
     return org.createdBy === member.id;
+  }
+
+  isMemberAdmin(member: UserProfile): boolean {
+    const org = this.organization();
+    if (!org) return false;
+    return org.admins?.includes(member.id) ?? false;
+  }
+
+  async removeMember(member: UserProfile) {
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    
+    if (!org || !currentUser) {
+      this.removeMemberError.set('Organization or user not found.');
+      return;
+    }
+
+    // Only creator can remove members
+    if (!this.isCreator()) {
+      this.removeMemberError.set('Only the organization creator can remove members.');
+      return;
+    }
+
+    // Cannot remove the creator
+    if (this.isMemberCreator(member)) {
+      this.removeMemberError.set('Cannot remove the organization creator.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Remove ${member.firstName} ${member.lastName} from the organization?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.removingMemberId.set(member.id);
+    this.removeMemberError.set(null);
+
+    try {
+      // Remove member from members array
+      const updatedMembers = org.members.filter(memberId => memberId !== member.id);
+      await this.organizationService.updateOrganization(
+        org.id,
+        { members: updatedMembers },
+        currentUser.uid
+      );
+
+      // Refresh organization data
+      const updatedOrg = await this.organizationService.fetchOrganization(org.id);
+      if (updatedOrg) {
+        this.organization.set(updatedOrg);
+        // Reload members list
+        this.loadOrganizationMembers(updatedOrg);
+        // Clear any errors
+        this.removeMemberError.set(null);
+      }
+    } catch (error) {
+      console.error('Failed to remove member', error);
+      this.removeMemberError.set(error instanceof Error ? error.message : 'Failed to remove member. Please try again.');
+    } finally {
+      this.removingMemberId.set(null);
+    }
+  }
+
+  async makeAdmin(member: UserProfile) {
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    
+    if (!org || !currentUser) {
+      this.adminManagementError.set('Organization or user not found.');
+      return;
+    }
+
+    // Only creator can make admins
+    if (!this.isCreator()) {
+      this.adminManagementError.set('Only the organization creator can manage admin roles.');
+      return;
+    }
+
+    // Cannot make creator an admin (they already have all permissions)
+    if (this.isMemberCreator(member)) {
+      this.adminManagementError.set('The creator already has admin privileges.');
+      return;
+    }
+
+    // Check if already an admin
+    if (this.isMemberAdmin(member)) {
+      this.adminManagementError.set('This member is already an admin.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Make ${member.firstName} ${member.lastName} an admin? They will be able to edit organization details.`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.managingAdminId.set(member.id);
+    this.adminManagementError.set(null);
+
+    try {
+      // Add member to admins array
+      const currentAdmins = org.admins ?? [];
+      const updatedAdmins = [...currentAdmins, member.id];
+      await this.organizationService.updateOrganization(
+        org.id,
+        { admins: updatedAdmins },
+        currentUser.uid
+      );
+
+      // Refresh organization data
+      const updatedOrg = await this.organizationService.fetchOrganization(org.id);
+      if (updatedOrg) {
+        this.organization.set(updatedOrg);
+        // Reload members list
+        this.loadOrganizationMembers(updatedOrg);
+        // Clear any errors
+        this.adminManagementError.set(null);
+      }
+    } catch (error) {
+      console.error('Failed to make admin', error);
+      this.adminManagementError.set(error instanceof Error ? error.message : 'Failed to make admin. Please try again.');
+    } finally {
+      this.managingAdminId.set(null);
+    }
+  }
+
+  async removeAdmin(member: UserProfile) {
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    
+    if (!org || !currentUser) {
+      this.adminManagementError.set('Organization or user not found.');
+      return;
+    }
+
+    // Only creator can remove admins
+    if (!this.isCreator()) {
+      this.adminManagementError.set('Only the organization creator can manage admin roles.');
+      return;
+    }
+
+    // Cannot remove admin status from creator
+    if (this.isMemberCreator(member)) {
+      this.adminManagementError.set('Cannot remove admin status from the creator.');
+      return;
+    }
+
+    // Check if member is an admin
+    if (!this.isMemberAdmin(member)) {
+      this.adminManagementError.set('This member is not an admin.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Remove admin privileges from ${member.firstName} ${member.lastName}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.managingAdminId.set(member.id);
+    this.adminManagementError.set(null);
+
+    try {
+      // Remove member from admins array
+      const currentAdmins = org.admins ?? [];
+      const updatedAdmins = currentAdmins.filter(adminId => adminId !== member.id);
+      await this.organizationService.updateOrganization(
+        org.id,
+        { admins: updatedAdmins.length > 0 ? updatedAdmins : [] },
+        currentUser.uid
+      );
+
+      // Refresh organization data
+      const updatedOrg = await this.organizationService.fetchOrganization(org.id);
+      if (updatedOrg) {
+        this.organization.set(updatedOrg);
+        // Reload members list
+        this.loadOrganizationMembers(updatedOrg);
+        // Clear any errors
+        this.adminManagementError.set(null);
+      }
+    } catch (error) {
+      console.error('Failed to remove admin', error);
+      this.adminManagementError.set(error instanceof Error ? error.message : 'Failed to remove admin. Please try again.');
+    } finally {
+      this.managingAdminId.set(null);
+    }
   }
 
   toggleMembersSection() {
