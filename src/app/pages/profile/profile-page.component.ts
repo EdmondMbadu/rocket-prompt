@@ -724,6 +724,17 @@ export class ProfilePageComponent {
     return !prompt.authorId || prompt.authorId === currentUser.uid;
   }
 
+  openCreatePromptModal() {
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.resetCreatePromptForm();
+    this.tagQuery.set('');
+    this.newPromptModalOpen.set(true);
+  }
+
   openEditPromptModal(prompt: PromptCard) {
     const currentUser = this.authService.currentUser;
     if (!currentUser) {
@@ -846,7 +857,7 @@ export class ProfilePageComponent {
     try {
       const currentUser = this.authService.currentUser;
       if (!currentUser) {
-        throw new Error('You must be signed in to update a prompt.');
+        throw new Error('You must be signed in to create or update a prompt.');
       }
 
       // Check if user is admin
@@ -862,8 +873,20 @@ export class ProfilePageComponent {
           ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
+      } else {
+        // Creating a new prompt
+        const createInput: CreatePromptInput = {
+          authorId: currentUser.uid,
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl || undefined,
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.createPrompt(createInput);
       }
 
+      // If the user entered a new tag that isn't already in categories, add it locally
       const trimmedTag = (tag ?? '').trim();
       if (trimmedTag && !this.categories().some(c => c.value === trimmedTag) && !this.baseCategoryValues.has(trimmedTag)) {
         const next = [...this.categories(), { label: this.formatTagLabel(trimmedTag), value: trimmedTag }];
