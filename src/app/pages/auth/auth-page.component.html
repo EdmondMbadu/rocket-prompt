@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-white px-4 py-16 text-slate-900">
   <div class="mx-auto flex w-full max-w-md flex-col items-stretch gap-8">
-    <a routerLink="/" class="flex items-center justify-center transition hover:opacity-80">
+    <button type="button" (click)="navigateToHomeOrLanding()" class="flex items-center justify-center transition hover:opacity-80 cursor-pointer">
       <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 w-auto" />
-    </a>
+    </button>
 
     <div class="space-y-3 text-center">
       <h1 class="text-3xl font-semibold tracking-tight">{{ heading() }}</h1>

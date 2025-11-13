@@ -6,7 +6,9 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <!-- Brand -->
           <div class="flex items-center gap-3 text-slate-900">
-            <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-14 w-auto" />
+            <button type="button" (click)="navigateToHomeOrLanding()" class="flex items-center hover:opacity-80 transition-opacity cursor-pointer">
+              <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-14 w-auto" />
+            </button>
           </div>
 
           <!-- Actions -->

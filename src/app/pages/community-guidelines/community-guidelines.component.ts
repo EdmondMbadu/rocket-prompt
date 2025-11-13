@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, AfterViewInit, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-community-guidelines',
@@ -10,6 +11,9 @@ import { RouterLink } from '@angular/router';
   styleUrl: './community-guidelines.component.css'
 })
 export class CommunityGuidelinesComponent implements OnInit, AfterViewInit {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  
   today: string;
 
   constructor() {
@@ -28,5 +32,14 @@ export class CommunityGuidelinesComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // Ensure scroll to top after view is initialized
     window.scrollTo(0, 0);
+  }
+
+  async navigateToHomeOrLanding() {
+    const user = this.authService.currentUser;
+    if (user) {
+      await this.router.navigate(['/home']);
+    } else {
+      await this.router.navigate(['/']);
+    }
   }
 }

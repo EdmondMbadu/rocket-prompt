@@ -2,9 +2,9 @@
   <!-- Navigation -->
   <nav class="relative px-4 py-4 md:px-6 md:py-6 border-b border-slate-300">
     <div class="flex items-center justify-between gap-4">
-      <a routerLink="/" class="flex items-center transition hover:opacity-80">
+      <button type="button" (click)="navigateToHomeOrLanding()" class="flex items-center transition hover:opacity-80 cursor-pointer">
         <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 w-auto md:h-14" />
-      </a>
+      </button>
       <a routerLink="/" 
         class="text-slate-600 hover:text-slate-900 transition-colors text-sm md:text-base">
         ← Back to Home

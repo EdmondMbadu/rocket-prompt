@@ -286,4 +286,13 @@ export class AuthPageComponent {
       return target.startsWith('/') ? target : null;
     }
   }
+
+  async navigateToHomeOrLanding() {
+    const user = this.authService.currentUser;
+    if (user) {
+      await this.router.navigate(['/home']);
+    } else {
+      await this.router.navigate(['/']);
+    }
+  }
 }

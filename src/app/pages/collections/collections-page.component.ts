@@ -826,5 +826,14 @@ export class CollectionsPageComponent {
         this.brandLogoUploadError.set(null);
         this.brandLogoFile = null;
     }
+
+    async navigateToHomeOrLanding() {
+        const user = this.authService.currentUser;
+        if (user) {
+            await this.router.navigate(['/home']);
+        } else {
+            await this.router.navigate(['/']);
+        }
+    }
 }
 

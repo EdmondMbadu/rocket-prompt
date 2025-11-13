@@ -3,7 +3,10 @@
     <div class="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3 text-slate-900">
-          <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 w-auto" />
+          <button type="button" (click)="navigateToHomeOrLanding()"
+            class="flex items-center hover:opacity-80 transition-opacity cursor-pointer">
+            <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-12 w-auto" />
+          </button>
           <h1 class="text-2xl font-semibold">Liked Prompts</h1>
         </div>
 

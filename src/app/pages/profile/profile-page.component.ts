@@ -1300,5 +1300,14 @@ export class ProfilePageComponent {
       void this.router.navigateByUrl(url.replace(window.location.origin, ''));
     }
   }
+
+  async navigateToHomeOrLanding() {
+    const user = this.authService.currentUser;
+    if (user) {
+      await this.router.navigate(['/home']);
+    } else {
+      await this.router.navigate(['/']);
+    }
+  }
 }
 

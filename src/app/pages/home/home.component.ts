@@ -1274,4 +1274,13 @@ export class HomeComponent {
     const prompt = this.prompts().find(p => p.id === forkingId);
     return prompt?.title || 'Original prompt';
   }
+
+  async navigateToHomeOrLanding() {
+    const user = this.authService.currentUser;
+    if (user) {
+      await this.router.navigate(['/home']);
+    } else {
+      await this.router.navigate(['/']);
+    }
+  }
 }
