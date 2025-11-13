@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { getApp } from 'firebase/app';
 import { AuthService } from '../../services/auth.service';
 import { OrganizationService } from '../../services/organization.service';
 import { PromptService } from '../../services/prompt.service';
@@ -39,6 +40,39 @@ export class OrganizationProfileComponent {
   readonly isLoadingPrompts = signal(false);
   readonly loadPromptsError = signal<string | null>(null);
   readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
+  
+  // Search functionality
+  readonly searchTerm = signal('');
+  readonly filteredPrompts = computed(() => {
+    const prompts = this.organizationPrompts();
+    const term = this.searchTerm().trim().toLowerCase();
+
+    if (!term) {
+      return prompts;
+    }
+
+    return prompts.filter(prompt => {
+      const haystack = [
+        prompt.title,
+        prompt.content,
+        prompt.tag,
+        prompt.customUrl ?? ''
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  });
+  
+  // Invite functionality
+  readonly inviteQuery = signal('');
+  readonly inviteSuggestions = signal<UserProfile[]>([]);
+  readonly isSearchingUsers = signal(false);
+  readonly inviteError = signal<string | null>(null);
+  readonly inviteSuccess = signal<string | null>(null);
+  readonly isInviting = signal(false);
+  private inviteSearchTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Prompt card functionality state
   readonly shareModalOpen = signal(false);
@@ -1230,6 +1264,264 @@ export class OrganizationProfileComponent {
     }
     const prompt = this.organizationPrompts().find(p => p.id === forkingId);
     return prompt?.title || 'Original prompt';
+  }
+
+  // Search functionality
+  onSearch(term: string) {
+    this.searchTerm.set(term);
+  }
+
+  trackPromptById(_: number, prompt: Prompt) {
+    return prompt.id;
+  }
+
+  // Invite functionality
+  onInviteQueryChange(query: string) {
+    this.inviteQuery.set(query);
+    this.inviteError.set(null);
+    this.inviteSuccess.set(null);
+    
+    // Clear existing timer
+    if (this.inviteSearchTimer) {
+      clearTimeout(this.inviteSearchTimer);
+    }
+
+    const trimmed = query.trim();
+    if (!trimmed) {
+      this.inviteSuggestions.set([]);
+      return;
+    }
+
+    // Debounce search
+    this.isSearchingUsers.set(true);
+    this.inviteSearchTimer = setTimeout(async () => {
+      try {
+        await this.searchUsers(trimmed);
+      } finally {
+        this.isSearchingUsers.set(false);
+      }
+    }, 300);
+  }
+
+  private async searchUsers(query: string) {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) {
+      this.inviteSuggestions.set([]);
+      return;
+    }
+
+    try {
+      // Import firestore module directly
+      const firestoreModule = await import('firebase/firestore');
+      const firestore = firestoreModule.getFirestore(getApp());
+      const usersRef = firestoreModule.collection(firestore, 'users');
+      
+      // Search by username (exact match first)
+      const usernameQuery = firestoreModule.query(
+        usersRef,
+        firestoreModule.where('username', '==', trimmed),
+        firestoreModule.limit(5)
+      );
+      
+      const usernameSnapshot = await firestoreModule.getDocs(usernameQuery);
+      const results: UserProfile[] = [];
+      const seenIds = new Set<string>();
+
+      // Add username matches
+      usernameSnapshot.docs.forEach(doc => {
+        const data = doc.data() as Omit<UserProfile, 'id'>;
+        const profile: UserProfile = {
+          id: doc.id,
+          ...data
+        };
+        if (!seenIds.has(profile.id)) {
+          results.push(profile);
+          seenIds.add(profile.id);
+        }
+      });
+
+      // Also search by name (partial match)
+      // Note: Firestore doesn't support case-insensitive search, so we'll do client-side filtering
+      // For better performance, we could use Algolia or similar, but for now we'll fetch a reasonable set
+      const allUsersQuery = firestoreModule.query(
+        usersRef,
+        firestoreModule.limit(50) // Limit to avoid fetching too many
+      );
+      
+      const allUsersSnapshot = await firestoreModule.getDocs(allUsersQuery);
+      allUsersSnapshot.docs.forEach(doc => {
+        if (seenIds.has(doc.id)) return;
+        
+        const data = doc.data() as Omit<UserProfile, 'id'>;
+        const firstName = (data.firstName || '').toLowerCase();
+        const lastName = (data.lastName || '').toLowerCase();
+        const email = (data.email || '').toLowerCase();
+        const username = (data.username || '').toLowerCase();
+        
+        if (firstName.includes(trimmed) || 
+            lastName.includes(trimmed) || 
+            `${firstName} ${lastName}`.includes(trimmed) ||
+            email.includes(trimmed) ||
+            username.includes(trimmed)) {
+          const profile: UserProfile = {
+            id: doc.id,
+            ...data
+          };
+          results.push(profile);
+          seenIds.add(profile.id);
+        }
+      });
+
+      // Limit results
+      this.inviteSuggestions.set(results.slice(0, 10));
+    } catch (error) {
+      console.error('Failed to search users', error);
+      this.inviteSuggestions.set([]);
+    }
+  }
+
+  async inviteUser(user: UserProfile) {
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    
+    if (!org || !currentUser) {
+      this.inviteError.set('Organization or user not found.');
+      return;
+    }
+
+    // Check if user is already a member
+    if (org.members.includes(user.id)) {
+      this.inviteError.set('User is already a member of this organization.');
+      return;
+    }
+
+    // Check if current user is the creator
+    if (org.createdBy !== currentUser.uid) {
+      this.inviteError.set('Only the organization creator can invite members.');
+      return;
+    }
+
+    this.isInviting.set(true);
+    this.inviteError.set(null);
+    this.inviteSuccess.set(null);
+
+    try {
+      // Add user to members array
+      const updatedMembers = [...org.members, user.id];
+      await this.organizationService.updateOrganization(
+        org.id,
+        { members: updatedMembers },
+        currentUser.uid
+      );
+
+      this.inviteSuccess.set(`${user.firstName} ${user.lastName} has been added to the organization.`);
+      this.inviteQuery.set('');
+      this.inviteSuggestions.set([]);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        this.inviteSuccess.set(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to invite user', error);
+      this.inviteError.set(error instanceof Error ? error.message : 'Failed to invite user. Please try again.');
+    } finally {
+      this.isInviting.set(false);
+    }
+  }
+
+  async inviteByEmail(email: string) {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      this.inviteError.set('Please enter an email address.');
+      return;
+    }
+
+    // Basic email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(trimmed)) {
+      this.inviteError.set('Please enter a valid email address.');
+      return;
+    }
+
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+    
+    if (!org || !currentUser) {
+      this.inviteError.set('Organization or user not found.');
+      return;
+    }
+
+    // Check if current user is the creator
+    if (org.createdBy !== currentUser.uid) {
+      this.inviteError.set('Only the organization creator can invite members.');
+      return;
+    }
+
+    this.isInviting.set(true);
+    this.inviteError.set(null);
+    this.inviteSuccess.set(null);
+
+    try {
+      // Try to find user by email first
+      const firestoreModule = await import('firebase/firestore');
+      const firestore = firestoreModule.getFirestore(getApp());
+      const usersRef = firestoreModule.collection(firestore, 'users');
+      const emailQuery = firestoreModule.query(
+        usersRef,
+        firestoreModule.where('email', '==', trimmed),
+        firestoreModule.limit(1)
+      );
+      
+      const emailSnapshot = await firestoreModule.getDocs(emailQuery);
+      
+      if (!emailSnapshot.empty) {
+        // User exists, add them directly
+        const doc = emailSnapshot.docs[0];
+        const data = doc.data() as Omit<UserProfile, 'id'>;
+        const user: UserProfile = {
+          id: doc.id,
+          ...data
+        };
+
+        if (org.members.includes(user.id)) {
+          this.inviteError.set('User is already a member of this organization.');
+          return;
+        }
+
+        const updatedMembers = [...org.members, user.id];
+        await this.organizationService.updateOrganization(
+          org.id,
+          { members: updatedMembers },
+          currentUser.uid
+        );
+
+        this.inviteSuccess.set(`${user.firstName || user.email} has been added to the organization.`);
+      } else {
+        // User doesn't exist - for now, just show a message
+        // In a real app, you might want to send an email invitation
+        this.inviteError.set('User not found. Email invitations are not yet implemented. Please ask the user to sign up first.');
+      }
+
+      this.inviteQuery.set('');
+      this.inviteSuggestions.set([]);
+      
+      // Clear success message after 3 seconds
+      if (this.inviteSuccess()) {
+        setTimeout(() => {
+          this.inviteSuccess.set(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Failed to invite by email', error);
+      this.inviteError.set(error instanceof Error ? error.message : 'Failed to invite user. Please try again.');
+    } finally {
+      this.isInviting.set(false);
+    }
+  }
+
+  selectInviteSuggestion(user: UserProfile) {
+    this.inviteUser(user);
   }
 }
 
