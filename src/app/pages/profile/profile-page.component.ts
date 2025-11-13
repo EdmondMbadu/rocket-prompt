@@ -80,6 +80,7 @@ export class ProfilePageComponent {
   readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
 
   readonly searchTerm = signal('');
+  readonly collectionsSearchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
   readonly menuOpen = signal(false);
   readonly menuTop = signal<number | null>(null);
@@ -390,6 +391,28 @@ export class ProfilePageComponent {
     return this.collections().length;
   });
 
+  readonly filteredCollections = computed(() => {
+    const collections = this.collections();
+    const term = this.collectionsSearchTerm().trim().toLowerCase();
+
+    if (!term) {
+      return collections;
+    }
+
+    return collections.filter(collection => {
+      const haystack = [
+        collection.name,
+        collection.tag,
+        collection.blurb ?? '',
+        collection.customUrl ?? ''
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  });
+
   async copyPromptUrl(prompt: PromptCard) {
     if (!prompt) return;
 
@@ -517,6 +540,10 @@ export class ProfilePageComponent {
 
   onSearch(term: string) {
     this.searchTerm.set(term);
+  }
+
+  onCollectionsSearch(term: string) {
+    this.collectionsSearchTerm.set(term);
   }
 
   trackPromptById(_: number, prompt: PromptCard) {

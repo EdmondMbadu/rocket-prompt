@@ -1648,30 +1648,21 @@ export class OrganizationProfileComponent {
     this.isLoadingCollections.set(true);
     this.loadCollectionsError.set(null);
 
-    // Get collections created by organization members
-    const memberIds = [org.createdBy, ...org.members].filter(Boolean);
-    
-    // For now, we'll get collections by the creator. In the future, we might want to
-    // query collections by all members or add organizationId to collections
-    if (org.createdBy) {
-      this.collectionService.collectionsByAuthor$(org.createdBy)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (collections) => {
-            this.organizationCollections.set(collections);
-            this.isLoadingCollections.set(false);
-            this.loadCollectionsError.set(null);
-          },
-          error: (error) => {
-            console.error('Failed to load organization collections', error);
-            this.isLoadingCollections.set(false);
-            this.loadCollectionsError.set('Failed to load collections. Please try again.');
-          }
-        });
-    } else {
-      this.organizationCollections.set([]);
-      this.isLoadingCollections.set(false);
-    }
+    // Query collections by organizationId (collections specifically associated with the organization)
+    this.collectionService.collectionsByOrganization$(org.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (collections) => {
+          this.organizationCollections.set(collections);
+          this.isLoadingCollections.set(false);
+          this.loadCollectionsError.set(null);
+        },
+        error: (error) => {
+          console.error('Failed to load organization collections', error);
+          this.isLoadingCollections.set(false);
+          this.loadCollectionsError.set('Failed to load collections. Please try again.');
+        }
+      });
   }
 
   readonly organizationCollectionCount = computed(() => {

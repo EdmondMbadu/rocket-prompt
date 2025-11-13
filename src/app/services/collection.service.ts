@@ -81,6 +81,42 @@ export class CollectionService {
     });
   }
 
+  collectionsByOrganization$(organizationId: string): Observable<PromptCollection[]> {
+    const trimmedOrganizationId = organizationId?.trim();
+    
+    return new Observable<PromptCollection[]>((subscriber) => {
+      if (!trimmedOrganizationId) {
+        subscriber.next([]);
+        subscriber.complete();
+        return;
+      }
+
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'collections');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('organizationId', '==', trimmedOrganizationId),
+            firestoreModule.orderBy('createdAt', 'desc')
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const collections = snapshot.docs.map((doc) => this.mapCollection(doc, firestoreModule));
+              subscriber.next(collections);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
   collection$(id: string): Observable<PromptCollection | undefined> {
     const trimmedId = id?.trim();
 
@@ -166,6 +202,10 @@ export class CollectionService {
 
     if (authorId) {
       payload['authorId'] = authorId.trim();
+    }
+
+    if (input.organizationId) {
+      payload['organizationId'] = input.organizationId.trim();
     }
 
     if (customUrl) {
@@ -386,6 +426,7 @@ export class CollectionService {
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
     const authorIdValue = data['authorId'];
+    const organizationIdValue = data['organizationId'];
     const collectionIdValue = data['collectionId'];
     const heroImageUrlValue = data['heroImageUrl'];
     const customUrlValue = data['customUrl'];
@@ -405,6 +446,7 @@ export class CollectionService {
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule),
       authorId: typeof authorIdValue === 'string' ? authorIdValue : undefined,
+      organizationId: typeof organizationIdValue === 'string' ? organizationIdValue : undefined,
       collectionId: typeof collectionIdValue === 'string' ? collectionIdValue : undefined,
       heroImageUrl: typeof heroImageUrlValue === 'string' ? heroImageUrlValue : undefined,
       customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,

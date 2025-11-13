@@ -7,6 +7,7 @@ export interface PromptCollection {
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly authorId?: string;
+  readonly organizationId?: string;
   readonly collectionId?: string;
   readonly heroImageUrl?: string;
   readonly customUrl?: string;
@@ -25,6 +26,7 @@ export interface CreateCollectionInput {
   readonly brandLogoUrl?: string;
   readonly brandLink?: string;
   readonly brandSubtext?: string;
+  readonly organizationId?: string;
 }
 
 export interface UpdateCollectionInput {

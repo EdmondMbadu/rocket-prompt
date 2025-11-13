@@ -75,38 +75,6 @@
             </ng-container>
           </div>
         </div>
-
-        <!-- Desktop search -->
-        <div class="mt-6 hidden sm:block">
-          <label
-            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-            <svg aria-hidden="true" viewBox="0 0 24 24"
-              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
-              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <input type="search"
-              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
-              placeholder="Search your prompts..." [value]="searchTerm()"
-              (input)="onSearch(($any($event.target)).value)" />
-          </label>
-        </div>
-      </div>
-
-      <!-- Mobile search -->
-      <div class="mx-auto block max-w-6xl px-4 pb-4 sm:hidden sm:px-6 lg:px-8">
-        <label
-          class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-          <svg aria-hidden="true" viewBox="0 0 24 24"
-            class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
-            <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <input type="search"
-            class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
-            placeholder="Search your prompts..." [value]="searchTerm()"
-            (input)="onSearch(($any($event.target)).value)" />
-        </label>
       </div>
     </header>
 
@@ -321,6 +289,79 @@
           (click)="selectTab('collections')">
           <span>Collections</span>
         </button>
+      </div>
+    </section>
+
+    <!-- SEARCH BAR (Context-aware, below tabs) -->
+    <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <!-- Prompts Search -->
+      <div *ngIf="activeTab() === 'prompts'">
+        <!-- Desktop search -->
+        <div class="hidden sm:block">
+          <label
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+              placeholder="Search your prompts..." [value]="searchTerm()"
+              (input)="onSearch(($any($event.target)).value)" />
+          </label>
+        </div>
+
+        <!-- Mobile search -->
+        <div class="block sm:hidden">
+          <label
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+              placeholder="Search your prompts..." [value]="searchTerm()"
+              (input)="onSearch(($any($event.target)).value)" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Collections Search -->
+      <div *ngIf="activeTab() === 'collections'">
+        <!-- Desktop search -->
+        <div class="hidden sm:block">
+          <label
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+              placeholder="Search your collections..." [value]="collectionsSearchTerm()"
+              (input)="onCollectionsSearch(($any($event.target)).value)" />
+          </label>
+        </div>
+
+        <!-- Mobile search -->
+        <div class="block sm:hidden">
+          <label
+            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <input type="search"
+              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+              placeholder="Search your collections..." [value]="collectionsSearchTerm()"
+              (input)="onCollectionsSearch(($any($event.target)).value)" />
+          </label>
+        </div>
       </div>
     </section>
 
@@ -614,9 +655,9 @@
         </ng-container>
 
         <ng-template #collectionsList>
-          <ng-container *ngIf="collections().length > 0; else noCollections">
+          <ng-container *ngIf="filteredCollections().length > 0; else noCollections">
             <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 pt-6">
-              <article *ngFor="let collection of collections()"
+              <article *ngFor="let collection of filteredCollections()"
                 class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 cursor-pointer"
                 (click)="navigateToCollection(collection)">
                 <!-- Hero Image Background -->
