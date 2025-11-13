@@ -3,7 +3,9 @@
   "targets": {},
   "etags": {
     "rocket-prompt": {
-      "extensionInstances": {}
+      "extensionInstances": {
+        "firestore-genai-chatbot": "df79520f72d7ebf86280d8fba5b922ac76ce4049a3d718364384221b25150772"
+      }
     }
   }
 }
