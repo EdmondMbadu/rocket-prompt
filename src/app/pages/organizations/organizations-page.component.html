@@ -158,21 +158,27 @@
 
             <!-- Show upgrade prompt if user needs to upgrade -->
             <div *ngIf="shouldShowUpgradePrompt()"
-              class="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-white p-12 text-center">
-              <div class="max-w-md mx-auto">
-                <div class="mb-4 text-5xl">⭐</div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Upgrade to Team</h3>
-                <p class="text-slate-600 mb-6">
-                  Create and manage organizations with Team subscription. Collaborate with your team and showcase your organization's prompts.
-                </p>
-                <button type="button"
-                  (click)="navigateToUpgrade()"
-                  class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-200">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+              class="rounded-xl border border-amber-200 bg-amber-50/30 p-6">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  Upgrade to Team
-                </button>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-base font-bold text-slate-900 mb-1">Upgrade to Team</h3>
+                  <p class="text-sm text-slate-600 mb-4">
+                    Create organizations, invite team members, and collaborate on prompts.
+                  </p>
+                  <button type="button"
+                    (click)="navigateToUpgrade()"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 text-white px-4 py-2 text-sm font-semibold hover:bg-amber-700 transition-colors">
+                    <span>Upgrade</span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </ng-template>

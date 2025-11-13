@@ -9,9 +9,11 @@ import { getApp } from 'firebase/app';
 import { AuthService } from '../../services/auth.service';
 import { OrganizationService } from '../../services/organization.service';
 import { PromptService } from '../../services/prompt.service';
+import { CollectionService } from '../../services/collection.service';
 import type { Organization } from '../../models/organization.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../../models/prompt.model';
+import type { PromptCollection } from '../../models/collection.model';
 
 @Component({
   selector: 'app-organization-profile',
@@ -24,6 +26,7 @@ export class OrganizationProfileComponent {
   private readonly authService = inject(AuthService);
   private readonly organizationService = inject(OrganizationService);
   private readonly promptService = inject(PromptService);
+  private readonly collectionService = inject(CollectionService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -153,6 +156,17 @@ export class OrganizationProfileComponent {
   // Members list
   readonly organizationMembers = signal<UserProfile[]>([]);
   readonly isLoadingMembers = signal(false);
+  readonly membersSectionExpanded = signal(false);
+  readonly membersListExpanded = signal(false);
+  readonly inviteSectionExpanded = signal(false);
+  
+  // Tabs
+  readonly activeTab = signal<'prompts' | 'collections'>('prompts');
+  
+  // Collections
+  readonly organizationCollections = signal<PromptCollection[]>([]);
+  readonly isLoadingCollections = signal(false);
+  readonly loadCollectionsError = signal<string | null>(null);
 
   readonly truncatedDescription = computed(() => {
     const description = this.organization()?.description;
@@ -191,6 +205,8 @@ export class OrganizationProfileComponent {
           this.descriptionForm.patchValue({ description: org.description || '' });
           // Load organization prompts
           this.loadOrganizationPrompts(org.id);
+          // Load organization collections
+          this.loadOrganizationCollections(org);
           // Load organization members if user is creator
           if (this.isCreator()) {
             this.loadOrganizationMembers(org);
@@ -1611,5 +1627,55 @@ export class OrganizationProfileComponent {
     if (!org) return false;
     return org.createdBy === member.id;
   }
+
+  toggleMembersSection() {
+    this.membersSectionExpanded.update(v => !v);
+  }
+
+  toggleMembersList() {
+    this.membersListExpanded.update(v => !v);
+  }
+
+  toggleInviteSection() {
+    this.inviteSectionExpanded.update(v => !v);
+  }
+
+  selectTab(tab: 'prompts' | 'collections') {
+    this.activeTab.set(tab);
+  }
+
+  private loadOrganizationCollections(org: Organization) {
+    this.isLoadingCollections.set(true);
+    this.loadCollectionsError.set(null);
+
+    // Get collections created by organization members
+    const memberIds = [org.createdBy, ...org.members].filter(Boolean);
+    
+    // For now, we'll get collections by the creator. In the future, we might want to
+    // query collections by all members or add organizationId to collections
+    if (org.createdBy) {
+      this.collectionService.collectionsByAuthor$(org.createdBy)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (collections) => {
+            this.organizationCollections.set(collections);
+            this.isLoadingCollections.set(false);
+            this.loadCollectionsError.set(null);
+          },
+          error: (error) => {
+            console.error('Failed to load organization collections', error);
+            this.isLoadingCollections.set(false);
+            this.loadCollectionsError.set('Failed to load collections. Please try again.');
+          }
+        });
+    } else {
+      this.organizationCollections.set([]);
+      this.isLoadingCollections.set(false);
+    }
+  }
+
+  readonly organizationCollectionCount = computed(() => {
+    return this.organizationCollections().length;
+  });
 }
 
