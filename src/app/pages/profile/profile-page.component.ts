@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
@@ -107,6 +107,15 @@ export class ProfilePageComponent {
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
 
+  // Collection creation
+  readonly newCollectionModalOpen = signal(false);
+  readonly isSavingCollection = signal(false);
+  readonly collectionFormError = signal<string | null>(null);
+  readonly collectionCustomUrlError = signal<string | null>(null);
+  readonly isCheckingCollectionCustomUrl = signal(false);
+  readonly promptSearchTermForCollection = signal('');
+  private collectionCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
+
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -124,6 +133,22 @@ export class ProfilePageComponent {
     customUrl: [''],
     content: ['', [Validators.required, Validators.minLength(10)]],
     isPrivate: [false]
+  });
+
+  readonly collectionForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required, Validators.minLength(2)]],
+    promptIds: this.fb.nonNullable.control<string[]>([], {
+      validators: [(control) => {
+        const value = control.value;
+        if (Array.isArray(value) && value.length > 0) {
+          return null;
+        }
+        return { required: true };
+      }]
+    }),
+    customUrl: [''],
+    blurb: ['']
   });
 
   readonly tagQuery = signal('');
@@ -424,6 +449,33 @@ export class ProfilePageComponent {
     });
   });
 
+  // Available prompts for collection creation (only user's own prompts)
+  readonly availablePromptsForCollection = computed(() => {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return [];
+    }
+    return this.prompts().filter(prompt => {
+      // Only include prompts that belong to the current user
+      return prompt.authorId === currentUser.uid;
+    });
+  });
+
+  // Filtered prompts for collection modal search
+  readonly filteredPromptsForCollection = computed(() => {
+    const term = this.promptSearchTermForCollection().trim().toLowerCase();
+    const prompts = this.availablePromptsForCollection();
+
+    if (!term) {
+      return prompts;
+    }
+
+    return prompts.filter(prompt => {
+      const haystack = [prompt.title, prompt.tag, prompt.tagLabel].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+  });
+
   async copyPromptUrl(prompt: PromptCard) {
     if (!prompt) return;
 
@@ -700,6 +752,168 @@ export class ProfilePageComponent {
       void this.router.navigate(['/collection', collection.customUrl]);
     } else {
       void this.router.navigate(['/collections', collection.id]);
+    }
+  }
+
+  openCreateCollectionModal() {
+    if (!this.isViewingOwnProfile()) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    this.collectionForm.reset({
+      name: '',
+      tag: '',
+      promptIds: [],
+      customUrl: '',
+      blurb: ''
+    });
+    this.collectionForm.markAsPristine();
+    this.collectionForm.markAsUntouched();
+    this.collectionFormError.set(null);
+    this.collectionCustomUrlError.set(null);
+    this.clearCollectionCustomUrlDebounce();
+    this.promptSearchTermForCollection.set('');
+    this.newCollectionModalOpen.set(true);
+  }
+
+  closeCreateCollectionModal() {
+    if (this.isSavingCollection()) {
+      return;
+    }
+
+    this.newCollectionModalOpen.set(false);
+    this.collectionFormError.set(null);
+    this.collectionCustomUrlError.set(null);
+    this.clearCollectionCustomUrlDebounce();
+    this.collectionForm.markAsPristine();
+    this.collectionForm.markAsUntouched();
+  }
+
+  togglePromptSelectionForCollection(promptId: string) {
+    const control = this.collectionForm.controls.promptIds;
+    const current = new Set(control.value ?? []);
+
+    if (current.has(promptId)) {
+      current.delete(promptId);
+    } else {
+      current.add(promptId);
+    }
+
+    control.setValue(Array.from(current));
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
+  isPromptSelectedForCollection(promptId: string): boolean {
+    return this.collectionForm.controls.promptIds.value.includes(promptId);
+  }
+
+  onCollectionCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.collectionForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+    
+    if (this.collectionCustomUrlTimer) {
+      clearTimeout(this.collectionCustomUrlTimer);
+    }
+
+    if (!trimmed) {
+      this.collectionCustomUrlError.set(null);
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.collectionCustomUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.collectionCustomUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    this.isCheckingCollectionCustomUrl.set(true);
+    this.collectionCustomUrlError.set(null);
+    
+    this.collectionCustomUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.collectionService.isCustomUrlTaken(trimmed);
+        if (isTaken) {
+          this.collectionCustomUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.collectionCustomUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.collectionCustomUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCollectionCustomUrl.set(false);
+      }
+    }, 500);
+  }
+
+  private clearCollectionCustomUrlDebounce() {
+    if (this.collectionCustomUrlTimer) {
+      clearTimeout(this.collectionCustomUrlTimer);
+      this.collectionCustomUrlTimer = null;
+    }
+  }
+
+  async submitCollectionForm() {
+    if (this.collectionForm.invalid || this.collectionCustomUrlError()) {
+      this.collectionForm.markAllAsTouched();
+      return;
+    }
+
+    const { name, tag, promptIds, customUrl, blurb } = this.collectionForm.getRawValue();
+    const currentUser = this.authService.currentUser;
+    const authorId = currentUser?.uid;
+
+    if (!authorId) {
+      this.collectionFormError.set('You must be signed in to create a collection.');
+      return;
+    }
+
+    this.isSavingCollection.set(true);
+    this.collectionFormError.set(null);
+
+    try {
+      await this.collectionService.createCollection({
+        name,
+        tag,
+        promptIds,
+        customUrl: customUrl?.trim() || undefined,
+        blurb: blurb?.trim() || undefined
+      }, authorId);
+
+      this.newCollectionModalOpen.set(false);
+      this.collectionForm.reset({
+        name: '',
+        tag: '',
+        promptIds: [],
+        customUrl: '',
+        blurb: ''
+      });
+      this.collectionForm.markAsPristine();
+      this.collectionForm.markAsUntouched();
+      this.collectionCustomUrlError.set(null);
+      this.clearCollectionCustomUrlDebounce();
+    } catch (error) {
+      console.error('Failed to create collection', error);
+      this.collectionFormError.set(
+        error instanceof Error ? error.message : 'Could not create the collection. Please try again.'
+      );
+    } finally {
+      this.isSavingCollection.set(false);
     }
   }
 
@@ -998,6 +1212,11 @@ export class ProfilePageComponent {
   handleEscape() {
     if (this.newPromptModalOpen()) {
       this.closeCreatePromptModal();
+      return;
+    }
+
+    if (this.newCollectionModalOpen()) {
+      this.closeCreateCollectionModal();
       return;
     }
 
