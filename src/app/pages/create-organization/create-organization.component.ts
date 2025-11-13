@@ -30,15 +30,21 @@ export class CreateOrganizationComponent {
   readonly error = signal<string | null>(null);
   readonly usernameError = signal<string | null>(null);
   readonly isCheckingUsername = signal(false);
+  readonly uploadingLogo = signal(false);
+  readonly uploadingCover = signal(false);
+  readonly logoError = signal<string | null>(null);
+  readonly coverError = signal<string | null>(null);
+  readonly logoPreview = signal<string | null>(null);
+  readonly coverPreview = signal<string | null>(null);
 
   private usernameCheckTimer: ReturnType<typeof setTimeout> | null = null;
+  private logoFile: File | null = null;
+  private coverFile: File | null = null;
 
   readonly createOrganizationForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
-    username: [''],
-    logoUrl: [''],
-    coverImageUrl: ['']
+    username: ['']
   });
 
   constructor() {
@@ -109,6 +115,88 @@ export class CreateOrganizationComponent {
     }, 500);
   }
 
+  async onLogoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.logoError.set('Only image files are allowed.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.logoError.set('Image size must be less than 5MB.');
+      return;
+    }
+
+    this.logoFile = file;
+    this.logoError.set(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.logoPreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input to allow selecting the same file again
+    input.value = '';
+  }
+
+  async onCoverSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.coverError.set('Only image files are allowed.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.coverError.set('Image size must be less than 5MB.');
+      return;
+    }
+
+    this.coverFile = file;
+    this.coverError.set(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.coverPreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input to allow selecting the same file again
+    input.value = '';
+  }
+
+  removeLogo() {
+    this.logoFile = null;
+    this.logoPreview.set(null);
+    this.logoError.set(null);
+  }
+
+  removeCover() {
+    this.coverFile = null;
+    this.coverPreview.set(null);
+    this.coverError.set(null);
+  }
+
   async onSubmit() {
     if (this.createOrganizationForm.invalid) {
       this.createOrganizationForm.markAllAsTouched();
@@ -121,7 +209,7 @@ export class CreateOrganizationComponent {
       return;
     }
 
-    const { name, description, username, logoUrl, coverImageUrl } = this.createOrganizationForm.getRawValue();
+    const { name, description, username } = this.createOrganizationForm.getRawValue();
 
     // Check username availability one more time
     const trimmedUsername = username?.trim();
@@ -137,13 +225,38 @@ export class CreateOrganizationComponent {
     this.error.set(null);
 
     try {
+      // Create organization first
       const organizationId = await this.organizationService.createOrganization({
         name: name.trim(),
         description: description?.trim() || undefined,
-        username: trimmedUsername || undefined,
-        logoUrl: logoUrl?.trim() || undefined,
-        coverImageUrl: coverImageUrl?.trim() || undefined
+        username: trimmedUsername || undefined
       }, currentUser.uid);
+
+      // Upload logo if provided
+      if (this.logoFile) {
+        this.uploadingLogo.set(true);
+        try {
+          await this.organizationService.uploadLogo(organizationId, this.logoFile, currentUser.uid);
+        } catch (error) {
+          console.error('Failed to upload logo', error);
+          this.logoError.set(error instanceof Error ? error.message : 'Failed to upload logo.');
+        } finally {
+          this.uploadingLogo.set(false);
+        }
+      }
+
+      // Upload cover image if provided
+      if (this.coverFile) {
+        this.uploadingCover.set(true);
+        try {
+          await this.organizationService.uploadCoverImage(organizationId, this.coverFile, currentUser.uid);
+        } catch (error) {
+          console.error('Failed to upload cover image', error);
+          this.coverError.set(error instanceof Error ? error.message : 'Failed to upload cover image.');
+        } finally {
+          this.uploadingCover.set(false);
+        }
+      }
 
       // Navigate to the organization profile
       const org = await this.organizationService.fetchOrganization(organizationId);

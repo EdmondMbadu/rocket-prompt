@@ -468,6 +468,168 @@ export class OrganizationService {
     return this.firestoreModule;
   }
 
+  /**
+   * Upload logo image for an organization
+   */
+  async uploadLogo(organizationId: string, file: File, userId: string): Promise<string> {
+    const trimmedId = organizationId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('An organization id is required to upload a logo.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'organizations', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Organization not found.');
+    }
+
+    const orgData = docSnap.data() as Record<string, unknown>;
+    const createdBy = orgData['createdBy'] as string | undefined;
+    const members = Array.isArray(orgData['members']) ? orgData['members'] as string[] : [];
+
+    // Check if user is the creator or a member
+    if (createdBy !== userId && !members.includes(userId)) {
+      throw new Error('You do not have permission to upload images for this organization.');
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Delete old logo if it exists
+    if (orgData['logoUrl']) {
+      try {
+        const url = new URL(orgData['logoUrl'] as string);
+        const pathMatch = url.pathname.match(/\/o\/(.+)/);
+        if (pathMatch) {
+          const encodedPath = pathMatch[1];
+          const decodedPath = decodeURIComponent(encodedPath);
+          const oldStorageRef = storageModule.ref(storage, decodedPath);
+          await storageModule.deleteObject(oldStorageRef);
+        }
+      } catch (error) {
+        console.warn('Failed to delete old logo:', error);
+      }
+    }
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `organizations/${trimmedId}/logo-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the organization with the new image URL
+    await firestoreModule.updateDoc(docRef, {
+      logoUrl: downloadURL
+    });
+
+    return downloadURL;
+  }
+
+  /**
+   * Upload cover image for an organization
+   */
+  async uploadCoverImage(organizationId: string, file: File, userId: string): Promise<string> {
+    const trimmedId = organizationId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('An organization id is required to upload a cover image.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'organizations', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Organization not found.');
+    }
+
+    const orgData = docSnap.data() as Record<string, unknown>;
+    const createdBy = orgData['createdBy'] as string | undefined;
+    const members = Array.isArray(orgData['members']) ? orgData['members'] as string[] : [];
+
+    // Check if user is the creator or a member
+    if (createdBy !== userId && !members.includes(userId)) {
+      throw new Error('You do not have permission to upload images for this organization.');
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Delete old cover image if it exists
+    if (orgData['coverImageUrl']) {
+      try {
+        const url = new URL(orgData['coverImageUrl'] as string);
+        const pathMatch = url.pathname.match(/\/o\/(.+)/);
+        if (pathMatch) {
+          const encodedPath = pathMatch[1];
+          const decodedPath = decodeURIComponent(encodedPath);
+          const oldStorageRef = storageModule.ref(storage, decodedPath);
+          await storageModule.deleteObject(oldStorageRef);
+        }
+      } catch (error) {
+        console.warn('Failed to delete old cover image:', error);
+      }
+    }
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `organizations/${trimmedId}/cover-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the organization with the new image URL
+    await firestoreModule.updateDoc(docRef, {
+      coverImageUrl: downloadURL
+    });
+
+    return downloadURL;
+  }
+
   private ensureApp(): FirebaseApp {
     if (getApps().length) {
       return getApp();
