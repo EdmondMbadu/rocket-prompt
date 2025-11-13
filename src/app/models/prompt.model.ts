@@ -22,6 +22,8 @@ export interface Prompt {
   readonly forkedFromTitle?: string;
   readonly forkedFromCustomUrl?: string;
   readonly forkCount?: number;
+  // Organization-related fields
+  readonly organizationId?: string;
 }
 
 export interface CreatePromptInput {
@@ -42,6 +44,8 @@ export interface CreatePromptInput {
   readonly forkedFromTitle?: string;
   readonly forkedFromCustomUrl?: string;
   readonly isPrivate?: boolean;
+  // Organization-related fields
+  readonly organizationId?: string;
 }
 
 export interface UpdatePromptInput {

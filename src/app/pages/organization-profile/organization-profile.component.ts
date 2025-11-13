@@ -7,8 +7,10 @@ import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { OrganizationService } from '../../services/organization.service';
+import { PromptService } from '../../services/prompt.service';
 import type { Organization } from '../../models/organization.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { CreatePromptInput } from '../../models/prompt.model';
 
 @Component({
   selector: 'app-organization-profile',
@@ -20,6 +22,7 @@ import type { UserProfile } from '../../models/user-profile.model';
 export class OrganizationProfileComponent {
   private readonly authService = inject(AuthService);
   private readonly organizationService = inject(OrganizationService);
+  private readonly promptService = inject(PromptService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -57,6 +60,22 @@ export class OrganizationProfileComponent {
   });
   
   readonly organizationUrlCopied = signal(false);
+
+  // Prompt creation state
+  readonly newPromptModalOpen = signal(false);
+  readonly isSavingPrompt = signal(false);
+  readonly promptFormError = signal<string | null>(null);
+  readonly customUrlError = signal<string | null>(null);
+  readonly isCheckingCustomUrl = signal(false);
+  private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
+
+  readonly createPromptForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required]],
+    customUrl: [''],
+    content: ['', [Validators.required, Validators.minLength(10)]],
+    isPrivate: [false]
+  });
 
   readonly isViewingOwnOrganization = computed(() => {
     const currentUser = this.authService.currentUser;
@@ -397,6 +416,11 @@ export class OrganizationProfileComponent {
 
   @HostListener('document:keydown.escape')
   handleEscape() {
+    if (this.newPromptModalOpen()) {
+      this.closeCreatePromptModal();
+      return;
+    }
+
     if (this.menuOpen()) {
       this.closeMenu();
     }
@@ -509,6 +533,182 @@ export class OrganizationProfileComponent {
       this.uploadingCover.set(false);
       // Reset the input
       input.value = '';
+    }
+  }
+
+  // Prompt creation methods
+  openCreatePromptModal() {
+    this.closeMenu();
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.resetCreatePromptForm();
+    this.newPromptModalOpen.set(true);
+  }
+
+  closeCreatePromptModal() {
+    if (this.isSavingPrompt()) {
+      return;
+    }
+
+    this.newPromptModalOpen.set(false);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+  }
+
+  private resetCreatePromptForm() {
+    this.createPromptForm.reset({
+      title: '',
+      tag: '',
+      customUrl: '',
+      content: '',
+      isPrivate: false
+    });
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+  }
+
+  async submitPromptForm() {
+    if (this.createPromptForm.invalid) {
+      this.createPromptForm.markAllAsTouched();
+      return;
+    }
+
+    const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
+    const trimmedCustomUrl = (customUrl ?? '').trim();
+
+    // Validate custom URL if provided
+    if (trimmedCustomUrl) {
+      // Check format
+      const urlPattern = /^[a-z0-9-]+$/i;
+      if (!urlPattern.test(trimmedCustomUrl)) {
+        this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+        return;
+      }
+
+      // Check reserved paths
+      const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines', 'organizations', 'organization'];
+      if (reservedPaths.includes(trimmedCustomUrl.toLowerCase())) {
+        this.customUrlError.set('This URL is reserved. Please choose a different one.');
+        return;
+      }
+
+      // Final uniqueness check before submitting
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, null);
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to verify custom URL', error);
+        this.promptFormError.set('Unable to verify custom URL availability. Please try again.');
+        return;
+      }
+    }
+
+    this.isSavingPrompt.set(true);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+
+    try {
+      const currentUser = this.authService.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to create a prompt.');
+      }
+
+      const org = this.organization();
+      if (!org) {
+        throw new Error('Organization not found.');
+      }
+
+      // Check if user is admin
+      const profile = await this.authService.fetchUserProfile(currentUser.uid);
+      const isAdmin = profile && (profile.role === 'admin' || profile.admin);
+
+      const createInput: CreatePromptInput = {
+        authorId: currentUser.uid,
+        title,
+        content,
+        tag,
+        customUrl: trimmedCustomUrl || undefined,
+        organizationId: org.id, // Associate prompt with organization
+        ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+      };
+      
+      await this.promptService.createPrompt(createInput);
+
+      this.resetCreatePromptForm();
+      this.newPromptModalOpen.set(false);
+    } catch (error) {
+      console.error('Failed to save prompt', error);
+      this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
+    } finally {
+      this.isSavingPrompt.set(false);
+    }
+  }
+
+  onCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+    
+    // Clear any existing timer
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+    }
+
+    // Clear error if empty
+    if (!trimmed) {
+      this.customUrlError.set(null);
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Validate format first
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Check for reserved paths
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines', 'organizations', 'organization'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.customUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCustomUrl.set(false);
+      return;
+    }
+
+    // Debounce the uniqueness check
+    this.isCheckingCustomUrl.set(true);
+    this.customUrlError.set(null);
+    
+    this.customUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmed, null);
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.customUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.customUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCustomUrl.set(false);
+      }
+    }, 500); // 500ms debounce
+  }
+
+  private clearCustomUrlDebounce() {
+    if (this.customUrlTimer) {
+      clearTimeout(this.customUrlTimer);
+      this.customUrlTimer = null;
     }
   }
 }

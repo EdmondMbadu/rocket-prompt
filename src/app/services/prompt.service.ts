@@ -176,6 +176,11 @@ export class PromptService {
       payload['isPrivate'] = input.isPrivate;
     }
 
+    // Add organizationId if provided
+    if (input.organizationId) {
+      payload['organizationId'] = input.organizationId;
+    }
+
     // Add fork-related fields if this is a fork
     if (input.forkedFromPromptId) {
       payload['forkedFromPromptId'] = input.forkedFromPromptId;
@@ -312,6 +317,7 @@ export class PromptService {
     const forkedFromTitleValue = data['forkedFromTitle'];
     const forkedFromCustomUrlValue = data['forkedFromCustomUrl'];
     const forkCountValue = data['forkCount'];
+    const organizationIdValue = data['organizationId'];
 
     const launchGpt = typeof launchGptValue === 'number' ? launchGptValue : 0;
     const launchGemini = typeof launchGeminiValue === 'number' ? launchGeminiValue : 0;
@@ -344,7 +350,8 @@ export class PromptService {
       forkedFromAuthorId: typeof forkedFromAuthorIdValue === 'string' ? forkedFromAuthorIdValue : undefined,
       forkedFromTitle: typeof forkedFromTitleValue === 'string' ? forkedFromTitleValue : undefined,
       forkedFromCustomUrl: typeof forkedFromCustomUrlValue === 'string' ? forkedFromCustomUrlValue : undefined,
-      forkCount: typeof forkCountValue === 'number' ? forkCountValue : undefined
+      forkCount: typeof forkCountValue === 'number' ? forkCountValue : undefined,
+      organizationId: typeof organizationIdValue === 'string' ? organizationIdValue : undefined
     };
   }
 
