@@ -90,6 +90,16 @@ export const routes: Routes = [
       import('./pages/organizations/organizations-page.component').then(m => m.OrganizationsPageComponent)
   },
   {
+    path: 'organization/:username',
+    loadComponent: () =>
+      import('./pages/organization-profile/organization-profile.component').then(m => m.OrganizationProfileComponent)
+  },
+  {
+    path: 'organizations/create',
+    loadComponent: () =>
+      import('./pages/create-organization/create-organization.component').then(m => m.CreateOrganizationComponent)
+  },
+  {
     path: ':customUrl',
     // Catch-all for custom URLs (e.g., /my-custom-url)
     // This route must come after all specific routes but before the final ** catch-all

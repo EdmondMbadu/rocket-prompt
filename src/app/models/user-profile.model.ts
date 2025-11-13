@@ -14,4 +14,5 @@ export interface UserProfile {
   preferences?: UserPreferences;
   admin?: boolean; // Deprecated, use role instead
   role?: string; // 'admin' or undefined/other roles
+  subscriptionStatus?: string; // 'free', 'pro', or 'team'
 }

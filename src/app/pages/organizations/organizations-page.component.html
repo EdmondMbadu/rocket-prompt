@@ -83,12 +83,151 @@
     <div class="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-slate-900">Organizations</h1>
-        <p class="mt-2 text-slate-600">Manage your organizations here.</p>
+        <p class="mt-2 text-slate-600">Manage your organizations and collaborate with your team.</p>
       </div>
 
-      <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center">
-        <p class="text-slate-500">Organizations page coming soon...</p>
-      </div>
+      <!-- Section 1: Your Organization -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">Your Organization</h2>
+        
+        <ng-container *ngIf="isLoadingOrganizations(); else organizationContent">
+          <div class="rounded-2xl border-2 border-slate-200 bg-white p-12 text-center">
+            <div class="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#DC2626]"></div>
+            <p class="text-slate-500">Loading organization...</p>
+          </div>
+        </ng-container>
+
+        <ng-template #organizationContent>
+          <!-- Show created organization if exists -->
+          <ng-container *ngIf="userCreatedOrganization(); else noCreatedOrg">
+            <div class="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+              (click)="navigateToOrganization(userCreatedOrganization()!)">
+              <div class="flex items-center gap-6">
+                <div class="flex-shrink-0">
+                  <div *ngIf="userCreatedOrganization()!.logoUrl" 
+                    class="h-20 w-20 rounded-full overflow-hidden border-2 border-slate-200">
+                    <img [src]="userCreatedOrganization()!.logoUrl" 
+                      [alt]="userCreatedOrganization()!.name"
+                      class="w-full h-full object-cover" />
+                  </div>
+                  <div *ngIf="!userCreatedOrganization()!.logoUrl"
+                    class="h-20 w-20 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-2xl font-black border-2 border-slate-200">
+                    {{ getOrganizationInitials(userCreatedOrganization()!) }}
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-bold text-slate-900 mb-1">{{ userCreatedOrganization()!.name }}</h3>
+                  <p *ngIf="userCreatedOrganization()!.description" 
+                    class="text-slate-600 text-sm line-clamp-2">
+                    {{ userCreatedOrganization()!.description }}
+                  </p>
+                  <p *ngIf="!userCreatedOrganization()!.description" 
+                    class="text-slate-400 text-sm italic">
+                    No description provided
+                  </p>
+                </div>
+                <div class="flex-shrink-0">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-slate-400">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #noCreatedOrg>
+            <!-- Show create button if user can create -->
+            <div *ngIf="shouldShowCreateButton()" 
+              class="rounded-2xl border-2 border-dashed border-[#DC2626]/30 bg-gradient-to-br from-red-50/50 to-white p-12 text-center">
+              <div class="max-w-md mx-auto">
+                <div class="mb-4 text-5xl">🏢</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Create Your Organization</h3>
+                <p class="text-slate-600 mb-6">
+                  Set up your organization page to showcase your team's prompts and collaborate with members.
+                </p>
+                <button type="button"
+                  (click)="navigateToCreateOrganization()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 transition-all duration-200">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Organization
+                </button>
+              </div>
+            </div>
+
+            <!-- Show upgrade prompt if user needs to upgrade -->
+            <div *ngIf="shouldShowUpgradePrompt()"
+              class="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-white p-12 text-center">
+              <div class="max-w-md mx-auto">
+                <div class="mb-4 text-5xl">⭐</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Upgrade to Team</h3>
+                <p class="text-slate-600 mb-6">
+                  Create and manage organizations with Team subscription. Collaborate with your team and showcase your organization's prompts.
+                </p>
+                <button type="button"
+                  (click)="navigateToUpgrade()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl hover:shadow-amber-500/40 hover:scale-105 transition-all duration-200">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Upgrade to Team
+                </button>
+              </div>
+            </div>
+          </ng-template>
+        </ng-template>
+      </section>
+
+      <!-- Section 2: Organizations You're a Member Of -->
+      <section>
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">Organizations You're a Member Of</h2>
+        
+        <ng-container *ngIf="userMemberOrganizations().length > 0; else noMemberOrgs">
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let org of userMemberOrganizations()"
+              class="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+              (click)="navigateToOrganization(org)">
+              <div class="flex flex-col items-center text-center">
+                <div class="mb-4">
+                  <div *ngIf="org.logoUrl" 
+                    class="h-16 w-16 rounded-full overflow-hidden border-2 border-slate-200 mx-auto">
+                    <img [src]="org.logoUrl" 
+                      [alt]="org.name"
+                      class="w-full h-full object-cover" />
+                  </div>
+                  <div *ngIf="!org.logoUrl"
+                    class="h-16 w-16 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-xl font-black border-2 border-slate-200 mx-auto">
+                    {{ getOrganizationInitials(org) }}
+                  </div>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">{{ org.name }}</h3>
+                <p *ngIf="org.description" 
+                  class="text-slate-600 text-sm line-clamp-2 mb-4">
+                  {{ org.description }}
+                </p>
+                <p *ngIf="!org.description" 
+                  class="text-slate-400 text-sm italic mb-4">
+                  No description
+                </p>
+                <div class="flex items-center gap-2 text-sm text-[#DC2626] font-semibold">
+                  <span>View organization</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noMemberOrgs>
+          <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center">
+            <div class="text-4xl mb-4">👥</div>
+            <p class="text-slate-500">You're not a member of any organizations yet.</p>
+          </div>
+        </ng-template>
+      </section>
     </div>
   </div>
 </ng-container>
