@@ -166,6 +166,70 @@ export class OrganizationService {
   }
 
   /**
+   * Get organizations that allow open join (anyone can join)
+   */
+  organizationsWithOpenJoin$(): Observable<Organization[]> {
+    return new Observable<Organization[]>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'organizations');
+          
+          // Try with orderBy first, fallback to just where clause if index doesn't exist
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('allowOpenJoin', '==', true),
+            firestoreModule.orderBy('createdAt', 'desc')
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const organizations = snapshot.docs.map((doc) => this.mapOrganization(doc, firestoreModule));
+              console.log('organizationsWithOpenJoin$ - Found organizations:', organizations.length, organizations.map(o => ({ id: o.id, name: o.name, allowOpenJoin: o.allowOpenJoin })));
+              subscriber.next(organizations);
+            },
+            (error) => {
+              // If the query with orderBy fails due to missing index, try without it
+              const errorCode = (error as { code?: string })?.code;
+              const errorMessage = (error as { message?: string })?.message || '';
+              
+              if (errorCode === 'failed-precondition' || errorMessage.includes('index') || errorMessage.includes('requires an index')) {
+                console.warn('Composite index missing for allowOpenJoin + createdAt, using query without orderBy. Please create the index:', error);
+                const fallbackQuery = firestoreModule.query(
+                  collectionRef,
+                  firestoreModule.where('allowOpenJoin', '==', true)
+                );
+                
+                unsubscribe = firestoreModule.onSnapshot(
+                  fallbackQuery,
+                  (snapshot) => {
+                    const organizations = snapshot.docs.map((doc) => this.mapOrganization(doc, firestoreModule));
+                    // Sort client-side by createdAt descending
+                    organizations.sort((a, b) => {
+                      const aDate = a.createdAt?.getTime() || 0;
+                      const bDate = b.createdAt?.getTime() || 0;
+                      return bDate - aDate; // desc
+                    });
+                    console.log('organizationsWithOpenJoin$ (fallback) - Found organizations:', organizations.length, organizations.map(o => ({ id: o.id, name: o.name, allowOpenJoin: o.allowOpenJoin })));
+                    subscriber.next(organizations);
+                  },
+                  (err) => subscriber.error(err)
+                );
+              } else {
+                subscriber.error(error);
+              }
+            }
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
    * Create a new organization
    */
   async createOrganization(input: CreateOrganizationInput, createdBy: string): Promise<string> {
@@ -319,6 +383,16 @@ export class OrganizationService {
       updatePayload['members'] = input.members;
     }
 
+    if (input.allowOpenJoin !== undefined) {
+      // Only creator can update allowOpenJoin
+      if (existingCreatedBy !== trimmedUserId) {
+        throw new Error('Only the organization creator can update open join settings.');
+      }
+      // Explicitly set to boolean value (true or false), not undefined
+      updatePayload['allowOpenJoin'] = input.allowOpenJoin === true;
+      console.log('Setting allowOpenJoin in Firestore to:', updatePayload['allowOpenJoin']);
+    }
+
     await firestoreModule.updateDoc(docRef, updatePayload);
   }
 
@@ -414,6 +488,7 @@ export class OrganizationService {
     const createdByValue = data['createdBy'];
     const membersValue = data['members'];
     const usernameValue = data['username'];
+    const allowOpenJoinValue = data['allowOpenJoin'];
     const createdAtValue = data['createdAt'];
     const updatedAtValue = data['updatedAt'];
 
@@ -426,6 +501,7 @@ export class OrganizationService {
       createdBy: typeof createdByValue === 'string' ? createdByValue : '',
       members: Array.isArray(membersValue) ? membersValue.filter((m): m is string => typeof m === 'string') : [],
       username: typeof usernameValue === 'string' ? usernameValue : undefined,
+      allowOpenJoin: typeof allowOpenJoinValue === 'boolean' ? allowOpenJoinValue : undefined,
       createdAt: this.toDate(createdAtValue, firestoreModule),
       updatedAt: this.toDate(updatedAtValue, firestoreModule)
     };
@@ -628,6 +704,54 @@ export class OrganizationService {
     });
 
     return downloadURL;
+  }
+
+  /**
+   * Join an organization (add user to members array)
+   */
+  async joinOrganization(organizationId: string, userId: string): Promise<void> {
+    const trimmedId = organizationId?.trim();
+    const trimmedUserId = userId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('An organization id is required to join.');
+    }
+
+    if (!trimmedUserId) {
+      throw new Error('A user ID is required to join an organization.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+
+    // Fetch the organization to check if it allows open join
+    const docRef = firestoreModule.doc(firestore, 'organizations', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Organization not found.');
+    }
+
+    const orgData = docSnap.data() as Record<string, unknown>;
+    const allowOpenJoin = orgData['allowOpenJoin'] === true;
+    const existingMembers = Array.isArray(orgData['members']) ? orgData['members'] as string[] : [];
+
+    // Check if organization allows open join
+    if (!allowOpenJoin) {
+      throw new Error('This organization does not allow open membership. You must be invited to join.');
+    }
+
+    // Check if user is already a member
+    if (existingMembers.includes(trimmedUserId)) {
+      throw new Error('You are already a member of this organization.');
+    }
+
+    // Add user to members array
+    const updatedMembers = [...existingMembers, trimmedUserId];
+
+    await firestoreModule.updateDoc(docRef, {
+      members: updatedMembers,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
   }
 
   private ensureApp(): FirebaseApp {

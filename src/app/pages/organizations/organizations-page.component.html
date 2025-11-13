@@ -135,7 +135,7 @@
       </section>
 
       <!-- Section 2: Organizations You're a Member Of -->
-      <section>
+      <section class="mb-12">
         <h2 class="text-2xl font-bold text-slate-900 mb-6">Organizations You're a Member Of</h2>
         
         <ng-container *ngIf="userMemberOrganizations().length > 0; else noMemberOrgs">
@@ -180,6 +180,56 @@
           <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center">
             <div class="text-4xl mb-4">👥</div>
             <p class="text-slate-500">You're not a member of any organizations yet.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- Section 3: Organizations Welcoming Members -->
+      <section>
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">Organizations Welcoming Members</h2>
+        
+        <ng-container *ngIf="openJoinOrganizations().length > 0; else noOpenJoinOrgs">
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div *ngFor="let org of openJoinOrganizations()"
+              class="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+              (click)="navigateToOrganization(org)">
+              <div class="flex flex-col items-center text-center">
+                <div class="mb-4">
+                  <div *ngIf="org.logoUrl" 
+                    class="h-16 w-16 rounded-full overflow-hidden border-2 border-slate-200 mx-auto">
+                    <img [src]="org.logoUrl" 
+                      [alt]="org.name"
+                      class="w-full h-full object-cover" />
+                  </div>
+                  <div *ngIf="!org.logoUrl"
+                    class="h-16 w-16 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-xl font-black border-2 border-slate-200 mx-auto">
+                    {{ getOrganizationInitials(org) }}
+                  </div>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">{{ org.name }}</h3>
+                <p *ngIf="org.description" 
+                  class="text-slate-600 text-sm line-clamp-2 mb-4">
+                  {{ org.description }}
+                </p>
+                <p *ngIf="!org.description" 
+                  class="text-slate-400 text-sm italic mb-4">
+                  No description
+                </p>
+                <div class="flex items-center gap-2 text-sm text-[#DC2626] font-semibold">
+                  <span>Join organization</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noOpenJoinOrgs>
+          <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center">
+            <div class="text-4xl mb-4">🌍</div>
+            <p class="text-slate-500">No organizations are currently welcoming new members.</p>
           </div>
         </ng-template>
       </section>

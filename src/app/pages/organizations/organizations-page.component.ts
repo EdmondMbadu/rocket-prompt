@@ -30,6 +30,7 @@ export class OrganizationsPageComponent {
     // Organization data
     readonly userCreatedOrganization = signal<Organization | null>(null);
     readonly userMemberOrganizations = signal<Organization[]>([]);
+    readonly openJoinOrganizations = signal<Organization[]>([]);
     readonly isLoadingOrganizations = signal(false);
 
     // Computed values
@@ -113,6 +114,21 @@ export class OrganizationsPageComponent {
                 },
                 error: (error) => {
                     console.error('Failed to load member organizations', error);
+                }
+            });
+
+        // Load organizations with open join
+        this.organizationService.organizationsWithOpenJoin$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (orgs) => {
+                    // Show ALL organizations with open join - no filtering needed
+                    // The organization profile page will handle showing "Already a member" vs "Join" button
+                    console.log('Open join organizations (all):', orgs.length, orgs.map(o => ({ id: o.id, name: o.name })));
+                    this.openJoinOrganizations.set(orgs);
+                },
+                error: (error) => {
+                    console.error('Failed to load open join organizations', error);
                 }
             });
     }

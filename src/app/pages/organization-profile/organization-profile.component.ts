@@ -140,6 +140,13 @@ export class OrganizationProfileComponent {
     return org.createdBy === currentUser.uid || org.members.includes(currentUser.uid);
   });
 
+  readonly isCurrentUserMember = computed(() => {
+    const currentUser = this.authService.currentUser;
+    const org = this.organization();
+    if (!currentUser || !org) return false;
+    return org.members.includes(currentUser.uid) || org.createdBy === currentUser.uid;
+  });
+
   readonly canInviteMembers = computed(() => {
     const profile = this.currentUserProfile();
     if (!profile) return false;
@@ -159,6 +166,16 @@ export class OrganizationProfileComponent {
   readonly membersSectionExpanded = signal(false);
   readonly membersListExpanded = signal(false);
   readonly inviteSectionExpanded = signal(false);
+  
+  // Settings section
+  readonly settingsSectionExpanded = signal(false);
+  readonly isSavingOpenMembership = signal(false);
+  readonly openMembershipError = signal<string | null>(null);
+  
+  // Join organization
+  readonly isJoiningOrganization = signal(false);
+  readonly joinOrganizationError = signal<string | null>(null);
+  readonly joinOrganizationSuccess = signal<string | null>(null);
   
   // Tabs
   readonly activeTab = signal<'prompts' | 'collections'>('prompts');
@@ -1669,6 +1686,100 @@ export class OrganizationProfileComponent {
 
   toggleInviteSection() {
     this.inviteSectionExpanded.update(v => !v);
+  }
+
+  toggleSettingsSection() {
+    this.settingsSectionExpanded.update(v => !v);
+  }
+
+  async toggleOpenMembership(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    const newValue = checkbox.checked;
+    const org = this.organization();
+    const currentUser = this.authService.currentUser;
+
+    if (!org || !currentUser) {
+      return;
+    }
+
+    // If value hasn't changed, do nothing
+    if (org.allowOpenJoin === newValue) {
+      return;
+    }
+
+    this.isSavingOpenMembership.set(true);
+    this.openMembershipError.set(null);
+
+    try {
+      console.log('Updating allowOpenJoin to:', newValue, 'for org:', org.id);
+      await this.organizationService.updateOrganization(
+        org.id,
+        { allowOpenJoin: newValue },
+        currentUser.uid
+      );
+      console.log('Successfully updated allowOpenJoin');
+      // The observable should automatically update, but let's also manually refresh
+      const updatedOrg = await this.organizationService.fetchOrganization(org.id);
+      if (updatedOrg) {
+        console.log('Updated org from fetch:', updatedOrg.allowOpenJoin);
+        this.organization.set(updatedOrg);
+      }
+    } catch (error) {
+      console.error('Failed to update open membership setting', error);
+      this.openMembershipError.set(error instanceof Error ? error.message : 'Failed to update setting. Please try again.');
+      // Revert checkbox state
+      checkbox.checked = !newValue;
+    } finally {
+      this.isSavingOpenMembership.set(false);
+    }
+  }
+
+  async joinOrganization() {
+    const org = this.organization();
+    if (!org) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      // Redirect to sign in page
+      await this.router.navigate(['/auth'], {
+        queryParams: { redirectTo: this.router.url }
+      });
+      return;
+    }
+
+    // Check if already a member
+    if (this.isCurrentUserMember()) {
+      this.joinOrganizationError.set('You are already a member of this organization.');
+      return;
+    }
+
+    this.isJoiningOrganization.set(true);
+    this.joinOrganizationError.set(null);
+    this.joinOrganizationSuccess.set(null);
+
+    try {
+      await this.organizationService.joinOrganization(org.id, currentUser.uid);
+      this.joinOrganizationSuccess.set('Successfully joined the organization!');
+      
+      // Reload organization data to reflect the membership change
+      // The observable will automatically update, but we can trigger a reload
+      const updatedOrg = await this.organizationService.fetchOrganization(org.id);
+      if (updatedOrg) {
+        this.organization.set(updatedOrg);
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        this.joinOrganizationSuccess.set(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to join organization', error);
+      this.joinOrganizationError.set(error instanceof Error ? error.message : 'Failed to join organization. Please try again.');
+    } finally {
+      this.isJoiningOrganization.set(false);
+    }
   }
 
   selectTab(tab: 'prompts' | 'collections') {
