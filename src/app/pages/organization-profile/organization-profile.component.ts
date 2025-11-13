@@ -416,8 +416,8 @@ export class OrganizationProfileComponent {
       return `${origin}/organization/${username}`;
     }
     
-    // Fallback to ID if no username
-    return `${origin}/organizations/${organization.id}`;
+    // Fallback to organizations list page if no username
+    return `${origin}/organizations`;
   }
 
   async copyOrganizationUrl() {

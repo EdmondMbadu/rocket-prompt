@@ -131,7 +131,8 @@ export class OrganizationsPageComponent {
         if (organization.username) {
             void this.router.navigate(['/organization', organization.username]);
         } else {
-            void this.router.navigate(['/organizations', organization.id]);
+            // Fallback: navigate to organizations list page if no username
+            void this.router.navigate(['/organizations']);
         }
     }
 

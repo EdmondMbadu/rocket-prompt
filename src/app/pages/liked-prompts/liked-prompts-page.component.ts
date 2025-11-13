@@ -323,9 +323,10 @@ export class LikedPromptsPageComponent {
     if (organizationId) {
       const organization = this.getOrganization(organizationId);
       if (organization?.username) {
-        void this.router.navigate(['/organizations', organization.username]);
+        void this.router.navigate(['/organization', organization.username]);
       } else {
-        void this.router.navigate(['/organizations', organizationId]);
+        // Fallback: navigate to organizations list page if no username
+        void this.router.navigate(['/organizations']);
       }
     }
   }
