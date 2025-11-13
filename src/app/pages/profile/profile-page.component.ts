@@ -8,9 +8,11 @@ import { of, combineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import { CollectionService } from '../../services/collection.service';
+import { OrganizationService } from '../../services/organization.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
 
@@ -38,6 +40,9 @@ interface PromptCard {
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly authorProfile?: UserProfile;
+  // Organization-related fields
+  readonly organizationId?: string;
+  readonly organizationProfile?: Organization;
   // Fork-related fields
   readonly forkedFromPromptId?: string;
   readonly forkedFromAuthorId?: string;
@@ -58,6 +63,7 @@ export class ProfilePageComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
   private readonly collectionService = inject(CollectionService);
+  private readonly organizationService = inject(OrganizationService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -79,6 +85,7 @@ export class ProfilePageComponent {
 
   readonly prompts = signal<PromptCard[]>([]);
   readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
+  readonly organizations = signal<Map<string, Organization>>(new Map());
 
   readonly searchTerm = signal('');
   readonly collectionsSearchTerm = signal('');
@@ -571,6 +578,37 @@ export class ProfilePageComponent {
     return this.profileInitials(profile);
   }
 
+  getOrganization(organizationId: string): Organization | undefined {
+    return this.organizations().get(organizationId);
+  }
+
+  getOrganizationInitials(organization: Organization | undefined): string {
+    if (!organization) {
+      return 'ORG';
+    }
+    const name = organization.name || '';
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+    if (name.length >= 2) {
+      return name.substring(0, 2).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase() || 'ORG';
+  }
+
+  navigateToOrganization(organizationId: string, event: Event) {
+    event.stopPropagation();
+    if (organizationId) {
+      const organization = this.getOrganization(organizationId);
+      if (organization?.username) {
+        void this.router.navigate(['/organizations', organization.username]);
+      } else {
+        void this.router.navigate(['/organizations', organizationId]);
+      }
+    }
+  }
+
   getDisplayUsername(profile: UserProfile | undefined): string {
     if (!profile) {
       return 'User';
@@ -1024,6 +1062,7 @@ export class ProfilePageComponent {
           this.prompts.set(cards);
           this.syncCategories(prompts);
           this.loadAuthorProfiles(prompts);
+          this.loadOrganizations(prompts);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
           if (this.promptFormError()) {
@@ -1088,6 +1127,53 @@ export class ProfilePageComponent {
     });
   }
 
+  private loadOrganizations(prompts: readonly Prompt[]) {
+    const uniqueOrganizationIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.organizationId) {
+        uniqueOrganizationIds.add(prompt.organizationId);
+      }
+    });
+
+    const organizationsMap = new Map(this.organizations());
+    const organizationsToLoad: string[] = [];
+
+    uniqueOrganizationIds.forEach(organizationId => {
+      if (!organizationsMap.has(organizationId)) {
+        organizationsToLoad.push(organizationId);
+      }
+    });
+
+    if (organizationsToLoad.length === 0) {
+      return;
+    }
+
+    // Load organizations in parallel
+    Promise.all(
+      organizationsToLoad.map(organizationId =>
+        this.organizationService.fetchOrganization(organizationId).then(organization => ({
+          organizationId,
+          organization
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(organizationsMap);
+      results.forEach(({ organizationId, organization }) => {
+        if (organization) {
+          updatedMap.set(organizationId, organization);
+        }
+      });
+      this.organizations.set(updatedMap);
+      
+      // Update prompt cards with organization profiles
+      const updatedCards = this.prompts().map(card => ({
+        ...card,
+        organizationProfile: card.organizationId ? updatedMap.get(card.organizationId) : undefined
+      }));
+      this.prompts.set(updatedCards);
+    });
+  }
+
   private mapPromptToCard(prompt: Prompt): PromptCard {
     const tag = prompt.tag || 'general';
 
@@ -1110,6 +1196,8 @@ export class ProfilePageComponent {
       createdAt: prompt.createdAt,
       updatedAt: prompt.updatedAt,
       authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined,
+      organizationId: prompt.organizationId,
+      organizationProfile: prompt.organizationId ? this.organizations().get(prompt.organizationId) : undefined,
       forkedFromPromptId: prompt.forkedFromPromptId,
       forkedFromAuthorId: prompt.forkedFromAuthorId,
       forkedFromTitle: prompt.forkedFromTitle,

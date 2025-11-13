@@ -6,8 +6,10 @@ import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
+import { OrganizationService } from '../../services/organization.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { Organization } from '../../models/organization.model';
 
 interface LikedPromptCard {
   readonly id: string;
@@ -25,6 +27,9 @@ interface LikedPromptCard {
   readonly totalLaunch: number;
   readonly customUrl?: string;
   readonly authorProfile?: UserProfile;
+  // Organization-related fields
+  readonly organizationId?: string;
+  readonly organizationProfile?: Organization;
   // Fork-related fields
   readonly forkedFromPromptId?: string;
   readonly forkedFromAuthorId?: string;
@@ -43,11 +48,13 @@ interface LikedPromptCard {
 export class LikedPromptsPageComponent {
   private readonly authService = inject(AuthService);
   private readonly promptService = inject(PromptService);
+  private readonly organizationService = inject(OrganizationService);
   readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly likedPrompts = signal<LikedPromptCard[]>([]);
   readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
+  readonly organizations = signal<Map<string, Organization>>(new Map());
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly searchTerm = signal('');
@@ -224,6 +231,7 @@ export class LikedPromptsPageComponent {
       const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
       this.likedPrompts.set(cards);
       this.loadAuthorProfiles(prompts);
+      this.loadOrganizations(prompts);
       this.lastLoadedActor = actor;
     } catch (error) {
       if (this.loadRequestId !== requestId) {
@@ -291,6 +299,37 @@ export class LikedPromptsPageComponent {
     }
   }
 
+  getOrganization(organizationId: string): Organization | undefined {
+    return this.organizations().get(organizationId);
+  }
+
+  getOrganizationInitials(organization: Organization | undefined): string {
+    if (!organization) {
+      return 'ORG';
+    }
+    const name = organization.name || '';
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+    if (name.length >= 2) {
+      return name.substring(0, 2).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase() || 'ORG';
+  }
+
+  navigateToOrganization(organizationId: string, event: Event) {
+    event.stopPropagation();
+    if (organizationId) {
+      const organization = this.getOrganization(organizationId);
+      if (organization?.username) {
+        void this.router.navigate(['/organizations', organization.username]);
+      } else {
+        void this.router.navigate(['/organizations', organizationId]);
+      }
+    }
+  }
+
   private loadAuthorProfiles(prompts: readonly Prompt[]) {
     const uniqueAuthorIds = new Set<string>();
     prompts.forEach(prompt => {
@@ -336,6 +375,51 @@ export class LikedPromptsPageComponent {
     });
   }
 
+  private loadOrganizations(prompts: readonly Prompt[]) {
+    const uniqueOrganizationIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.organizationId) {
+        uniqueOrganizationIds.add(prompt.organizationId);
+      }
+    });
+
+    const organizationsMap = new Map(this.organizations());
+    const organizationsToLoad: string[] = [];
+
+    uniqueOrganizationIds.forEach(organizationId => {
+      if (!organizationsMap.has(organizationId)) {
+        organizationsToLoad.push(organizationId);
+      }
+    });
+
+    if (organizationsToLoad.length === 0) {
+      return;
+    }
+
+    Promise.all(
+      organizationsToLoad.map(organizationId =>
+        this.organizationService.fetchOrganization(organizationId).then(organization => ({
+          organizationId,
+          organization
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(organizationsMap);
+      results.forEach(({ organizationId, organization }) => {
+        if (organization) {
+          updatedMap.set(organizationId, organization);
+        }
+      });
+      this.organizations.set(updatedMap);
+      
+      const updatedCards = this.likedPrompts().map(card => ({
+        ...card,
+        organizationProfile: card.organizationId ? updatedMap.get(card.organizationId) : undefined
+      }));
+      this.likedPrompts.set(updatedCards);
+    });
+  }
+
   private mapPromptToCard(prompt: Prompt): LikedPromptCard {
     const tag = prompt.tag || 'general';
 
@@ -355,6 +439,8 @@ export class LikedPromptsPageComponent {
       totalLaunch: prompt.totalLaunch ?? 0,
       customUrl: prompt.customUrl,
       authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined,
+      organizationId: prompt.organizationId,
+      organizationProfile: prompt.organizationId ? this.organizations().get(prompt.organizationId) : undefined,
       forkedFromPromptId: prompt.forkedFromPromptId,
       forkedFromAuthorId: prompt.forkedFromAuthorId,
       forkedFromTitle: prompt.forkedFromTitle,
