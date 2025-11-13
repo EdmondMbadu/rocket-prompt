@@ -86,32 +86,53 @@
                 </div>
             </div>
 
-            <!-- Author section -->
-            <div *ngIf="prompt()?.authorId" class="author-section">
-                <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId, $event)"
-                    class="author-avatar-button"
-                    [attr.aria-label]="'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
-                    title="View author profile">
-                    <img *ngIf="getAuthorProfile()?.profilePictureUrl"
-                      [src]="getAuthorProfile()?.profilePictureUrl"
-                      [alt]="(getAuthorProfile()?.firstName || '') + ' ' + (getAuthorProfile()?.lastName || '')"
-                      class="w-full h-full rounded-full object-cover" />
-                    <span *ngIf="!getAuthorProfile()?.profilePictureUrl"
-                      class="author-avatar-initials">{{ getAuthorInitials() }}</span>
-                </button>
-                <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId, $event)"
-                    class="author-name-button"
-                    [attr.aria-label]="'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
-                    title="View author profile">
-                    <span class="author-name-text">
-                        <ng-container *ngIf="getAuthorProfile(); else loadingName">
-                            {{ getAuthorProfile()?.firstName }} {{ getAuthorProfile()?.lastName }}
-                        </ng-container>
-                        <ng-template #loadingName>
-                            <span class="text-slate-400">Author</span>
-                        </ng-template>
-                    </span>
-                </button>
+            <!-- Author/Organization section -->
+            <div *ngIf="prompt()?.authorId || prompt()?.organizationId" class="author-section">
+                <div class="flex items-center gap-2.5">
+                    <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId || '', $event)"
+                        class="author-avatar-button"
+                        [attr.aria-label]="getOrganization() ? 'View ' + getOrganization()?.name + '\'s profile' : 'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
+                        [title]="getOrganization() ? 'View organization profile' : 'View author profile'">
+                        <img *ngIf="getAuthorProfilePicture()"
+                          [src]="getAuthorProfilePicture()"
+                          [alt]="getOrganization() ? getOrganization()?.name : (getAuthorProfile()?.firstName || '') + ' ' + (getAuthorProfile()?.lastName || '')"
+                          class="w-full h-full rounded-full object-cover" />
+                        <span *ngIf="!getAuthorProfilePicture()"
+                          class="author-avatar-initials">{{ getAuthorInitials() }}</span>
+                    </button>
+                    <div class="flex items-center gap-2.5">
+                        <button type="button" (click)="navigateToAuthorProfile(prompt()!.authorId || '', $event)"
+                            class="author-name-button"
+                            [attr.aria-label]="getOrganization() ? 'View ' + getOrganization()?.name + '\'s profile' : 'View ' + (getAuthorProfile()?.firstName || 'author') + '\'s profile'"
+                            [title]="getOrganization() ? 'View organization profile' : 'View author profile'">
+                            <span class="author-name-text">
+                                <ng-container *ngIf="getOrganization(); else userProfile">
+                                    {{ getOrganization()?.name }}
+                                </ng-container>
+                                <ng-template #userProfile>
+                                    <ng-container *ngIf="getAuthorProfile(); else loadingName">
+                                        {{ getAuthorProfile()?.firstName }} {{ getAuthorProfile()?.lastName }}
+                                    </ng-container>
+                                    <ng-template #loadingName>
+                                        <span class="text-slate-400">Author</span>
+                                    </ng-template>
+                                </ng-template>
+                            </span>
+                        </button>
+                        <!-- Organization badge -->
+                        <div *ngIf="getOrganization()"
+                            class="flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/60 px-2.5 py-1 text-xs">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-blue-600" fill="currentColor"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                            <span class="text-blue-700 font-semibold">Organization</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Private badge (if user is the author) -->

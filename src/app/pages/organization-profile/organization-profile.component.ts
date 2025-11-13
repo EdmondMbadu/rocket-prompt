@@ -10,7 +10,7 @@ import { OrganizationService } from '../../services/organization.service';
 import { PromptService } from '../../services/prompt.service';
 import type { Organization } from '../../models/organization.model';
 import type { UserProfile } from '../../models/user-profile.model';
-import type { CreatePromptInput, Prompt } from '../../models/prompt.model';
+import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../../models/prompt.model';
 
 @Component({
   selector: 'app-organization-profile',
@@ -38,6 +38,20 @@ export class OrganizationProfileComponent {
   readonly organizationPrompts = signal<Prompt[]>([]);
   readonly isLoadingPrompts = signal(false);
   readonly loadPromptsError = signal<string | null>(null);
+  readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
+  
+  // Prompt card functionality state
+  readonly shareModalOpen = signal(false);
+  readonly sharePrompt = signal<Prompt | null>(null);
+  readonly isEditingPrompt = signal(false);
+  readonly editingPromptId = signal<string | null>(null);
+  readonly forkingPromptId = signal<string | null>(null);
+  readonly deletingPromptId = signal<string | null>(null);
+  readonly deleteError = signal<string | null>(null);
+  readonly recentlyCopied = signal<Set<string>>(new Set());
+  readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
+  private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
   readonly editingName = signal(false);
   readonly editingDescription = signal(false);
   readonly isSaving = signal(false);
@@ -546,6 +560,9 @@ export class OrganizationProfileComponent {
   // Prompt creation methods
   openCreatePromptModal() {
     this.closeMenu();
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -559,6 +576,9 @@ export class OrganizationProfileComponent {
     }
 
     this.newPromptModalOpen.set(false);
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -637,19 +657,53 @@ export class OrganizationProfileComponent {
       const profile = await this.authService.fetchUserProfile(currentUser.uid);
       const isAdmin = profile && (profile.role === 'admin' || profile.admin);
 
-      const createInput: CreatePromptInput = {
-        authorId: currentUser.uid,
-        title,
-        content,
-        tag,
-        customUrl: trimmedCustomUrl || undefined,
-        organizationId: org.id, // Associate prompt with organization
-        ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
-      };
-      
-      await this.promptService.createPrompt(createInput);
+      if (this.isEditingPrompt() && this.editingPromptId()) {
+        const updateInput: UpdatePromptInput = {
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl,
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
+      } else if (this.forkingPromptId()) {
+        // Forking a prompt
+        const originalPrompt = this.organizationPrompts().find(p => p.id === this.forkingPromptId());
+        if (originalPrompt) {
+          const createInput: CreatePromptInput = {
+            authorId: currentUser.uid,
+            title,
+            content,
+            tag,
+            customUrl: trimmedCustomUrl || undefined,
+            forkedFromPromptId: originalPrompt.id,
+            forkedFromAuthorId: originalPrompt.authorId,
+            forkedFromTitle: originalPrompt.title,
+            forkedFromCustomUrl: originalPrompt.customUrl,
+            ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          };
+          await this.promptService.createPrompt(createInput);
+        } else {
+          throw new Error('Original prompt not found.');
+        }
+      } else {
+        const createInput: CreatePromptInput = {
+          authorId: currentUser.uid,
+          title,
+          content,
+          tag,
+          customUrl: trimmedCustomUrl || undefined,
+          organizationId: org.id, // Associate prompt with organization
+          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        
+        await this.promptService.createPrompt(createInput);
+      }
 
       this.resetCreatePromptForm();
+      this.isEditingPrompt.set(false);
+      this.editingPromptId.set(null);
+      this.forkingPromptId.set(null);
       this.newPromptModalOpen.set(false);
       // Reload prompts to show the new one
       if (org) {
@@ -732,6 +786,7 @@ export class OrganizationProfileComponent {
       .subscribe({
         next: (prompts) => {
           this.organizationPrompts.set(prompts);
+          this.loadAuthorProfiles(prompts);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
         },
@@ -741,6 +796,73 @@ export class OrganizationProfileComponent {
           this.loadPromptsError.set('Failed to load organization prompts. Please try again.');
         }
       });
+  }
+
+  private loadAuthorProfiles(prompts: readonly Prompt[]) {
+    const uniqueAuthorIds = new Set<string>();
+    prompts.forEach(prompt => {
+      if (prompt.authorId) {
+        uniqueAuthorIds.add(prompt.authorId);
+      }
+    });
+
+    const profilesMap = new Map(this.authorProfiles());
+    const profilesToLoad: string[] = [];
+
+    uniqueAuthorIds.forEach(authorId => {
+      if (!profilesMap.has(authorId)) {
+        profilesToLoad.push(authorId);
+      }
+    });
+
+    if (profilesToLoad.length === 0) {
+      return;
+    }
+
+    // Load profiles in parallel
+    Promise.all(
+      profilesToLoad.map(authorId =>
+        this.authService.fetchUserProfile(authorId).then(profile => ({
+          authorId,
+          profile
+        }))
+      )
+    ).then(results => {
+      const updatedMap = new Map(profilesMap);
+      results.forEach(({ authorId, profile }) => {
+        if (profile) {
+          updatedMap.set(authorId, profile);
+        }
+      });
+      this.authorProfiles.set(updatedMap);
+    });
+  }
+
+  getAuthorProfile(authorId: string): UserProfile | undefined {
+    return this.authorProfiles().get(authorId);
+  }
+
+  getAuthorInitials(authorId: string): string {
+    const profile = this.getAuthorProfile(authorId);
+    if (!profile) {
+      return 'RP';
+    }
+    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
+    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
+    const initials = `${firstInitial}${lastInitial}`.trim();
+    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  }
+
+  async navigateToAuthorProfile(authorId: string, event: Event) {
+    event.stopPropagation();
+    if (authorId) {
+      const profile = await this.authService.fetchUserProfile(authorId);
+      if (profile?.username) {
+        void this.router.navigate(['/profile', profile.username]);
+      } else {
+        void this.router.navigate(['/profile'], { queryParams: { userId: authorId } });
+      }
+    }
   }
 
   buildPreview(content: string): string {
@@ -776,6 +898,313 @@ export class OrganizationProfileComponent {
       if (!short) return;
       void this.router.navigate(['/prompt', short]);
     }
+  }
+
+  // Copy prompt functionality
+  async copyPrompt(prompt: Prompt) {
+    if (!prompt) return;
+
+    const text = prompt.content ?? '';
+
+    try {
+      await navigator.clipboard.writeText(text);
+      this.showCopyMessage('Prompt copied!');
+      this.markPromptAsCopied(prompt.id);
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(text);
+      this.showCopyMessage('Prompt copied!');
+      this.markPromptAsCopied(prompt.id);
+    }
+  }
+
+  private markPromptAsCopied(id: string) {
+    if (!id) return;
+
+    this.recentlyCopied.update(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    const existing = this.copyTimers.get(id);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const DURATION = 2500;
+    const timer = setTimeout(() => {
+      this.recentlyCopied.update(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      this.copyTimers.delete(id);
+    }, DURATION);
+
+    this.copyTimers.set(id, timer);
+  }
+
+  async copyPromptUrl(prompt: Prompt) {
+    if (!prompt) return;
+
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    } catch (e) {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+      this.markPromptUrlAsCopied(prompt.id);
+    }
+  }
+
+  private markPromptUrlAsCopied(id: string) {
+    if (!id) return;
+
+    this.recentlyCopiedUrl.update(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    const existing = this.copyUrlTimers.get(id);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    const DURATION = 2500;
+    const timer = setTimeout(() => {
+      this.recentlyCopiedUrl.update(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      this.copyUrlTimers.delete(id);
+    }, DURATION);
+
+    this.copyUrlTimers.set(id, timer);
+  }
+
+  getPromptDisplayUrl(prompt: Prompt): string {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
+  }
+
+  // Share modal functionality
+  openShareModal(prompt: Prompt) {
+    this.sharePrompt.set(prompt);
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+    this.sharePrompt.set(null);
+  }
+
+  createChatGPTUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  createGeminiUrl(prompt: string): string {
+    return 'https://gemini.google.com/app';
+  }
+
+  createClaudeUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  async openChatbot(url: string, chatbotName: string) {
+    const promptText = this.sharePrompt()?.content || '';
+    
+    if (chatbotName === 'ChatGPT') {
+      window.open(url, '_blank');
+      return;
+    }
+
+    try {
+      if (promptText) {
+        await navigator.clipboard.writeText(promptText);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
+    } catch (e) {
+      if (promptText) {
+        this.fallbackCopyTextToClipboard(promptText);
+        this.showCopyMessage(`${chatbotName} prompt copied!`);
+      }
+    }
+
+    window.open(url, '_blank');
+  }
+
+  copyPromptPageUrl() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const short = (prompt.id ?? '').slice(0, 8);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+    });
+  }
+
+  // Fork prompt functionality
+  openForkPromptModal(prompt: Prompt) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to fork a prompt.');
+      return;
+    }
+
+    this.closeMenu();
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.forkingPromptId.set(prompt.id);
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: '',
+      content: prompt.content,
+      isPrivate: false
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.newPromptModalOpen.set(true);
+  }
+
+  // Edit prompt functionality
+  openEditPromptModal(prompt: Prompt) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to edit a prompt.');
+      return;
+    }
+
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.promptFormError.set('You do not have permission to edit this prompt. Only the author can edit it.');
+      return;
+    }
+
+    this.closeMenu();
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    this.isEditingPrompt.set(true);
+    this.editingPromptId.set(prompt.id);
+    this.forkingPromptId.set(null);
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: prompt.customUrl ?? '',
+      content: prompt.content,
+      isPrivate: prompt.isPrivate ?? false
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.newPromptModalOpen.set(true);
+  }
+
+  canEditPrompt(prompt: Prompt): boolean {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+    return !prompt.authorId || prompt.authorId === currentUser.uid;
+  }
+
+  // Delete prompt functionality
+  async onDeletePrompt(prompt: Prompt) {
+    if (this.deletingPromptId() === prompt.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.deleteError.set('You must be signed in to delete a prompt.');
+      return;
+    }
+
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.deleteError.set('You do not have permission to delete this prompt. Only the author can delete it.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${prompt.title}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingPromptId.set(prompt.id);
+    this.deleteError.set(null);
+
+    try {
+      await this.promptService.deletePrompt(prompt.id, currentUser.uid);
+      // Reload prompts after deletion
+      const org = this.organization();
+      if (org) {
+        this.loadOrganizationPrompts(org.id);
+      }
+    } catch (error) {
+      console.error('Failed to delete prompt', error);
+      this.deleteError.set(
+        error instanceof Error ? error.message : 'Could not delete the prompt. Please try again.'
+      );
+    } finally {
+      this.deletingPromptId.set(null);
+    }
+  }
+
+  getOriginalPromptUrl(prompt: Prompt): string | null {
+    if (!prompt.forkedFromPromptId) {
+      return null;
+    }
+    
+    if (prompt.forkedFromCustomUrl) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/${prompt.forkedFromCustomUrl}`;
+    }
+    
+    if (prompt.forkedFromPromptId) {
+      const short = prompt.forkedFromPromptId.slice(0, 8);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/prompt/${short}`;
+    }
+    
+    return null;
+  }
+
+  navigateToOriginalPrompt(prompt: Prompt, event: Event) {
+    event.stopPropagation();
+    const url = this.getOriginalPromptUrl(prompt);
+    if (url) {
+      void this.router.navigateByUrl(url.replace(window.location.origin, ''));
+    }
+  }
+
+  getForkingPromptTitle(): string {
+    const forkingId = this.forkingPromptId();
+    if (!forkingId) {
+      return 'Original prompt';
+    }
+    const prompt = this.organizationPrompts().find(p => p.id === forkingId);
+    return prompt?.title || 'Original prompt';
   }
 }
 

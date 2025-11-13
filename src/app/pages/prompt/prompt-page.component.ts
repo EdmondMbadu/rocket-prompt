@@ -4,8 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
 import { AuthService } from '../../services/auth.service';
+import { OrganizationService } from '../../services/organization.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
+import type { Organization } from '../../models/organization.model';
 
 @Component({
   selector: 'app-prompt-page',
@@ -19,6 +21,7 @@ export class PromptPageComponent {
   private readonly router = inject(Router);
   private readonly promptService = inject(PromptService);
   private readonly authService = inject(AuthService);
+  private readonly organizationService = inject(OrganizationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly isLoading = signal(true);
@@ -27,6 +30,7 @@ export class PromptPageComponent {
   readonly shareModalOpen = signal(false);
   readonly currentUser = signal(this.authService.currentUser);
   readonly authorProfile = signal<UserProfile | undefined>(undefined);
+  readonly organization = signal<Organization | undefined>(undefined);
 
   // Provide like state
   readonly liked = signal(false);
@@ -332,8 +336,10 @@ export class PromptPageComponent {
       this.loadError.set(null);
       this.isLoading.set(false);
 
-      // Load author profile if authorId exists
-      if (found.authorId) {
+      // Load organization if organizationId exists, otherwise load author profile
+      if (found.organizationId) {
+        void this.loadOrganization(found.organizationId);
+      } else if (found.authorId) {
         void this.loadAuthorProfile(found.authorId);
       }
 
@@ -445,6 +451,26 @@ export class PromptPageComponent {
     this.shareSectionExpanded.update(v => !v);
   }
 
+  // Organization methods
+  private async loadOrganization(organizationId: string) {
+    try {
+      this.organizationService.organization$(organizationId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (org) => {
+            this.organization.set(org || undefined);
+          },
+          error: (error) => {
+            console.error('Failed to load organization', error);
+            this.organization.set(undefined);
+          }
+        });
+    } catch (error) {
+      console.error('Failed to load organization', error);
+      this.organization.set(undefined);
+    }
+  }
+
   // Author profile methods
   private async loadAuthorProfile(authorId: string) {
     try {
@@ -460,7 +486,17 @@ export class PromptPageComponent {
     return this.authorProfile();
   }
 
+  getOrganization(): Organization | undefined {
+    return this.organization();
+  }
+
   getAuthorInitials(): string {
+    const org = this.getOrganization();
+    if (org) {
+      // Use first letter of organization name
+      return org.name?.charAt(0)?.toUpperCase() ?? 'O';
+    }
+
     const profile = this.getAuthorProfile();
     if (!profile) {
       return 'RP';
@@ -473,8 +509,44 @@ export class PromptPageComponent {
     return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
   }
 
+  getAuthorName(): string {
+    const org = this.getOrganization();
+    if (org) {
+      return org.name;
+    }
+
+    const profile = this.getAuthorProfile();
+    if (!profile) {
+      return 'Author';
+    }
+
+    return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || profile.email || 'Author';
+  }
+
+  getAuthorProfilePicture(): string | undefined {
+    const org = this.getOrganization();
+    if (org?.logoUrl) {
+      return org.logoUrl;
+    }
+
+    const profile = this.getAuthorProfile();
+    return profile?.profilePictureUrl;
+  }
+
   async navigateToAuthorProfile(authorId: string, event: Event) {
     event.stopPropagation();
+    const org = this.getOrganization();
+    if (org) {
+      if (org.username) {
+        void this.router.navigate(['/organization', org.username]);
+      } else {
+        // Fallback to ID if username not available (though this shouldn't happen)
+        console.warn('Organization missing username, using ID:', org.id);
+        void this.router.navigate(['/organization', org.id]);
+      }
+      return;
+    }
+
     if (authorId) {
       // Try to get the profile to get the username
       const profile = await this.authService.fetchUserProfile(authorId);
