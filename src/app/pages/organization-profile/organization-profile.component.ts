@@ -853,8 +853,33 @@ export class OrganizationProfileComponent {
     return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
   }
 
-  async navigateToAuthorProfile(authorId: string, event: Event) {
+  async navigateToAuthorProfile(authorId: string, event: Event, prompt?: Prompt) {
     event.stopPropagation();
+    
+    // If prompt belongs to an organization, navigate to organization profile
+    if (prompt?.organizationId) {
+      const org = this.organization();
+      if (org && org.id === prompt.organizationId) {
+        // Already on this organization's page, no need to navigate
+        return;
+      }
+      
+      // Load organization and navigate to it
+      try {
+        const orgData = await this.organizationService.fetchOrganization(prompt.organizationId);
+        if (orgData?.username) {
+          void this.router.navigate(['/organization', orgData.username]);
+        } else if (orgData) {
+          // Fallback to ID if username not available
+          void this.router.navigate(['/organization', orgData.id]);
+        }
+      } catch (error) {
+        console.error('Failed to load organization', error);
+      }
+      return;
+    }
+    
+    // Otherwise, navigate to user profile
     if (authorId) {
       const profile = await this.authService.fetchUserProfile(authorId);
       if (profile?.username) {
