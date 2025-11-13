@@ -85,6 +85,11 @@ export const routes: Routes = [
       import('./pages/community-guidelines/community-guidelines.component').then(m => m.CommunityGuidelinesComponent)
   },
   {
+    path: 'organizations',
+    loadComponent: () =>
+      import('./pages/organizations/organizations-page.component').then(m => m.OrganizationsPageComponent)
+  },
+  {
     path: ':customUrl',
     // Catch-all for custom URLs (e.g., /my-custom-url)
     // This route must come after all specific routes but before the final ** catch-all

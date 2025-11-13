@@ -51,6 +51,11 @@ export class SidebarComponent {
       label: 'Liked Prompts',
       icon: 'liked',
       route: '/prompts/liked'
+    },
+    {
+      label: 'Organizations',
+      icon: 'organizations',
+      route: '/organizations'
     }
   ];
 
