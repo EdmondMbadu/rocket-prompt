@@ -37,58 +37,7 @@
               <span class="min-[375px]:hidden">New</span>
             </button>
 
-            <div class="relative z-50" data-user-menu>
-              <button #avatarButton type="button" class="avatar-button" (click)="toggleMenu()"
-                [attr.aria-expanded]="menuOpen()" aria-haspopup="true">
-                <span class="sr-only">Open user menu</span>
-                <img *ngIf="profile.profilePictureUrl" [src]="profile.profilePictureUrl"
-                  [alt]="profile.firstName + ' ' + profile.lastName" class="w-full h-full rounded-full object-cover" />
-                <span *ngIf="!profile.profilePictureUrl" class="avatar-initials">{{ profileInitials(profile) }}</span>
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="avatar-dropdown-icon" fill="none"
-                  stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              <!-- Mobile backdrop overlay -->
-              <div *ngIf="menuOpen()" class="menu-backdrop sm:hidden" (click)="closeMenu()"></div>
-
-              <div *ngIf="menuOpen()" class="menu-panel" role="menu" [style.top.px]="menuTop() ?? undefined"
-                [style.right.px]="menuRight() ?? undefined">
-                <div class="menu-header">
-                  <p class="menu-name">{{ profile.firstName }} {{ profile.lastName }}</p>
-                  <p class="menu-email">{{ profile.email }}</p>
-                </div>
-                <button *ngIf="profile.role === 'admin' || profile.admin" type="button"
-                  class="menu-item menu-item--admin" role="menuitem" (click)="router.navigate(['/admin']); closeMenu()">
-                  <span>Admin Dashboard</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="none"
-                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </button>
-                <button type="button" class="menu-item menu-item--profile" role="menuitem"
-                  (click)="router.navigate(['/profile']); closeMenu()">
-                  <span>Profile</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-                    stroke-width="1.6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </button>
-                <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
-                  <span>Log out</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path d="M9 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-2" fill="none"
-                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                    <path d="M6 9l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+            <app-navbar [profile]="profile" />
           </div>
         </div>
       </div>
@@ -113,39 +62,62 @@
           </div>
         </div>
 
-        <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
+        <div class="grid gap-4 sm:gap-5 md:grid-cols-2">
           <!-- Daily Tip Card -->
           <div *ngIf="dailyTip()"
-            class="group relative overflow-hidden rounded-xl border border-[#DC2626]/15 bg-gradient-to-br from-red-50/40 via-white to-white p-4 transition-all duration-200 hover:border-[#DC2626]/25 hover:shadow-md sm:p-5">
-            <!-- Flame glow effect -->
+            class="group relative overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white p-5 shadow-md transition-all duration-300 hover:border-[#DC2626]/40 hover:bg-gradient-to-br hover:from-orange-50 hover:via-red-50/80 hover:to-pink-50/60 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 sm:p-6 sm:rounded-3xl">
+            <!-- Animated background glow effects - only visible on hover -->
             <div
-              class="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-gradient-to-br from-orange-400/30 via-red-500/20 to-transparent blur-2xl opacity-50 animate-pulse-slow">
+              class="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-gradient-to-br from-orange-400/40 via-red-500/30 to-pink-500/20 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-60 animate-pulse-slow">
             </div>
-            <div class="relative flex items-start gap-3">
+            <div
+              class="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-gradient-to-tr from-yellow-400/30 via-orange-500/20 to-transparent blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-50 animate-pulse-slow"
+              style="animation-delay: 1s;">
+            </div>
+
+            <!-- Decorative sparkles - only visible on hover -->
+            <div class="absolute top-3 right-3 opacity-0 transition-opacity duration-300 group-hover:opacity-30">
+              <svg class="h-6 w-6 text-[#DC2626] animate-sparkle" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z" />
+              </svg>
+            </div>
+
+            <div class="relative flex items-start gap-4">
               <div class="flex-shrink-0 relative">
-                <!-- Flame glow layers -->
+                <!-- Multi-layer glow effect - only visible on hover -->
                 <div
-                  class="absolute inset-0 rounded-lg bg-gradient-to-t from-orange-400/30 via-red-500/20 to-transparent blur-lg animate-glow">
+                  class="absolute inset-0 rounded-xl bg-gradient-to-t from-orange-400/40 via-red-500/30 to-transparent blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-glow">
                 </div>
-                <div class="absolute inset-0 rounded-lg bg-[#DC2626]/15 blur-sm animate-glow"
-                  style="animation-delay: 0.3s;"></div>
                 <div
-                  class="relative rounded-lg bg-gradient-to-br from-red-50/80 via-orange-50/60 to-[#DC2626]/10 p-2.5 transition-all duration-300 group-hover:from-red-100/90 group-hover:via-orange-100/70 group-hover:to-[#DC2626]/15 group-hover:scale-110">
-                  <svg viewBox="0 0 24 24" class="h-4 w-4 text-[#DC2626] animate-flicker" fill="none"
-                    stroke="currentColor" stroke-width="2.5">
+                  class="absolute inset-0 rounded-xl bg-[#DC2626]/20 blur-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-glow"
+                  style="animation-delay: 0.4s;"></div>
+                <div
+                  class="absolute inset-0 rounded-xl bg-yellow-400/20 blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-glow"
+                  style="animation-delay: 0.8s;"></div>
+
+                <!-- Icon container with enhanced styling -->
+                <div
+                  class="relative rounded-xl bg-white p-3.5 shadow-md border border-slate-200/60 transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-orange-100 group-hover:via-red-100/90 group-hover:to-pink-100/80 group-hover:border-[#DC2626]/30 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-xl group-hover:shadow-red-500/30">
+                  <svg viewBox="0 0 24 24"
+                    class="h-5 w-5 text-slate-600 transition-colors duration-300 group-hover:text-[#DC2626] animate-flicker drop-shadow-lg"
+                    fill="none" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
               </div>
               <div class="flex-1 min-w-0">
-                <div class="mb-1.5 flex items-center gap-2">
-                  <span class="text-[10px] font-bold uppercase tracking-widest text-[#DC2626]">Daily Tip</span>
+                <div class="mb-2 flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#DC2626] to-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-red-500/30">
+                    <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                    Daily Tip
+                  </span>
                 </div>
-                <p class="text-sm font-medium text-slate-800 leading-snug sm:text-base">
+                <p class="text-sm font-semibold text-slate-900 leading-relaxed sm:text-base sm:leading-relaxed">
                   {{ dailyTip()?.text }}
                 </p>
-                <p *ngIf="dailyTip()?.author" class="mt-2 text-xs font-medium text-slate-500">
+                <p *ngIf="dailyTip()?.author" class="mt-3 text-xs font-semibold text-slate-600 italic">
                   — {{ dailyTip()?.author }}
                 </p>
               </div>
@@ -154,32 +126,67 @@
 
           <!-- Prompt of the Day Card -->
           <div *ngIf="promptOfTheDay()"
-            class="group relative overflow-hidden rounded-xl border border-slate-200/60 bg-white p-4 transition-all duration-200 hover:border-[#DC2626]/20 hover:shadow-md sm:p-5">
-            <!-- Rocket trail effect -->
+            class="group relative overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white p-5 shadow-md transition-all duration-300 hover:border-[#DC2626]/50 hover:bg-gradient-to-br hover:from-red-50 hover:via-orange-50/80 hover:to-amber-50/60 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1 sm:p-6 sm:rounded-3xl">
+            <!-- Animated background effects - only visible on hover -->
             <div
-              class="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-20 bg-gradient-to-t from-blue-400/40 via-transparent to-transparent blur-sm animate-rocket-trail">
+              class="absolute -top-8 -left-8 h-32 w-32 rounded-full bg-gradient-to-br from-red-400/30 via-orange-500/25 to-amber-500/20 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-50 animate-pulse-slow">
             </div>
-            <div class="relative flex items-start gap-3">
+            <div
+              class="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-gradient-to-tr from-pink-400/30 via-red-500/20 to-transparent blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-40 animate-pulse-slow"
+              style="animation-delay: 1.2s;">
+            </div>
+
+            <!-- Rocket trail effect - enhanced, only visible on hover -->
+            <div
+              class="absolute bottom-0 left-1/2 -translate-x-1/2 h-2 w-32 bg-gradient-to-t from-red-400/50 via-orange-400/30 to-transparent blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-rocket-trail">
+            </div>
+            <div
+              class="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-24 bg-gradient-to-t from-[#DC2626]/40 via-transparent to-transparent blur-sm opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-rocket-trail"
+              style="animation-delay: 0.3s;">
+            </div>
+
+            <!-- Decorative stars - only visible on hover -->
+            <div class="absolute top-3 right-3 opacity-0 transition-opacity duration-300 group-hover:opacity-40">
+              <svg class="h-5 w-5 text-[#DC2626] animate-twinkle" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" />
+              </svg>
+            </div>
+
+            <div class="relative flex items-start gap-4">
               <div class="flex-shrink-0 relative">
+                <!-- Multi-layer glow for rocket - only visible on hover -->
                 <div
-                  class="relative rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 p-2.5 transition-all duration-300 group-hover:from-slate-200 group-hover:to-slate-100 group-hover:scale-110">
-                  <span class="text-lg leading-none inline-block animate-rocket-launch">🚀</span>
+                  class="absolute inset-0 rounded-xl bg-gradient-to-t from-red-400/30 via-orange-500/25 to-transparent blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-glow">
+                </div>
+                <div
+                  class="absolute inset-0 rounded-xl bg-amber-400/20 blur-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100 animate-glow"
+                  style="animation-delay: 0.5s;"></div>
+
+                <!-- Rocket container with enhanced styling -->
+                <div
+                  class="relative rounded-xl bg-white p-3.5 shadow-md border border-slate-200/60 transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-red-100 group-hover:via-orange-100/90 group-hover:to-amber-100/80 group-hover:border-[#DC2626]/30 group-hover:scale-110 group-hover:-rotate-3 group-hover:shadow-xl group-hover:shadow-red-500/30">
+                  <span class="text-xl leading-none inline-block animate-rocket-launch drop-shadow-md">🚀</span>
                 </div>
               </div>
               <div class="flex-1 min-w-0">
-                <div class="mb-1.5 flex items-center gap-2">
-                  <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Prompt of the Day</span>
+                <div class="mb-2 flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#DC2626] to-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-red-500/30">
+                    <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                    Prompt of the Day
+                  </span>
                 </div>
-                <h3 class="text-sm font-bold text-slate-900 mb-1.5 leading-tight line-clamp-1 sm:text-base">
+                <h3
+                  class="text-sm font-black text-slate-900 mb-2 leading-tight line-clamp-1 sm:text-base group-hover:text-[#DC2626] transition-colors">
                   {{ promptOfTheDay()?.title }}
                 </h3>
-                <p class="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed sm:text-sm">
+                <p class="text-xs text-slate-700 line-clamp-2 mb-4 leading-relaxed sm:text-sm font-medium">
                   {{ promptOfTheDay()?.preview }}
                 </p>
                 <button type="button" (click)="openPrompt(promptOfTheDay()!)"
-                  class="inline-flex items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#B91C1C] hover:shadow-md active:scale-95 sm:px-4 sm:py-2 sm:text-sm">
-                  <span>View</span>
-                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5">
+                  class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-500/30 transition-all duration-200 hover:from-[#B91C1C] hover:to-[#991B1B] hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 sm:px-5 sm:py-2.5 sm:text-sm">
+                  <span>View Prompt</span>
+                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                 </button>

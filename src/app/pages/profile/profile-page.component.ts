@@ -8,6 +8,7 @@ import { of, combineLatest, from } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import { CollectionService } from '../../services/collection.service';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { PromptCollection } from '../../models/collection.model';
@@ -49,7 +50,7 @@ interface PromptCard {
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, NavbarComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.css'
 })
@@ -82,10 +83,6 @@ export class ProfilePageComponent {
   readonly searchTerm = signal('');
   readonly collectionsSearchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
-  readonly menuOpen = signal(false);
-  readonly menuTop = signal<number | null>(null);
-  readonly menuRight = signal<number | null>(null);
-  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
   readonly activeTab = signal<'prompts' | 'collections'>('prompts');
   readonly isLoadingPrompts = signal(true);
   readonly loadPromptsError = signal<string | null>(null);
@@ -151,6 +148,7 @@ export class ProfilePageComponent {
       return this.authService.userProfile$(user.uid);
     })
   );
+  readonly currentUserProfile = signal<UserProfile | null | undefined>(null);
 
   readonly profile$ = combineLatest([this.route.params, this.route.queryParams]).pipe(
     switchMap(([params, queryParams]) => {
@@ -336,6 +334,12 @@ export class ProfilePageComponent {
   }
 
   constructor() {
+    // Subscribe to current user profile and update signal for navbar
+    this.currentUserProfile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(profile => {
+        this.currentUserProfile.set(profile ?? null);
+      });
     this.observePrompts();
     this.observeCollections();
   }
@@ -528,11 +532,6 @@ export class ProfilePageComponent {
     document.body.removeChild(textArea);
   }
 
-  async signOut() {
-    this.closeMenu();
-    await this.authService.signOut();
-    await this.router.navigate(['/']);
-  }
 
   selectCategory(category: PromptCategory['value']) {
     this.selectedCategory.set(category);
@@ -550,64 +549,6 @@ export class ProfilePageComponent {
     return prompt.id;
   }
 
-  toggleMenu() {
-    if (this.newPromptModalOpen()) {
-      return;
-    }
-
-    const isOpening = !this.menuOpen();
-    this.menuOpen.update(open => !open);
-    
-    if (isOpening) {
-      // Use setTimeout to ensure ViewChild is available and DOM is updated
-      setTimeout(() => {
-        this.updateMenuPosition();
-      }, 0);
-    }
-  }
-
-  private updateMenuPosition() {
-    if (!this.avatarButtonRef?.nativeElement) {
-      return;
-    }
-
-    const button = this.avatarButtonRef.nativeElement;
-    const rect = button.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth < 640;
-    
-    if (isMobile) {
-      // On mobile, position below the button with some spacing
-      // Ensure it doesn't go off screen at the bottom
-      const menuHeight = 250; // Approximate menu height (increased for safety)
-      const spacing = 12;
-      let topPosition = rect.bottom + spacing;
-      
-      // If menu would go off screen, position it above the button instead
-      if (topPosition + menuHeight > viewportHeight - 16) {
-        topPosition = rect.top - menuHeight - spacing;
-        // Ensure it doesn't go off screen at the top either
-        if (topPosition < 16) {
-          topPosition = 16;
-        }
-      }
-      
-      // Ensure menu is always visible and not cut off
-      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
-      // On mobile, align to right with some margin
-      this.menuRight.set(16);
-    } else {
-      // Desktop: Position menu below the button with some spacing
-      this.menuTop.set(rect.bottom + 12);
-      // Align right edge of menu with right edge of button
-      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
-    }
-  }
-
-  closeMenu() {
-    this.menuOpen.set(false);
-  }
 
   profileInitials(profile: UserProfile | undefined) {
     if (!profile) {
@@ -736,18 +677,6 @@ export class ProfilePageComponent {
     return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
   }
 
-  @HostListener('document:click', ['$event'])
-  handleDocumentClick(event: Event) {
-    if (!this.menuOpen()) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-
-    if (!target?.closest('[data-user-menu]')) {
-      this.closeMenu();
-    }
-  }
 
   canEditPrompt(prompt: PromptCard): boolean {
     const currentUser = this.authService.currentUser;
@@ -769,7 +698,6 @@ export class ProfilePageComponent {
       return;
     }
 
-    this.closeMenu();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -1012,9 +940,7 @@ export class ProfilePageComponent {
       return;
     }
 
-    if (this.menuOpen()) {
-      this.closeMenu();
-    }
+    // Menu handling moved to NavbarComponent
   }
 
   private observePrompts() {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal, effect } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, inject, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PromptService } from '../../services/prompt.service';
 import { HomeContentService } from '../../services/home-content.service';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { DailyTip } from '../../models/home-content.model';
@@ -48,7 +49,7 @@ interface PromptCard {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, NavbarComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -108,10 +109,6 @@ export class HomeComponent {
 
   readonly searchTerm = signal('');
   readonly selectedCategory = signal<PromptCategory['value']>('all');
-  readonly menuOpen = signal(false);
-  readonly menuTop = signal<number | null>(null);
-  readonly menuRight = signal<number | null>(null);
-  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
   readonly newPromptModalOpen = signal(false);
   readonly shareModalOpen = signal(false);
   readonly sharePrompt = signal<PromptCard | null>(null);
@@ -473,11 +470,6 @@ export class HomeComponent {
     document.body.removeChild(textArea);
   }
 
-  async signOut() {
-    this.closeMenu();
-    await this.authService.signOut();
-    await this.router.navigate(['/']);
-  }
 
   selectCategory(category: PromptCategory['value']) {
     this.selectedCategory.set(category);
@@ -513,64 +505,6 @@ export class HomeComponent {
     return prompt.id;
   }
 
-  toggleMenu() {
-    if (this.newPromptModalOpen()) {
-      return;
-    }
-
-    const isOpening = !this.menuOpen();
-    this.menuOpen.update(open => !open);
-    
-    if (isOpening) {
-      // Use setTimeout to ensure ViewChild is available and DOM is updated
-      setTimeout(() => {
-        this.updateMenuPosition();
-      }, 0);
-    }
-  }
-
-  private updateMenuPosition() {
-    if (!this.avatarButtonRef?.nativeElement) {
-      return;
-    }
-
-    const button = this.avatarButtonRef.nativeElement;
-    const rect = button.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth < 640;
-    
-    if (isMobile) {
-      // On mobile, position below the button with some spacing
-      // Ensure it doesn't go off screen at the bottom
-      const menuHeight = 250; // Approximate menu height (increased for safety)
-      const spacing = 12;
-      let topPosition = rect.bottom + spacing;
-      
-      // If menu would go off screen, position it above the button instead
-      if (topPosition + menuHeight > viewportHeight - 16) {
-        topPosition = rect.top - menuHeight - spacing;
-        // Ensure it doesn't go off screen at the top either
-        if (topPosition < 16) {
-          topPosition = 16;
-        }
-      }
-      
-      // Ensure menu is always visible and not cut off
-      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
-      // On mobile, align to right with some margin
-      this.menuRight.set(16);
-    } else {
-      // Desktop: Position menu below the button with some spacing
-      this.menuTop.set(rect.bottom + 12);
-      // Align right edge of menu with right edge of button
-      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
-    }
-  }
-
-  closeMenu() {
-    this.menuOpen.set(false);
-  }
 
   profileInitials(profile: UserProfile | undefined) {
     if (!profile) {
@@ -608,7 +542,6 @@ export class HomeComponent {
   }
 
   openCreatePromptModal() {
-    this.closeMenu();
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(null);
@@ -627,7 +560,6 @@ export class HomeComponent {
       return;
     }
 
-    this.closeMenu();
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(prompt.id);
@@ -662,7 +594,6 @@ export class HomeComponent {
       return;
     }
 
-    this.closeMenu();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -875,18 +806,6 @@ export class HomeComponent {
     }
   }
 
-  @HostListener('document:click', ['$event'])
-  handleDocumentClick(event: Event) {
-    if (!this.menuOpen()) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-
-    if (!target?.closest('[data-user-menu]')) {
-      this.closeMenu();
-    }
-  }
 
   @HostListener('document:keydown.escape')
   handleEscape() {
@@ -895,9 +814,7 @@ export class HomeComponent {
       return;
     }
 
-    if (this.menuOpen()) {
-      this.closeMenu();
-    }
+    // Menu handling moved to NavbarComponent
   }
 
   private observePrompts() {
