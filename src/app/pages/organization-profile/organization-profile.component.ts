@@ -167,6 +167,32 @@ export class OrganizationProfileComponent {
   readonly organizationCollections = signal<PromptCollection[]>([]);
   readonly isLoadingCollections = signal(false);
   readonly loadCollectionsError = signal<string | null>(null);
+  
+  // Collection creation state
+  readonly newCollectionModalOpen = signal(false);
+  readonly isSavingCollection = signal(false);
+  readonly collectionFormError = signal<string | null>(null);
+  readonly collectionCustomUrlError = signal<string | null>(null);
+  readonly isCheckingCollectionCustomUrl = signal(false);
+  private collectionCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly collectionPromptSearchTerm = signal('');
+  readonly uploadingBrandLogo = signal(false);
+  readonly brandLogoUploadError = signal<string | null>(null);
+  readonly brandLogoUrl = signal<string | null>(null);
+  private brandLogoFile: File | null = null;
+  readonly brandingSectionExpanded = signal(false);
+  
+  readonly createCollectionForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required, Validators.minLength(2)]],
+    promptIds: this.fb.nonNullable.control<string[]>([], {
+      validators: [Validators.required]
+    }),
+    customUrl: [''],
+    blurb: [''],
+    brandLink: [''],
+    brandSubtext: ['']
+  });
 
   readonly truncatedDescription = computed(() => {
     const description = this.organization()?.description;
@@ -510,6 +536,11 @@ export class OrganizationProfileComponent {
   handleEscape() {
     if (this.newPromptModalOpen()) {
       this.closeCreatePromptModal();
+      return;
+    }
+
+    if (this.newCollectionModalOpen()) {
+      this.closeCreateCollectionModal();
       return;
     }
 
@@ -1668,5 +1699,328 @@ export class OrganizationProfileComponent {
   readonly organizationCollectionCount = computed(() => {
     return this.organizationCollections().length;
   });
+
+  // Collection creation methods
+  openCreateCollectionModal() {
+    this.closeMenu();
+    this.collectionFormError.set(null);
+    this.collectionCustomUrlError.set(null);
+    this.clearCollectionCustomUrlDebounce();
+    this.resetCreateCollectionForm();
+    
+    // Prefill branding with org info
+    const org = this.organization();
+    let hasPrefilledData = false;
+    if (org) {
+      if (org.logoUrl) {
+        this.brandLogoUrl.set(org.logoUrl);
+        hasPrefilledData = true;
+      }
+      if (org.description) {
+        // Prefill brand subtext with org description (limited to 50 words)
+        const words = org.description.trim().split(/\s+/);
+        const limitedDescription = words.slice(0, 50).join(' ');
+        this.createCollectionForm.patchValue({
+          brandSubtext: limitedDescription
+        });
+        hasPrefilledData = true;
+      }
+    }
+    
+    // Expand branding section if we have prefilled data
+    if (hasPrefilledData) {
+      this.brandingSectionExpanded.set(true);
+    }
+    
+    this.newCollectionModalOpen.set(true);
+  }
+
+  closeCreateCollectionModal() {
+    if (this.isSavingCollection()) {
+      return;
+    }
+
+    this.newCollectionModalOpen.set(false);
+    this.collectionFormError.set(null);
+    this.collectionCustomUrlError.set(null);
+    this.brandLogoUrl.set(null);
+    this.brandLogoUploadError.set(null);
+    this.brandLogoFile = null;
+    this.brandingSectionExpanded.set(false);
+    this.clearCollectionCustomUrlDebounce();
+  }
+
+  private resetCreateCollectionForm() {
+    this.createCollectionForm.reset({
+      name: '',
+      tag: '',
+      promptIds: [],
+      customUrl: '',
+      blurb: '',
+      brandLink: '',
+      brandSubtext: ''
+    });
+    this.collectionFormError.set(null);
+    this.collectionCustomUrlError.set(null);
+    this.clearCollectionCustomUrlDebounce();
+    this.collectionPromptSearchTerm.set('');
+    this.createCollectionForm.markAsPristine();
+    this.createCollectionForm.markAsUntouched();
+  }
+
+  readonly filteredOrganizationPrompts = computed(() => {
+    const prompts = this.organizationPrompts();
+    const term = this.collectionPromptSearchTerm().trim().toLowerCase();
+
+    if (!term) {
+      return prompts;
+    }
+
+    return prompts.filter(prompt => {
+      const haystack = [
+        prompt.title,
+        prompt.content,
+        prompt.tag,
+        prompt.customUrl ?? ''
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  });
+
+  togglePromptSelection(promptId: string) {
+    const control = this.createCollectionForm.controls.promptIds;
+    const current = new Set(control.value ?? []);
+
+    if (current.has(promptId)) {
+      current.delete(promptId);
+    } else {
+      current.add(promptId);
+    }
+
+    control.setValue(Array.from(current));
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
+  isPromptSelected(promptId: string) {
+    return this.createCollectionForm.controls.promptIds.value.includes(promptId);
+  }
+
+  readonly brandSubtextWordCount = computed(() => {
+    const text = this.createCollectionForm.controls.brandSubtext.value?.trim() || '';
+    if (!text) return 0;
+    return text.split(/\s+/).filter(word => word.length > 0).length;
+  });
+
+  async submitCollectionForm() {
+    if (this.createCollectionForm.invalid || this.collectionCustomUrlError()) {
+      this.createCollectionForm.markAllAsTouched();
+      return;
+    }
+
+    const { name, tag, promptIds, customUrl, blurb, brandLink, brandSubtext } = this.createCollectionForm.getRawValue();
+    
+    // Validate brand subtext word limit (50 words)
+    if (brandSubtext?.trim()) {
+      const wordCount = brandSubtext.trim().split(/\s+/).filter(word => word.length > 0).length;
+      if (wordCount > 50) {
+        this.collectionFormError.set('Brand description must be 50 words or less.');
+        return;
+      }
+    }
+
+    const org = this.organization();
+    if (!org) {
+      this.collectionFormError.set('Organization not found.');
+      return;
+    }
+
+    this.isSavingCollection.set(true);
+    this.collectionFormError.set(null);
+
+    try {
+      // Determine brand logo URL - use org logo if it's a real URL (not a data URL from FileReader)
+      const brandLogoUrlValue = this.brandLogoUrl();
+      const isDataUrl = brandLogoUrlValue?.startsWith('data:');
+      const orgLogoUrl = !isDataUrl && brandLogoUrlValue ? brandLogoUrlValue : undefined;
+      
+      // Create collection with organizationId set to org.id and authorId also set to org.id
+      const collectionId = await this.collectionService.createCollection({
+        name,
+        tag,
+        promptIds,
+        customUrl: customUrl?.trim() || undefined,
+        blurb: blurb?.trim() || undefined,
+        brandLink: brandLink?.trim() || undefined,
+        brandSubtext: brandSubtext?.trim() || undefined,
+        organizationId: org.id,
+        brandLogoUrl: orgLogoUrl
+      }, org.id); // Set authorId to org.id
+
+      // Upload brand logo if file was selected (new file upload)
+      if (this.brandLogoFile) {
+        try {
+          const logoUrl = await this.collectionService.uploadBrandLogo(collectionId, this.brandLogoFile, org.id);
+          // Update collection with logo URL
+          await this.collectionService.updateCollection(collectionId, { brandLogoUrl: logoUrl }, org.id);
+        } catch (logoError) {
+          console.error('Failed to upload brand logo', logoError);
+          // Don't fail the whole operation if logo upload fails
+        }
+      }
+
+      this.newCollectionModalOpen.set(false);
+      this.resetCreateCollectionForm();
+      // Reload collections to show the new one
+      this.loadOrganizationCollections(org);
+    } catch (error) {
+      console.error('Failed to create collection', error);
+      this.collectionFormError.set(
+        error instanceof Error ? error.message : 'Could not create the collection. Please try again.'
+      );
+    } finally {
+      this.isSavingCollection.set(false);
+    }
+  }
+
+  onCollectionCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.createCollectionForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+    
+    // Clear any existing timer
+    if (this.collectionCustomUrlTimer) {
+      clearTimeout(this.collectionCustomUrlTimer);
+    }
+
+    // Clear error if empty
+    if (!trimmed) {
+      this.collectionCustomUrlError.set(null);
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    // Validate format first
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.collectionCustomUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    // Check for reserved paths
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'organizations', 'organization', 'profile'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.collectionCustomUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingCollectionCustomUrl.set(false);
+      return;
+    }
+
+    // Debounce the uniqueness check
+    this.isCheckingCollectionCustomUrl.set(true);
+    this.collectionCustomUrlError.set(null);
+    
+    this.collectionCustomUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.collectionService.isCustomUrlTaken(trimmed);
+        if (isTaken) {
+          this.collectionCustomUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.collectionCustomUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.collectionCustomUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingCollectionCustomUrl.set(false);
+      }
+    }, 500); // 500ms debounce
+  }
+
+  private clearCollectionCustomUrlDebounce() {
+    if (this.collectionCustomUrlTimer) {
+      clearTimeout(this.collectionCustomUrlTimer);
+      this.collectionCustomUrlTimer = null;
+    }
+  }
+
+  async onBrandLogoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+
+    this.uploadingBrandLogo.set(true);
+    this.brandLogoUploadError.set(null);
+
+    try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Only image files are allowed.');
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        throw new Error('Image size must be less than 5MB.');
+      }
+
+      // Store the file for later upload
+      this.brandLogoFile = file;
+
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          this.brandLogoUrl.set(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Failed to process brand logo', error);
+      this.brandLogoUploadError.set(error instanceof Error ? error.message : 'Failed to process logo. Please try again.');
+      this.brandLogoFile = null;
+    } finally {
+      this.uploadingBrandLogo.set(false);
+      // Reset the input
+      input.value = '';
+    }
+  }
+
+  removeBrandLogo() {
+    this.brandLogoUrl.set(null);
+    this.brandLogoFile = null;
+    this.brandLogoUploadError.set(null);
+  }
+
+  async onDeleteCollection(collection: PromptCollection) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${collection.name}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await this.collectionService.deleteCollection(collection.id, currentUser.uid);
+      // Reload collections after deletion
+      const org = this.organization();
+      if (org) {
+        this.loadOrganizationCollections(org);
+      }
+    } catch (error) {
+      console.error('Failed to delete collection', error);
+      alert(error instanceof Error ? error.message : 'Could not delete the collection. Please try again.');
+    }
+  }
 }
 

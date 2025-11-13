@@ -3,10 +3,11 @@ import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, i
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, distinctUntilChanged, switchMap, combineLatest, catchError } from 'rxjs/operators';
-import { of, combineLatest as rxjsCombineLatest, from } from 'rxjs';
+import { of, combineLatest as rxjsCombineLatest, from, firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CollectionService } from '../../services/collection.service';
 import { PromptService } from '../../services/prompt.service';
+import { OrganizationService } from '../../services/organization.service';
 import type { PromptCollection } from '../../models/collection.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
@@ -47,6 +48,7 @@ export class CollectionDetailComponent {
   private readonly authService = inject(AuthService);
   private readonly collectionService = inject(CollectionService);
   private readonly promptService = inject(PromptService);
+  private readonly organizationService = inject(OrganizationService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -121,6 +123,10 @@ export class CollectionDetailComponent {
     return !!this.profile();
   });
 
+  // Organization membership check
+  readonly organization = signal<any>(null);
+  readonly isOrganizationMember = signal(false);
+
   // Check if current user is the author of the collection
   readonly isAuthor = computed(() => {
     const collection = this.collection();
@@ -131,8 +137,13 @@ export class CollectionDetailComponent {
     return collection.authorId === currentUser.uid;
   });
 
-  readonly canEdit = computed(() => this.isAuthor());
-  readonly canDelete = computed(() => this.isAuthor());
+  readonly canEdit = computed(() => {
+    return this.isAuthor() || this.isOrganizationMember();
+  });
+  
+  readonly canDelete = computed(() => {
+    return this.isAuthor() || this.isOrganizationMember();
+  });
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly promptUrlCopyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -494,15 +505,42 @@ export class CollectionDetailComponent {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: collection => {
+        next: async collection => {
           if (collection) {
             this.collection.set(collection);
             this.collectionTagLabel.set(this.formatTagLabel(collection.tag ?? 'general'));
             void this.updateBookmarkedState(collection.id);
+            
+            // Check organization membership if collection belongs to an organization
+            if (collection.organizationId) {
+              try {
+                const org = await firstValueFrom(this.organizationService.organization$(collection.organizationId));
+                this.organization.set(org);
+                if (org) {
+                  const currentUser = this.authService.currentUser;
+                  if (currentUser) {
+                    const isMember = org.createdBy === currentUser.uid || org.members.includes(currentUser.uid);
+                    this.isOrganizationMember.set(isMember);
+                  } else {
+                    this.isOrganizationMember.set(false);
+                  }
+                } else {
+                  this.isOrganizationMember.set(false);
+                }
+              } catch (error) {
+                console.error('Failed to check organization membership', error);
+                this.isOrganizationMember.set(false);
+              }
+            } else {
+              this.organization.set(null);
+              this.isOrganizationMember.set(false);
+            }
           } else {
             this.collection.set(null);
             this.collectionTagLabel.set('');
             this.bookmarked.set(false);
+            this.organization.set(null);
+            this.isOrganizationMember.set(false);
           }
 
           this.isLoadingCollection.set(false);

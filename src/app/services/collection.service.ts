@@ -1,19 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
 import type { DocumentSnapshot, Firestore, QueryDocumentSnapshot } from 'firebase/firestore';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environments';
 import type {
   CreateCollectionInput,
   PromptCollection,
   UpdateCollectionInput
 } from '../models/collection.model';
+import { OrganizationService } from './organization.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CollectionService {
   private readonly app: FirebaseApp = this.ensureApp();
+  private readonly organizationService = inject(OrganizationService);
 
   private firestore: Firestore | null = null;
   private firestoreModule?: typeof import('firebase/firestore');
@@ -258,15 +260,36 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
+
+    if (!userId) {
+      throw new Error('You must be logged in to edit collections.');
+    }
 
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to edit collections.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow edit
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only edit collections for organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only edit collections for organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only edit collections you created.');
-      }
+    } else {
+      throw new Error('You can only edit collections you created.');
     }
 
     const updatePayload: Record<string, unknown> = {};
@@ -384,15 +407,36 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
+
+    if (!userId) {
+      throw new Error('You must be logged in to delete collections.');
+    }
 
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to delete collections.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow delete
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only delete collections for organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only delete collections for organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only delete collections you created.');
-      }
+    } else {
+      throw new Error('You can only delete collections you created.');
     }
 
     await firestoreModule.deleteDoc(docRef);
@@ -602,15 +646,36 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
+
+    if (!userId) {
+      throw new Error('You must be logged in to upload images.');
+    }
 
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to upload images.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow upload
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only upload images for collections in organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only upload images for collections in organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only upload images for collections you created.');
-      }
+    } else {
+      throw new Error('You can only upload images for collections you created.');
     }
 
     // Import Firebase Storage
@@ -654,16 +719,37 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
     const heroImageUrl = collectionData['heroImageUrl'] as string | undefined;
 
+    if (!userId) {
+      throw new Error('You must be logged in to delete images.');
+    }
+
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to delete images.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow delete
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only delete images for collections in organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only delete images for collections in organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only delete images for collections you created.');
-      }
+    } else {
+      throw new Error('You can only delete images for collections you created.');
     }
 
     // Delete from Storage if URL exists
@@ -733,15 +819,36 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
+
+    if (!userId) {
+      throw new Error('You must be logged in to upload images.');
+    }
 
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to upload images.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow upload
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only upload images for collections in organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only upload images for collections in organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only upload images for collections you created.');
-      }
+    } else {
+      throw new Error('You can only upload images for collections you created.');
     }
 
     // Import Firebase Storage
@@ -785,16 +892,37 @@ export class CollectionService {
 
     const collectionData = docSnap.data() as Record<string, unknown>;
     const authorId = collectionData['authorId'] as string | undefined;
+    const organizationId = collectionData['organizationId'] as string | undefined;
     const brandLogoUrl = collectionData['brandLogoUrl'] as string | undefined;
 
+    if (!userId) {
+      throw new Error('You must be logged in to delete images.');
+    }
+
     // Check if user is the author
-    if (authorId) {
-      if (!userId) {
-        throw new Error('You must be logged in to delete images.');
+    if (authorId && authorId === userId) {
+      // User is the author, allow delete
+    } else if (organizationId) {
+      // Check if user is a member or creator of the organization
+      try {
+        const org = await firstValueFrom(this.organizationService.organization$(organizationId));
+        if (!org) {
+          throw new Error('Organization not found.');
+        }
+        if (org.createdBy !== userId && !org.members.includes(userId)) {
+          throw new Error('You can only delete images for collections in organizations you are a member of.');
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Organization not found')) {
+          throw error;
+        }
+        if (error instanceof Error && error.message.includes('member')) {
+          throw error;
+        }
+        throw new Error('You can only delete images for collections in organizations you are a member of.');
       }
-      if (authorId !== userId) {
-        throw new Error('You can only delete images for collections you created.');
-      }
+    } else {
+      throw new Error('You can only delete images for collections you created.');
     }
 
     // Delete from Storage if URL exists

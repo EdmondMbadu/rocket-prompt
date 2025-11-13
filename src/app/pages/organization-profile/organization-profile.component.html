@@ -13,6 +13,12 @@
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-2 self-end sm:gap-3 sm:gap-5 flex-shrink-0">
+            <button *ngIf="currentUserProfile() && isViewingOwnOrganization()" type="button" (click)="openCreateCollectionModal()"
+              class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
+              <span class="text-sm sm:text-base">＋</span>
+              <span class="hidden min-[375px]:inline">New Collection</span>
+              <span class="min-[375px]:hidden">Collection</span>
+            </button>
             <button *ngIf="currentUserProfile() && isViewingOwnOrganization()" type="button" (click)="openCreatePromptModal()"
               class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
               <span class="text-sm sm:text-base">＋</span>
@@ -914,8 +920,7 @@
               <ng-container *ngIf="organizationCollections().length > 0; else noCollections">
                 <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
                   <article *ngFor="let collection of organizationCollections()"
-                    class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 w-full min-w-0 max-w-full overflow-hidden box-border cursor-pointer"
-                    (click)="router.navigate(['/collections', collection.id])">
+                    class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 w-full min-w-0 max-w-full overflow-hidden box-border">
                     
                     <!-- Hero Image or Placeholder -->
                     <div *ngIf="collection.heroImageUrl" 
@@ -947,15 +952,53 @@
                       {{ collection.blurb }}
                     </p>
 
-                    <!-- Prompt Count -->
+                    <!-- Prompt Count and Actions -->
                     <div class="mt-auto flex items-center justify-between pt-4 border-t border-slate-200">
                       <span class="text-sm text-slate-600">
                         <span class="font-semibold">{{ collection.promptIds.length }}</span>
                         {{ collection.promptIds.length === 1 ? 'prompt' : 'prompts' }}
                       </span>
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400 group-hover:text-[#DC2626] transition-colors">
-                        <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
+                      <div class="flex items-center gap-2">
+                        <button *ngIf="isViewingOwnOrganization()" 
+                          type="button"
+                          class="icon-button icon-button--primary"
+                          aria-label="Edit collection"
+                          title="Edit collection"
+                          (click)="router.navigate(['/collections', collection.id]); $event.stopPropagation()">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                            <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                        </button>
+                        <button *ngIf="isViewingOwnOrganization()" 
+                          type="button"
+                          class="icon-button icon-button--danger"
+                          aria-label="Delete collection"
+                          title="Delete collection"
+                          (click)="onDeleteCollection(collection); $event.stopPropagation()">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                            <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
+                              stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </button>
+                        <button type="button"
+                          class="icon-button"
+                          aria-label="View collection"
+                          title="View collection"
+                          (click)="router.navigate(['/collections', collection.id]); $event.stopPropagation()">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400 group-hover:text-[#DC2626] transition-colors">
+                            <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 </div>
@@ -1133,6 +1176,299 @@
           </ng-container>
           <ng-template #saveLabel>
             {{ isEditingPrompt() ? 'Update Prompt' : 'Save Prompt' }}
+          </ng-template>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CREATE COLLECTION MODAL -->
+<div *ngIf="newCollectionModalOpen()" class="modal-overlay" (click)="closeCreateCollectionModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <button type="button" class="modal-close" aria-label="Close" (click)="closeCreateCollectionModal()"
+      [disabled]="isSavingCollection()">
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+        <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <header class="pr-6 sm:pr-8">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#DC2626] sm:text-sm">Create</p>
+      <h2 class="mt-1.5 text-lg font-semibold text-slate-900 sm:mt-2 sm:text-2xl">New Collection</h2>
+      <p class="mt-1 text-xs text-slate-500 sm:text-sm">
+        Create a collection for {{ organization()?.name }}. This collection will be associated with your organization.
+      </p>
+    </header>
+
+    <form class="mt-4 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createCollectionForm"
+      (ngSubmit)="submitCollectionForm()">
+      <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="collection-name">Collection name</label>
+          <input id="collection-name" type="text" formControlName="name"
+            class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+            placeholder="e.g. Launch Campaign Toolkit" />
+          <p *ngIf="createCollectionForm.controls.name.invalid && createCollectionForm.controls.name.touched"
+            class="mt-1 text-[10px] text-red-600 sm:text-xs">
+            A collection name with at least 3 characters is required.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="collection-tag">Collection tag</label>
+          <input id="collection-tag" type="text" formControlName="tag"
+            class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+            placeholder="e.g. marketing" />
+          <p *ngIf="createCollectionForm.controls.tag.invalid && createCollectionForm.controls.tag.touched"
+            class="mt-1 text-[10px] text-red-600 sm:text-xs">
+            Add a tag so the collection can be grouped.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="collection-custom-url">Custom URL (optional)</label>
+        <div class="mt-1 flex items-center gap-1.5 sm:gap-2">
+          <span class="text-xs text-slate-500 sm:text-sm">rocketprompt.io/collection/</span>
+          <div class="flex-1 relative">
+            <input id="collection-custom-url" type="text" formControlName="customUrl"
+              (input)="onCollectionCustomUrlInput(($any($event.target)).value)"
+              class="w-full rounded-xl border px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+              [ngClass]="{
+                'border-red-300': collectionCustomUrlError(),
+                'border-slate-300': !collectionCustomUrlError()
+              }" placeholder="my-collection" />
+            <div *ngIf="isCheckingCollectionCustomUrl()" class="absolute right-2 top-1/2 -translate-y-1/2 sm:right-3">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 animate-spin text-slate-400 sm:h-4 sm:w-4">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+                </circle>
+                <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="collectionCustomUrlError()" class="mt-1 text-[10px] text-red-600 sm:text-xs">
+          {{ collectionCustomUrlError() }}
+        </p>
+        <p *ngIf="!collectionCustomUrlError() && !isCheckingCollectionCustomUrl() && createCollectionForm.controls.customUrl.value"
+          class="mt-1 text-[10px] text-slate-500 sm:text-xs">
+          Your collection will be available at: rocketprompt.io/collection/{{ createCollectionForm.controls.customUrl.value }}
+        </p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="collection-blurb">Description (optional)</label>
+        <textarea id="collection-blurb" formControlName="blurb" rows="3"
+          class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm resize-none"
+          placeholder="Add a brief description of what this collection is about..."></textarea>
+      </div>
+
+      <!-- Branding Section (Expandable) -->
+      <div class="border-t border-slate-200 pt-4">
+        <button type="button"
+          class="w-full flex items-center justify-between p-3 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white hover:from-purple-100 hover:to-purple-50 transition-all duration-200 group"
+          (click)="brandingSectionExpanded.set(!brandingSectionExpanded())">
+          <div class="flex items-center gap-2">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-md">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="text-left">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 sm:text-xs">Branding</p>
+              <h3 class="mt-0.5 text-sm font-bold text-slate-900 sm:text-base">Add Company Branding (Optional)</h3>
+            </div>
+          </div>
+          <svg aria-hidden="true" viewBox="0 0 24 24" 
+            class="h-4 w-4 text-purple-600 transition-transform duration-200 sm:h-5 sm:w-5"
+            [class.rotate-180]="brandingSectionExpanded()">
+            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        
+        <div *ngIf="brandingSectionExpanded()" class="mt-4 border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-white p-4 sm:p-5">
+          <p class="text-xs text-slate-600 mb-4 leading-relaxed sm:text-sm">
+            Add your company logo, link, and a short description to brand this collection.
+          </p>
+
+          <!-- Brand Logo Upload -->
+          <div class="mb-4 sm:mb-5">
+            <label class="block text-xs font-semibold text-slate-700 mb-2 sm:text-sm">Company Logo (optional)</label>
+            <div *ngIf="!brandLogoUrl() && !uploadingBrandLogo()" class="flex items-center gap-3">
+              <label class="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 cursor-pointer transition hover:border-purple-400 hover:bg-purple-50 sm:px-4 sm:py-3 sm:text-sm">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 sm:h-5 sm:w-5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Upload Logo</span>
+                <input type="file" accept="image/*" class="hidden" (change)="onBrandLogoSelected($event)" />
+              </label>
+            </div>
+            <div *ngIf="uploadingBrandLogo()" class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500 sm:px-4 sm:py-3 sm:text-sm">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin sm:h-5 sm:w-5">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+              </svg>
+              <span>Processing...</span>
+            </div>
+            <div *ngIf="brandLogoUrl() && !uploadingBrandLogo()" class="flex items-center gap-3">
+              <div class="relative">
+                <img [src]="brandLogoUrl()" alt="Brand logo preview" class="h-12 w-auto rounded-lg border-2 border-slate-200 object-contain bg-white p-2 sm:h-16" />
+              </div>
+              <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600 sm:px-4 sm:text-sm" (click)="removeBrandLogo()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 sm:h-4 sm:w-4">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Remove</span>
+              </button>
+            </div>
+            <p *ngIf="brandLogoUploadError()" class="mt-2 text-[10px] text-red-600 sm:text-xs">
+              {{ brandLogoUploadError() }}
+            </p>
+            <p *ngIf="!brandLogoUploadError()" class="mt-1 text-[10px] text-slate-500 sm:text-xs">
+              Upload your company logo (max 5MB, PNG, JPG, or GIF)
+            </p>
+          </div>
+
+          <!-- Brand Link -->
+          <div class="mb-4 sm:mb-5">
+            <label class="block text-xs font-semibold text-slate-700 mb-2 sm:text-sm" for="collection-brand-link">Company Link (optional)</label>
+            <input id="collection-brand-link" type="url" formControlName="brandLink"
+              class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 sm:px-3 sm:py-2.5 sm:text-sm"
+              placeholder="https://example.com" />
+          </div>
+
+          <!-- Brand Subtext -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-2 sm:text-sm" for="collection-brand-subtext">Brand Description (optional)</label>
+            <textarea id="collection-brand-subtext" formControlName="brandSubtext" rows="2"
+              class="w-full rounded-xl border px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none sm:px-3 sm:py-2.5 sm:text-sm"
+              [class.border-red-300]="brandSubtextWordCount() > 50"
+              [class.border-slate-300]="brandSubtextWordCount() <= 50"
+              placeholder="A short description about your company or brand..."></textarea>
+            <div class="mt-1 flex items-center justify-between">
+              <p class="text-[10px] text-slate-500 sm:text-xs">
+                A brief explanation about your company or brand (appears in the hero image area).
+              </p>
+              <p class="text-[10px] font-medium sm:text-xs"
+                 [class.text-red-600]="brandSubtextWordCount() > 50"
+                 [class.text-slate-500]="brandSubtextWordCount() <= 50">
+                {{ brandSubtextWordCount() }}/50 words
+              </p>
+            </div>
+            <p *ngIf="brandSubtextWordCount() > 50" class="mt-1 text-[10px] text-red-600 font-medium sm:text-xs">
+              Brand description must be 50 words or less.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-2 sm:text-sm">Select prompts</label>
+
+        <!-- Prompt Search -->
+        <div *ngIf="!isLoadingPrompts() && !loadPromptsError() && organizationPrompts().length > 0" class="mb-3 sm:mb-4">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none sm:pl-4">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-slate-400 sm:h-5 sm:w-5">
+                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <input type="search"
+              class="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 transition-all sm:pl-11 sm:pr-10 sm:py-3 sm:text-sm"
+              placeholder="Search prompts by title or tag..."
+              [value]="collectionPromptSearchTerm()"
+              (input)="collectionPromptSearchTerm.set(($any($event.target).value))" />
+            <button *ngIf="collectionPromptSearchTerm()" type="button" (click)="collectionPromptSearchTerm.set('')"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition-colors sm:pr-4">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 sm:h-5 sm:w-5">
+                <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="isLoadingPrompts()"
+          class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-xs text-slate-500 sm:px-4 sm:py-6 sm:text-sm">
+          Loading prompts…
+        </div>
+
+        <div *ngIf="!isLoadingPrompts() && loadPromptsError()"
+          class="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 sm:px-4 sm:py-3 sm:text-sm">
+          {{ loadPromptsError() }}
+        </div>
+
+        <div *ngIf="!isLoadingPrompts() && !loadPromptsError()"
+          class="mt-3 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 sm:max-h-80">
+          <ng-container *ngIf="filteredOrganizationPrompts().length > 0; else noPrompts">
+            <label *ngFor="let prompt of filteredOrganizationPrompts(); trackBy: trackPromptById"
+              [class.bg-purple-50]="isPromptSelected(prompt.id)"
+              class="flex cursor-pointer items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition-all duration-200 hover:bg-slate-50 sm:gap-4 sm:px-5">
+              <div class="flex-shrink-0">
+                <div class="relative">
+                  <input type="checkbox"
+                    class="h-4 w-4 rounded border-2 border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-0 cursor-pointer transition-all sm:h-5 sm:w-5"
+                    [checked]="isPromptSelected(prompt.id)" (change)="togglePromptSelection(prompt.id)" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-semibold text-slate-900 leading-snug sm:text-sm">{{ prompt.title }}</span>
+                <span
+                  class="mt-1 inline-flex items-center rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200 sm:px-2.5 sm:py-1 sm:text-[11px]">
+                  {{ formatTagLabel(prompt.tag) }}
+                </span>
+              </div>
+            </label>
+          </ng-container>
+        </div>
+
+        <ng-template #noPrompts>
+          <div class="px-4 py-8 text-center">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-slate-300 sm:h-12 sm:w-12">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <p class="mt-3 text-xs font-medium text-slate-700 sm:text-sm">No prompts found</p>
+            <p class="mt-1 text-[10px] text-slate-500 sm:text-xs">{{ collectionPromptSearchTerm() ? 'Try a different search term' : 'Create prompts first to build a collection' }}</p>
+          </div>
+        </ng-template>
+
+        <p *ngIf="createCollectionForm.controls.promptIds.invalid && createCollectionForm.controls.promptIds.touched"
+          class="mt-2 text-[10px] text-red-600 sm:text-xs">
+          Select at least one prompt.
+        </p>
+      </div>
+
+      <div *ngIf="collectionFormError()"
+        class="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 sm:px-4 sm:py-3 sm:text-sm">
+        {{ collectionFormError() }}
+      </div>
+
+      <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end sm:gap-3">
+        <button type="button"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5 sm:text-sm"
+          (click)="closeCreateCollectionModal()" [disabled]="isSavingCollection()">
+          Cancel
+        </button>
+        <button type="submit"
+          class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 sm:px-6 sm:py-3 sm:text-sm"
+          [disabled]="isSavingCollection() || organizationPrompts().length === 0 || brandSubtextWordCount() > 50">
+          <ng-container *ngIf="isSavingCollection(); else saveLabel">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-1.5 h-3 w-3 animate-spin sm:mr-2 sm:h-4 sm:w-4">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+              </circle>
+              <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round"></path>
+            </svg>
+            Saving…
+          </ng-container>
+          <ng-template #saveLabel>
+            Save Collection
           </ng-template>
         </button>
       </div>
