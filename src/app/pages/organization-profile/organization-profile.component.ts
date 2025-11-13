@@ -137,6 +137,23 @@ export class OrganizationProfileComponent {
     return org.createdBy === currentUser.uid || org.members.includes(currentUser.uid);
   });
 
+  readonly canInviteMembers = computed(() => {
+    const profile = this.currentUserProfile();
+    if (!profile) return false;
+    return profile.role === 'admin' || profile.admin === true;
+  });
+
+  readonly isCreator = computed(() => {
+    const currentUser = this.authService.currentUser;
+    const org = this.organization();
+    if (!currentUser || !org) return false;
+    return org.createdBy === currentUser.uid;
+  });
+  
+  // Members list
+  readonly organizationMembers = signal<UserProfile[]>([]);
+  readonly isLoadingMembers = signal(false);
+
   readonly truncatedDescription = computed(() => {
     const description = this.organization()?.description;
     if (!description) return '';
@@ -174,6 +191,10 @@ export class OrganizationProfileComponent {
           this.descriptionForm.patchValue({ description: org.description || '' });
           // Load organization prompts
           this.loadOrganizationPrompts(org.id);
+          // Load organization members if user is creator
+          if (this.isCreator()) {
+            this.loadOrganizationMembers(org);
+          }
         }
         this.organizationLoaded.set(true);
       });
@@ -1395,9 +1416,11 @@ export class OrganizationProfileComponent {
       return;
     }
 
-    // Check if current user is the creator
-    if (org.createdBy !== currentUser.uid) {
-      this.inviteError.set('Only the organization creator can invite members.');
+    // Check if current user is admin
+    const profile = this.currentUserProfile();
+    const isAdmin = profile && (profile.role === 'admin' || profile.admin === true);
+    if (!isAdmin) {
+      this.inviteError.set('Only admins can invite members.');
       return;
     }
 
@@ -1417,6 +1440,14 @@ export class OrganizationProfileComponent {
       this.inviteSuccess.set(`${user.firstName} ${user.lastName} has been added to the organization.`);
       this.inviteQuery.set('');
       this.inviteSuggestions.set([]);
+      
+      // Reload members list if user is creator
+      if (this.isCreator()) {
+        const updatedOrg = this.organization();
+        if (updatedOrg) {
+          this.loadOrganizationMembers(updatedOrg);
+        }
+      }
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -1452,9 +1483,11 @@ export class OrganizationProfileComponent {
       return;
     }
 
-    // Check if current user is the creator
-    if (org.createdBy !== currentUser.uid) {
-      this.inviteError.set('Only the organization creator can invite members.');
+    // Check if current user is admin
+    const profile = this.currentUserProfile();
+    const isAdmin = profile && (profile.role === 'admin' || profile.admin === true);
+    if (!isAdmin) {
+      this.inviteError.set('Only admins can invite members.');
       return;
     }
 
@@ -1497,6 +1530,14 @@ export class OrganizationProfileComponent {
         );
 
         this.inviteSuccess.set(`${user.firstName || user.email} has been added to the organization.`);
+        
+        // Reload members list if user is creator
+        if (this.isCreator()) {
+          const updatedOrg = this.organization();
+          if (updatedOrg) {
+            this.loadOrganizationMembers(updatedOrg);
+          }
+        }
       } else {
         // User doesn't exist - for now, just show a message
         // In a real app, you might want to send an email invitation
@@ -1522,6 +1563,53 @@ export class OrganizationProfileComponent {
 
   selectInviteSuggestion(user: UserProfile) {
     this.inviteUser(user);
+  }
+
+  private async loadOrganizationMembers(org: Organization) {
+    this.isLoadingMembers.set(true);
+    
+    try {
+      const memberProfiles: UserProfile[] = [];
+      
+      // Load creator profile
+      if (org.createdBy) {
+        const creatorProfile = await this.authService.fetchUserProfile(org.createdBy);
+        if (creatorProfile) {
+          memberProfiles.push(creatorProfile);
+        }
+      }
+      
+      // Load member profiles
+      const memberPromises = org.members
+        .filter(memberId => memberId !== org.createdBy) // Don't duplicate creator
+        .map(memberId => this.authService.fetchUserProfile(memberId));
+      
+      const memberResults = await Promise.all(memberPromises);
+      memberResults.forEach(profile => {
+        if (profile) {
+          memberProfiles.push(profile);
+        }
+      });
+      
+      this.organizationMembers.set(memberProfiles);
+    } catch (error) {
+      console.error('Failed to load organization members', error);
+    } finally {
+      this.isLoadingMembers.set(false);
+    }
+  }
+
+  getMemberInitials(member: UserProfile): string {
+    const firstInitial = member.firstName.charAt(0).toUpperCase();
+    const lastInitial = member.lastName.charAt(0).toUpperCase();
+    const initials = `${firstInitial}${lastInitial}`.trim();
+    return initials || member.email.charAt(0).toUpperCase();
+  }
+
+  isMemberCreator(member: UserProfile): boolean {
+    const org = this.organization();
+    if (!org) return false;
+    return org.createdBy === member.id;
   }
 }
 
