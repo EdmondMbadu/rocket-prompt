@@ -2,6 +2,9 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
+   match /public/{documentId} {
+      allow read, write: if true;
+    }
     match /{document=**} {
       // Allow anyone to read data
       allow read: if true;
@@ -11,3 +14,5 @@ service cloud.firestore {
     }
   }
 }
+
+
