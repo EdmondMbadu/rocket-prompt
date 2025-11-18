@@ -72,13 +72,61 @@ export class AdminDashboardComponent {
     });
     readonly launchBreakdown = computed(() => {
         const prompts = this.prompts();
-        return {
-            gpt: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
-            gemini: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
-            claude: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
-            grok: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
-            copied: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0)
-        };
+        const stats = [
+            {
+                id: 'gpt',
+                label: 'ChatGPT',
+                subtext: 'OpenAI',
+                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
+                icon: 'assets/chatgpt.png', // You might need to adjust paths if they are different
+                colorClass: 'bg-[#74AA9C]',
+                bgClass: 'bg-emerald-50',
+                isImage: false, // Using emoji for now as placeholder if assets missing, or specific logic
+                emoji: '🤖'
+            },
+            {
+                id: 'gemini',
+                label: 'Gemini',
+                subtext: 'Google',
+                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
+                icon: 'assets/gemini.png',
+                colorClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
+                bgClass: 'bg-blue-50',
+                isImage: true
+            },
+            {
+                id: 'claude',
+                label: 'Claude',
+                subtext: 'Anthropic',
+                count: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+                icon: 'assets/claude.jpeg',
+                colorClass: 'bg-[#D97757]',
+                bgClass: 'bg-orange-50',
+                isImage: true
+            },
+            {
+                id: 'grok',
+                label: 'Grok',
+                subtext: 'xAI',
+                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
+                icon: 'assets/grok.jpg',
+                colorClass: 'bg-slate-800',
+                bgClass: 'bg-slate-100',
+                isImage: true
+            },
+            {
+                id: 'copied',
+                label: 'Copied',
+                subtext: 'Clipboard',
+                count: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0),
+                icon: 'copy-icon', // Special handling for SVG
+                colorClass: 'bg-gray-500',
+                bgClass: 'bg-gray-50',
+                isImage: false
+            }
+        ];
+
+        return stats.sort((a, b) => b.count - a.count);
     });
 
 

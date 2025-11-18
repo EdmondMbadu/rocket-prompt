@@ -135,112 +135,36 @@
           <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
             <h3 class="text-lg font-bold text-slate-900 mb-6">Model Popularity</h3>
             <div class="space-y-6">
-              <!-- ChatGPT -->
-              <div class="group">
+              <div *ngFor="let model of launchBreakdown()" class="group">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded-lg bg-[#74AA9C]/10 p-1.5">
-                      <img src="assets/gpt.png" alt="ChatGPT" class="h-full w-full object-contain" />
+                    <div class="h-8 w-8 rounded-lg p-1.5 flex items-center justify-center" [ngClass]="model.bgClass">
+                      <ng-container *ngIf="model.isImage; else iconTemplate">
+                        <img [src]="model.icon" [alt]="model.label" class="h-full w-full object-contain rounded-md" />
+                      </ng-container>
+                      <ng-template #iconTemplate>
+                        <ng-container *ngIf="model.id === 'copied'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </ng-container>
+                        <ng-container *ngIf="model.id === 'gpt'">
+                          <span class="text-lg">🤖</span>
+                        </ng-container>
+                      </ng-template>
                     </div>
                     <div>
-                      <span class="block text-sm font-semibold text-slate-900">ChatGPT</span>
-                      <span class="block text-xs text-slate-500">OpenAI</span>
+                      <span class="block text-sm font-semibold text-slate-900">{{ model.label }}</span>
+                      <span class="block text-xs text-slate-500">{{ model.subtext }}</span>
                     </div>
                   </div>
-                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().gpt }}</span>
+                  <span class="text-sm font-bold text-slate-900">{{ model.count }}</span>
                 </div>
                 <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-[#74AA9C] transition-all duration-1000 ease-out group-hover:brightness-110"
-                    [style.width.%]="getBarHeight(launchBreakdown().gpt, totalLaunches())"></div>
-                </div>
-              </div>
-
-              <!-- Gemini -->
-              <div class="group">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded-lg bg-blue-50 p-1.5">
-                      <img src="assets/gemini.png" alt="Gemini" class="h-full w-full object-contain" />
-                    </div>
-                    <div>
-                      <span class="block text-sm font-semibold text-slate-900">Gemini</span>
-                      <span class="block text-xs text-slate-500">Google</span>
-                    </div>
-                  </div>
-                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().gemini }}</span>
-                </div>
-                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out group-hover:brightness-110"
-                    [style.width.%]="getBarHeight(launchBreakdown().gemini, totalLaunches())"></div>
-                </div>
-              </div>
-
-              <!-- Claude -->
-              <div class="group">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded-lg bg-orange-50 p-1.5">
-                      <img src="assets/claude.jpeg" alt="Claude" class="h-full w-full object-contain rounded-md" />
-                    </div>
-                    <div>
-                      <span class="block text-sm font-semibold text-slate-900">Claude</span>
-                      <span class="block text-xs text-slate-500">Anthropic</span>
-                    </div>
-                  </div>
-                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().claude }}</span>
-                </div>
-                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-[#D97757] transition-all duration-1000 ease-out group-hover:brightness-110"
-                    [style.width.%]="getBarHeight(launchBreakdown().claude, totalLaunches())"></div>
-                </div>
-              </div>
-
-              <!-- Grok -->
-              <div class="group">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded-lg bg-slate-100 p-1.5">
-                      <img src="assets/grok.jpg" alt="Grok" class="h-full w-full object-contain rounded-md" />
-                    </div>
-                    <div>
-                      <span class="block text-sm font-semibold text-slate-900">Grok</span>
-                      <span class="block text-xs text-slate-500">xAI</span>
-                    </div>
-                  </div>
-                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().grok }}</span>
-                </div>
-                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-slate-800 transition-all duration-1000 ease-out group-hover:brightness-110"
-                    [style.width.%]="getBarHeight(launchBreakdown().grok, totalLaunches())"></div>
-                </div>
-              </div>
-
-              <!-- Copied -->
-              <div class="group">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded-lg bg-gray-50 p-1.5 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span class="block text-sm font-semibold text-slate-900">Copied</span>
-                      <span class="block text-xs text-slate-500">Clipboard</span>
-                    </div>
-                  </div>
-                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().copied }}</span>
-                </div>
-                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-gray-500 transition-all duration-1000 ease-out group-hover:brightness-110"
-                    [style.width.%]="getBarHeight(launchBreakdown().copied, totalLaunches())"></div>
+                  <div class="h-full rounded-full transition-all duration-1000 ease-out group-hover:brightness-110"
+                    [ngClass]="model.colorClass" [style.width.%]="getBarHeight(model.count, totalLaunches())"></div>
                 </div>
               </div>
             </div>
@@ -267,6 +191,9 @@
                       <div class="h-full rounded-full bg-slate-400"
                         [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByTag || []))"></div>
                     </div>
+                  </div>
+                  <div *ngIf="!stats()?.promptsByTag?.length" class="text-center py-4 text-slate-400 text-sm">
+                    No categories data available
                   </div>
                 </div>
               </div>
@@ -301,24 +228,31 @@
               </span>
             </div>
             <div class="flex items-end gap-3 h-48 pt-4">
-              <div *ngFor="let item of stats()?.usersByMonth" class="flex-1 flex flex-col items-center group">
-                <div class="relative w-full flex items-end justify-center h-full">
-                  <div
-                    class="w-full max-w-[2rem] rounded-t-lg bg-blue-500/90 transition-all duration-300 group-hover:bg-blue-600 group-hover:scale-y-105"
-                    [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))">
-                    <!-- Tooltip -->
+              <ng-container *ngIf="stats()?.usersByMonth?.length; else noUserData">
+                <div *ngFor="let item of stats()?.usersByMonth" class="flex-1 flex flex-col items-center group">
+                  <div class="relative w-full flex items-end justify-center h-full">
                     <div
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        {{ item.count }} users
+                      class="w-full max-w-[2rem] rounded-t-lg bg-blue-500/90 transition-all duration-300 group-hover:bg-blue-600 group-hover:scale-y-105"
+                      [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))">
+                      <!-- Tooltip -->
+                      <div
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                          {{ item.count }} users
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                    {{ formatMonth(item.month).split(' ')[0] }}
+                  </span>
                 </div>
-                <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
-                  {{ formatMonth(item.month).split(' ')[0] }}
-                </span>
-              </div>
+              </ng-container>
+              <ng-template #noUserData>
+                <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm">
+                  No user growth data available
+                </div>
+              </ng-template>
             </div>
           </div>
 
@@ -332,24 +266,31 @@
               </span>
             </div>
             <div class="flex items-end gap-3 h-48 pt-4">
-              <div *ngFor="let item of stats()?.promptsByMonth" class="flex-1 flex flex-col items-center group">
-                <div class="relative w-full flex items-end justify-center h-full">
-                  <div
-                    class="w-full max-w-[2rem] rounded-t-lg bg-indigo-500/90 transition-all duration-300 group-hover:bg-indigo-600 group-hover:scale-y-105"
-                    [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))">
-                    <!-- Tooltip -->
+              <ng-container *ngIf="stats()?.promptsByMonth?.length; else noPromptData">
+                <div *ngFor="let item of stats()?.promptsByMonth" class="flex-1 flex flex-col items-center group">
+                  <div class="relative w-full flex items-end justify-center h-full">
                     <div
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        {{ item.count }} prompts
+                      class="w-full max-w-[2rem] rounded-t-lg bg-indigo-500/90 transition-all duration-300 group-hover:bg-indigo-600 group-hover:scale-y-105"
+                      [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))">
+                      <!-- Tooltip -->
+                      <div
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                          {{ item.count }} prompts
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                    {{ formatMonth(item.month).split(' ')[0] }}
+                  </span>
                 </div>
-                <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
-                  {{ formatMonth(item.month).split(' ')[0] }}
-                </span>
-              </div>
+              </ng-container>
+              <ng-template #noPromptData>
+                <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm">
+                  No prompt growth data available
+                </div>
+              </ng-template>
             </div>
           </div>
         </div>
