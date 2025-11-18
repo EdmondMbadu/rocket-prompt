@@ -67,7 +67,6 @@ export class AdminDashboardComponent {
     readonly homeContentSuccess = signal<string | null>(null);
 
     // Metrics for all prompts
-    readonly metricsExpanded = signal(false);
     readonly totalLaunches = computed(() => {
         return this.prompts().reduce((sum, prompt) => sum + (prompt.totalLaunch || 0), 0);
     });
@@ -82,9 +81,7 @@ export class AdminDashboardComponent {
         };
     });
 
-    toggleMetrics() {
-        this.metricsExpanded.update(v => !v);
-    }
+
 
     readonly filteredUsers = computed(() => {
         const users = this.users();
@@ -123,27 +120,27 @@ export class AdminDashboardComponent {
     readonly promptCountsByUserId = computed(() => {
         const prompts = this.prompts();
         const counts = new Map<string, number>();
-        
+
         prompts.forEach(prompt => {
             if (prompt.authorId) {
                 counts.set(prompt.authorId, (counts.get(prompt.authorId) || 0) + 1);
             }
         });
-        
+
         return counts;
     });
 
     getPromptCount(user: UserProfile): number {
         // Match by user.id (document ID, which is the Firebase Auth UID) or user.userId
-        return this.promptCountsByUserId().get(user.id) || 
-               this.promptCountsByUserId().get(user.userId) || 
-               0;
+        return this.promptCountsByUserId().get(user.id) ||
+            this.promptCountsByUserId().get(user.userId) ||
+            0;
     }
 
     navigateToUserProfile(user: UserProfile, event: Event): void {
         event.preventDefault();
         event.stopPropagation();
-        
+
         if (user.username) {
             void this.router.navigate(['/profile', user.username]);
         } else {
@@ -224,7 +221,7 @@ export class AdminDashboardComponent {
     toggleSelectAll() {
         const selected = this.selectedPromptIds();
         const prompts = this.prompts();
-        
+
         if (selected.size === prompts.length) {
             this.selectedPromptIds.set(new Set());
         } else {

@@ -7,11 +7,8 @@
           <h1 class="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
           <p class="mt-1 text-sm text-slate-500">Manage users and monitor platform statistics</p>
         </div>
-        <button
-          type="button"
-          (click)="router.navigate(['/home'])"
-          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
+        <button type="button" (click)="router.navigate(['/home'])"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
           <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -24,13 +21,10 @@
   <!-- Main Content -->
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <!-- Error Message -->
-    <div *ngIf="error()" class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+    <div *ngIf="error()"
+      class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
       {{ error() }}
-      <button
-        type="button"
-        (click)="loadData()"
-        class="mt-2 text-sm font-semibold underline hover:text-red-800"
-      >
+      <button type="button" (click)="loadData()" class="mt-2 text-sm font-semibold underline hover:text-red-800">
         Try again
       </button>
     </div>
@@ -47,68 +41,290 @@
 
     <!-- Stats Cards -->
     <ng-container *ngIf="!isLoading() && stats()">
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <!-- Total Users -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500">Total Users</p>
-              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalUsers || 0 }}</p>
+      <!-- Modern Metrics Section -->
+      <div class="mb-8 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900">Platform Overview</h2>
+            <p class="text-slate-500">Real-time performance metrics and analytics</p>
+          </div>
+          <div class="flex items-center gap-2 rounded-lg bg-white p-1 shadow-sm border border-slate-200">
+            <span class="px-3 py-1 text-xs font-medium text-slate-500">Last updated: Just now</span>
+          </div>
+        </div>
+
+        <!-- Hero Stats Grid -->
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <!-- Total Launches Hero -->
+          <div
+            class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-6 text-white shadow-lg shadow-indigo-200 transition-transform hover:scale-[1.02]">
+            <div class="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute -bottom-6 -left-6 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
+
+            <div class="relative">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <span class="text-xl">🚀</span>
+                </div>
+                <span class="font-medium text-indigo-100">Total Launches</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-4xl font-bold tracking-tight">{{ totalLaunches() }}</span>
+                <span class="text-sm font-medium text-indigo-200">all time</span>
+              </div>
             </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-              <svg viewBox="0 0 24 24" class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+          </div>
+
+          <!-- Active Models -->
+          <div
+            class="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12%</span>
+            </div>
+            <h3 class="text-slate-500 text-sm font-medium">Top Model</h3>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-2xl font-bold text-slate-900">ChatGPT</span>
+              <span class="text-sm text-slate-400">most used</span>
+            </div>
+          </div>
+
+          <!-- Total Prompts -->
+          <div
+            class="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="text-slate-500 text-sm font-medium">Library Size</h3>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-2xl font-bold text-slate-900">{{ stats()?.totalPrompts || 0 }}</span>
+              <span class="text-sm text-slate-400">prompts</span>
+            </div>
+          </div>
+
+          <!-- Total Users -->
+          <div
+            class="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="text-slate-500 text-sm font-medium">Community</h3>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-2xl font-bold text-slate-900">{{ stats()?.totalUsers || 0 }}</span>
+              <span class="text-sm text-slate-400">users</span>
             </div>
           </div>
         </div>
 
-        <!-- Total Prompts -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500">Total Prompts</p>
-              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalPrompts || 0 }}</p>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <!-- Model Performance Card -->
+          <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
+            <h3 class="text-lg font-bold text-slate-900 mb-6">Model Popularity</h3>
+            <div class="space-y-6">
+              <!-- ChatGPT -->
+              <div class="group">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-lg bg-[#74AA9C]/10 p-1.5">
+                      <img src="assets/gpt.png" alt="ChatGPT" class="h-full w-full object-contain" />
+                    </div>
+                    <div>
+                      <span class="block text-sm font-semibold text-slate-900">ChatGPT</span>
+                      <span class="block text-xs text-slate-500">OpenAI</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().gpt }}</span>
+                </div>
+                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-[#74AA9C] transition-all duration-1000 ease-out group-hover:brightness-110"
+                    [style.width.%]="getBarHeight(launchBreakdown().gpt, totalLaunches())"></div>
+                </div>
+              </div>
+
+              <!-- Gemini -->
+              <div class="group">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-lg bg-blue-50 p-1.5">
+                      <img src="assets/gemini.png" alt="Gemini" class="h-full w-full object-contain" />
+                    </div>
+                    <div>
+                      <span class="block text-sm font-semibold text-slate-900">Gemini</span>
+                      <span class="block text-xs text-slate-500">Google</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().gemini }}</span>
+                </div>
+                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out group-hover:brightness-110"
+                    [style.width.%]="getBarHeight(launchBreakdown().gemini, totalLaunches())"></div>
+                </div>
+              </div>
+
+              <!-- Claude -->
+              <div class="group">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-lg bg-orange-50 p-1.5">
+                      <img src="assets/claude.jpeg" alt="Claude" class="h-full w-full object-contain rounded-md" />
+                    </div>
+                    <div>
+                      <span class="block text-sm font-semibold text-slate-900">Claude</span>
+                      <span class="block text-xs text-slate-500">Anthropic</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().claude }}</span>
+                </div>
+                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-[#D97757] transition-all duration-1000 ease-out group-hover:brightness-110"
+                    [style.width.%]="getBarHeight(launchBreakdown().claude, totalLaunches())"></div>
+                </div>
+              </div>
+
+              <!-- Grok -->
+              <div class="group">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-lg bg-slate-100 p-1.5">
+                      <img src="assets/grok.jpg" alt="Grok" class="h-full w-full object-contain rounded-md" />
+                    </div>
+                    <div>
+                      <span class="block text-sm font-semibold text-slate-900">Grok</span>
+                      <span class="block text-xs text-slate-500">xAI</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-slate-900">{{ launchBreakdown().grok }}</span>
+                </div>
+                <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-slate-800 transition-all duration-1000 ease-out group-hover:brightness-110"
+                    [style.width.%]="getBarHeight(launchBreakdown().grok, totalLaunches())"></div>
+                </div>
+              </div>
             </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <svg viewBox="0 0 24 24" class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+          </div>
+
+          <!-- Quick Stats / Distribution -->
+          <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col">
+            <h3 class="text-lg font-bold text-slate-900 mb-6">Content Distribution</h3>
+
+            <div class="flex-1 flex flex-col gap-6">
+              <!-- Prompts by Tag Preview -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-medium text-slate-700">Top Categories</span>
+                  <span class="text-xs text-slate-400">by prompt count</span>
+                </div>
+                <div class="space-y-3">
+                  <div *ngFor="let item of stats()?.promptsByTag?.slice(0, 4)" class="relative">
+                    <div class="flex items-center justify-between text-xs mb-1 z-10 relative">
+                      <span class="font-medium text-slate-700">{{ formatTag(item.tag) }}</span>
+                      <span class="text-slate-500">{{ item.count }}</span>
+                    </div>
+                    <div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div class="h-full rounded-full bg-slate-400"
+                        [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByTag || []))"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-auto pt-6 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">Total Collections</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats()?.totalCollections || 0 }}</p>
+                  </div>
+                  <div class="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+                    <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Total Collections -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500">Total Collections</p>
-              <p class="mt-2 text-3xl font-bold text-slate-900">{{ stats()?.totalCollections || 0 }}</p>
+        <!-- Growth Charts Row -->
+        <div class="grid gap-6 lg:grid-cols-2">
+          <!-- Users Growth -->
+          <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-slate-900">User Growth</h3>
+              <span
+                class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                Monthly
+              </span>
             </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <svg viewBox="0 0 24 24" class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" stroke-width="1.6">
-                <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
-                <path d="M8 5v-1.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5V5" />
-                <path d="M8 11h8" stroke-linecap="round" />
-                <path d="M8 15h5" stroke-linecap="round" />
-              </svg>
+            <div class="flex items-end gap-3 h-48 pt-4">
+              <div *ngFor="let item of stats()?.usersByMonth" class="flex-1 flex flex-col items-center group">
+                <div class="relative w-full flex items-end justify-center h-full">
+                  <div
+                    class="w-full max-w-[2rem] rounded-t-lg bg-blue-500/90 transition-all duration-300 group-hover:bg-blue-600 group-hover:scale-y-105"
+                    [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))">
+                    <!-- Tooltip -->
+                    <div
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        {{ item.count }} users
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                  {{ formatMonth(item.month).split(' ')[0] }}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Admin Users -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm transition hover:shadow-md">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500">Admin Users</p>
-              <p class="mt-2 text-3xl font-bold text-slate-900">
-                {{ adminCount() }}
-              </p>
+          <!-- Prompts Growth -->
+          <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-slate-900">Prompt Library Growth</h3>
+              <span
+                class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                Monthly
+              </span>
             </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
-              <svg viewBox="0 0 24 24" class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+            <div class="flex items-end gap-3 h-48 pt-4">
+              <div *ngFor="let item of stats()?.promptsByMonth" class="flex-1 flex flex-col items-center group">
+                <div class="relative w-full flex items-end justify-center h-full">
+                  <div
+                    class="w-full max-w-[2rem] rounded-t-lg bg-indigo-500/90 transition-all duration-300 group-hover:bg-indigo-600 group-hover:scale-y-105"
+                    [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))">
+                    <!-- Tooltip -->
+                    <div
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        {{ item.count }} prompts
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                  {{ formatMonth(item.month).split(' ')[0] }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -117,23 +333,15 @@
       <!-- Home Content Management Section -->
       <div class="rounded-2xl border border-slate-300 bg-white shadow-sm mb-8">
         <div class="p-6 border-b border-slate-200">
-          <button
-            type="button"
-            (click)="isHomeContentExpanded.set(!isHomeContentExpanded())"
-            class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
-          >
+          <button type="button" (click)="isHomeContentExpanded.set(!isHomeContentExpanded())"
+            class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition">
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-semibold text-slate-900">Home Page Content</h2>
               <span class="text-sm font-medium text-slate-500">Daily Tip & Prompt of the Day</span>
             </div>
-            <svg
-              [class.rotate-180]="isHomeContentExpanded()"
-              class="h-5 w-5 text-slate-500 transition-transform duration-200"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-            >
+            <svg [class.rotate-180]="isHomeContentExpanded()"
+              class="h-5 w-5 text-slate-500 transition-transform duration-200" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -141,30 +349,22 @@
 
         <div *ngIf="isHomeContentExpanded()" class="p-6">
           <!-- Success Message -->
-          <div *ngIf="homeContentSuccess()" class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          <div *ngIf="homeContentSuccess()"
+            class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
             {{ homeContentSuccess() }}
           </div>
 
           <!-- Error Message -->
-          <div *ngIf="homeContentError()" class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div *ngIf="homeContentError()"
+            class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {{ homeContentError() }}
           </div>
 
           <!-- Quick Actions -->
           <div class="mb-6 flex justify-end">
-            <button
-              type="button"
-              (click)="clearAllHomeContent()"
-              [disabled]="isSavingHomeContent()"
-              class="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                class="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
+            <button type="button" (click)="clearAllHomeContent()" [disabled]="isSavingHomeContent()"
+              class="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
               Clear All Fields
@@ -178,42 +378,35 @@
               <p class="text-sm text-slate-600 mb-4">
                 This tip will be displayed on the home page. If no tip is set for today, the previous tip will be shown.
               </p>
-              
+
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-2" for="daily-tip-text">
                     Tip Text <span class="text-red-600">*</span>
                   </label>
-                  <textarea
-                    id="daily-tip-text"
-                    rows="4"
-                    [value]="dailyTipText()"
-                    (input)="dailyTipText.set(($any($event.target)).value)"
-                    placeholder="Enter today's tip or quote..."
+                  <textarea id="daily-tip-text" rows="4" [value]="dailyTipText()"
+                    (input)="dailyTipText.set(($any($event.target)).value)" placeholder="Enter today's tip or quote..."
                     class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
-                    [disabled]="isSavingHomeContent()"
-                  ></textarea>
+                    [disabled]="isSavingHomeContent()"></textarea>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-2" for="daily-tip-author">
                     Author / Attribution (optional)
                   </label>
-                  <input
-                    id="daily-tip-author"
-                    type="text"
-                    [value]="dailyTipAuthor()"
+                  <input id="daily-tip-author" type="text" [value]="dailyTipAuthor()"
                     (input)="dailyTipAuthor.set(($any($event.target)).value)"
                     placeholder="e.g., Albert Einstein, or leave empty"
                     class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
-                    [disabled]="isSavingHomeContent()"
-                  />
+                    [disabled]="isSavingHomeContent()" />
                 </div>
 
-                <div *ngIf="homeContent()?.dailyTip" class="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600">
+                <div *ngIf="homeContent()?.dailyTip"
+                  class="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600">
                   <p class="font-medium mb-1">Current Tip:</p>
                   <p class="italic">"{{ homeContent()?.dailyTip?.text }}"</p>
-                  <p *ngIf="homeContent()?.dailyTip?.author" class="mt-1 text-slate-500">— {{ homeContent()?.dailyTip?.author }}</p>
+                  <p *ngIf="homeContent()?.dailyTip?.author" class="mt-1 text-slate-500">— {{
+                    homeContent()?.dailyTip?.author }}</p>
                   <p class="mt-2 text-slate-400">Date: {{ homeContent()?.dailyTip?.date }}</p>
                 </div>
               </div>
@@ -223,9 +416,10 @@
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
               <h3 class="text-lg font-semibold text-slate-900 mb-4">Prompt of the Day</h3>
               <p class="text-sm text-slate-600 mb-4">
-                Search for a prompt by title or tag and select it to feature on the home page. If no prompt is set for today, the previous one will be shown.
+                Search for a prompt by title or tag and select it to feature on the home page. If no prompt is set for
+                today, the previous one will be shown.
               </p>
-              
+
               <div class="space-y-4">
                 <!-- Search Input -->
                 <div>
@@ -233,90 +427,76 @@
                     Search Prompts
                   </label>
                   <div class="relative">
-                    <svg
-                      viewBox="0 0 24 24"
-                      class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.6"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" />
+                    <svg viewBox="0 0 24 24" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                      fill="none" stroke="currentColor" stroke-width="1.6">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" />
                     </svg>
-                    <input
-                      id="prompt-search"
-                      type="text"
-                      [value]="promptSearchTerm()"
-                      (input)="onPromptSearch(($any($event.target)).value)"
-                      placeholder="Search by title or tag..."
+                    <input id="prompt-search" type="text" [value]="promptSearchTerm()"
+                      (input)="onPromptSearch(($any($event.target)).value)" placeholder="Search by title or tag..."
                       class="w-full rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
-                      [disabled]="isSavingHomeContent()"
-                    />
+                      [disabled]="isSavingHomeContent()" />
                   </div>
                 </div>
 
                 <!-- Selected Prompt Display -->
-                <div *ngIf="promptOfTheDayId() && getPromptTitle(promptOfTheDayId())" class="rounded-lg border-2 border-[#DC2626]/30 bg-white p-4">
+                <div *ngIf="promptOfTheDayId() && getPromptTitle(promptOfTheDayId())"
+                  class="rounded-lg border-2 border-[#DC2626]/30 bg-white p-4">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <p class="text-xs font-medium text-slate-600 mb-1">Selected Prompt:</p>
                       <p class="text-sm font-semibold text-slate-900">{{ getPromptTitle(promptOfTheDayId()) }}</p>
                       <p class="text-xs text-slate-500 mt-1">ID: {{ promptOfTheDayId().slice(0, 8) }}...</p>
                     </div>
-                    <button
-                      type="button"
-                      (click)="promptOfTheDayId.set(''); promptSearchTerm.set('')"
+                    <button type="button" (click)="promptOfTheDayId.set(''); promptSearchTerm.set('')"
                       class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                      [disabled]="isSavingHomeContent()"
-                    >
+                      [disabled]="isSavingHomeContent()">
                       Clear
                     </button>
                   </div>
                 </div>
 
                 <!-- Prompt Results List -->
-                <div *ngIf="!promptOfTheDayId() || promptSearchTerm()" class="rounded-lg border border-slate-200 bg-white max-h-64 overflow-y-auto">
+                <div *ngIf="!promptOfTheDayId() || promptSearchTerm()"
+                  class="rounded-lg border border-slate-200 bg-white max-h-64 overflow-y-auto">
                   <div *ngIf="filteredPromptsForSelection().length > 0" class="divide-y divide-slate-100">
-                    <button
-                      type="button"
-                      *ngFor="let prompt of filteredPromptsForSelection()"
+                    <button type="button" *ngFor="let prompt of filteredPromptsForSelection()"
                       (click)="selectPromptForDay(prompt)"
                       class="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
-                      [class.bg-red-50]="promptOfTheDayId() === prompt.id"
-                      [disabled]="isSavingHomeContent()"
-                    >
+                      [class.bg-red-50]="promptOfTheDayId() === prompt.id" [disabled]="isSavingHomeContent()">
                       <div class="flex items-start justify-between gap-3">
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-semibold text-slate-900 truncate">{{ prompt.title }}</p>
                           <div class="flex items-center gap-2 mt-1">
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                            <span
+                              class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                               {{ formatTag(prompt.tag) }}
                             </span>
                             <span class="text-xs text-slate-400">ID: {{ prompt.id.slice(0, 8) }}...</span>
                           </div>
                         </div>
-                        <svg
-                          *ngIf="promptOfTheDayId() === prompt.id"
-                          viewBox="0 0 24 24"
-                          class="h-5 w-5 text-[#DC2626] flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg *ngIf="promptOfTheDayId() === prompt.id" viewBox="0 0 24 24"
+                          class="h-5 w-5 text-[#DC2626] flex-shrink-0" fill="none" stroke="currentColor"
+                          stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                     </button>
                   </div>
-                  <div *ngIf="filteredPromptsForSelection().length === 0 && promptSearchTerm()" class="px-4 py-8 text-center">
+                  <div *ngIf="filteredPromptsForSelection().length === 0 && promptSearchTerm()"
+                    class="px-4 py-8 text-center">
                     <p class="text-sm text-slate-500">No prompts found matching "{{ promptSearchTerm() }}"</p>
                   </div>
-                  <div *ngIf="filteredPromptsForSelection().length === 0 && !promptSearchTerm()" class="px-4 py-8 text-center">
+                  <div *ngIf="filteredPromptsForSelection().length === 0 && !promptSearchTerm()"
+                    class="px-4 py-8 text-center">
                     <p class="text-sm text-slate-500">Start typing to search for prompts...</p>
                   </div>
                 </div>
 
                 <!-- Current Prompt of the Day Info -->
-                <div *ngIf="homeContent()?.promptOfTheDayId && promptOfTheDayId() !== homeContent()?.promptOfTheDayId" class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                <div *ngIf="homeContent()?.promptOfTheDayId && promptOfTheDayId() !== homeContent()?.promptOfTheDayId"
+                  class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                   <p class="font-medium mb-1">Current Prompt of the Day:</p>
                   <p class="font-semibold text-slate-900">{{ getPromptTitle(homeContent()!.promptOfTheDayId!) }}</p>
                   <p class="mt-2 text-slate-400">Date: {{ homeContent()?.promptOfTheDayDate || 'N/A' }}</p>
@@ -326,39 +506,21 @@
 
             <!-- Action Buttons -->
             <div class="flex justify-between items-center gap-3 pt-4 border-t border-slate-200">
-              <button
-                type="button"
-                (click)="clearAllHomeContent()"
-                [disabled]="isSavingHomeContent()"
-                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  class="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                >
+              <button type="button" (click)="clearAllHomeContent()" [disabled]="isSavingHomeContent()"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 Clear All
               </button>
-              <button
-                type="button"
-                (click)="saveHomeContent()"
-                [disabled]="isSavingHomeContent()"
-                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  *ngIf="isSavingHomeContent()"
-                  viewBox="0 0 24 24"
-                  class="h-4 w-4 animate-spin"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                >
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
-                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+              <button type="button" (click)="saveHomeContent()" [disabled]="isSavingHomeContent()"
+                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg *ngIf="isSavingHomeContent()" viewBox="0 0 24 24" class="h-4 w-4 animate-spin" fill="none"
+                  stroke="currentColor" stroke-width="1.6">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+                  </circle>
+                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round"></path>
                 </svg>
                 <span *ngIf="!isSavingHomeContent()">Save Home Content</span>
                 <span *ngIf="isSavingHomeContent()">Saving...</span>
@@ -368,126 +530,21 @@
         </div>
       </div>
 
-      <!-- Metrics Section -->
-      <div class="rounded-2xl border border-slate-300 bg-white shadow-sm mb-8">
-        <div class="p-6 border-b border-slate-200">
-          <button
-            type="button"
-            (click)="toggleMetrics()"
-            class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
-            [attr.aria-expanded]="metricsExpanded()"
-          >
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">🚀</span>
-              <div class="text-left">
-                <h3 class="text-lg font-bold text-slate-900">All Prompts Metrics</h3>
-                <p class="text-sm text-slate-600">View analytics for all prompts combined</p>
-              </div>
-            </div>
-            <svg
-              [class.rotate-180]="metricsExpanded()"
-              class="h-5 w-5 text-slate-600 transition-transform duration-200"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
 
-        <!-- Metrics Content (expandable) -->
-        <div *ngIf="metricsExpanded()" class="px-6 pb-6 pt-2 border-t border-slate-200">
-          <div class="mt-4 space-y-4">
-            <!-- Total Launches -->
-            <div class="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200/50 px-5 py-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <span class="text-2xl">🚀</span>
-                  <div>
-                    <p class="text-sm font-semibold text-slate-700">Total Launches</p>
-                    <p class="text-xs text-slate-500">All prompt launches combined</p>
-                  </div>
-                </div>
-                <span class="text-3xl font-black text-blue-600">{{ totalLaunches() }}</span>
-              </div>
-            </div>
-
-            <!-- Launch Breakdown -->
-            <div
-              class="rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-slate-200/50 px-5 py-4">
-              <h4 class="text-sm font-bold text-slate-900 mb-3">Launch Breakdown</h4>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <img src="assets/gpt.png" alt="ChatGPT" class="h-6 w-6" />
-                    <span class="text-sm font-semibold text-slate-700">ChatGPT</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-600">{{ launchBreakdown().gpt }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <img src="assets/gemini.png" alt="Gemini" class="h-6 w-6" />
-                    <span class="text-sm font-semibold text-slate-700">Gemini</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-600">{{ launchBreakdown().gemini }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <img src="assets/claude.jpeg" alt="Claude" class="h-6 w-6 rounded-full" />
-                    <span class="text-sm font-semibold text-slate-700">Claude</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-600">{{ launchBreakdown().claude }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <img src="assets/grok.jpg" alt="Grok" class="h-6 w-6 rounded-full" />
-                    <span class="text-sm font-semibold text-slate-700">Grok</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-600">{{ launchBreakdown().grok }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-slate-700" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                    </svg>
-                    <span class="text-sm font-semibold text-slate-700">Copied</span>
-                  </div>
-                  <span class="text-lg font-bold text-blue-600">{{ launchBreakdown().copied }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Users Section - Collapsible -->
       <div class="rounded-2xl border border-slate-300 bg-white shadow-sm mb-8">
         <div class="p-6 border-b border-slate-200">
-          <button
-            type="button"
-            (click)="isUsersExpanded.set(!isUsersExpanded())"
-            class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
-          >
+          <button type="button" (click)="isUsersExpanded.set(!isUsersExpanded())"
+            class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition">
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-semibold text-slate-900">All Users</h2>
               <span class="text-sm font-medium text-slate-500">
                 ({{ filteredUsers().length }} user{{ filteredUsers().length !== 1 ? 's' : '' }})
               </span>
             </div>
-            <svg
-              [class.rotate-180]="isUsersExpanded()"
-              class="h-5 w-5 text-slate-500 transition-transform duration-200"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-            >
+            <svg [class.rotate-180]="isUsersExpanded()" class="h-5 w-5 text-slate-500 transition-transform duration-200"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -497,22 +554,14 @@
           <div class="p-6 border-b border-slate-200">
             <div class="flex items-center justify-end">
               <div class="relative">
-                <svg
-                  viewBox="0 0 24 24"
-                  class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" />
+                <svg viewBox="0 0 24 24" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                  fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" />
                 </svg>
-                <input
-                  type="search"
-                  [value]="searchTerm()"
-                  (input)="onSearch(($any($event.target)).value)"
+                <input type="search" [value]="searchTerm()" (input)="onSearch(($any($event.target)).value)"
                   placeholder="Search users..."
-                  class="w-64 rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
-                />
+                  class="w-64 rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500" />
               </div>
             </div>
           </div>
@@ -521,11 +570,16 @@
             <table class="w-full">
               <thead class="bg-slate-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Name</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Email</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Role</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Prompts</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Joined</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Name
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Email
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Role
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Prompts
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Joined
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200">
@@ -533,14 +587,14 @@
                   <tr *ngFor="let user of filteredUsers()" class="hover:bg-slate-50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white font-semibold">
-                          {{ user.firstName.charAt(0).toUpperCase() || '' }}{{ user.lastName.charAt(0).toUpperCase() || '' }}
+                        <div
+                          class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white font-semibold">
+                          {{ user.firstName.charAt(0).toUpperCase() || '' }}{{ user.lastName.charAt(0).toUpperCase() ||
+                          '' }}
                         </div>
                         <div class="ml-4">
-                          <a
-                            (click)="navigateToUserProfile(user, $event)"
-                            class="text-sm font-medium text-slate-900 hover:text-red-600 hover:underline transition-colors cursor-pointer"
-                          >
+                          <a (click)="navigateToUserProfile(user, $event)"
+                            class="text-sm font-medium text-slate-900 hover:text-red-600 hover:underline transition-colors cursor-pointer">
                             {{ user.firstName }} {{ user.lastName }}
                           </a>
                         </div>
@@ -550,16 +604,12 @@
                       <div class="text-sm text-slate-600">{{ user.email }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span
-                        *ngIf="user.role === 'admin' || user.admin"
-                        class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700"
-                      >
+                      <span *ngIf="user.role === 'admin' || user.admin"
+                        class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
                         Admin
                       </span>
-                      <span
-                        *ngIf="(user.role !== 'admin' && !user.admin)"
-                        class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
-                      >
+                      <span *ngIf="(user.role !== 'admin' && !user.admin)"
+                        class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                         User
                       </span>
                     </td>
@@ -584,136 +634,40 @@
         </div>
       </div>
 
-      <!-- Charts Section -->
-      <div class="grid gap-6 lg:grid-cols-2 mb-8">
-        <!-- Prompts by Tag Chart -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-          <h2 class="text-xl font-semibold text-slate-900 mb-4">Prompts by Tag</h2>
-          <div class="space-y-4">
-            <div *ngFor="let item of stats()?.promptsByTag?.slice(0, 10); let i = index" class="flex items-center gap-4">
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-sm font-medium text-slate-700">{{ formatTag(item.tag) }}</span>
-                  <span class="text-sm font-semibold text-slate-900">{{ item.count }}</span>
-                </div>
-                <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600 transition-all duration-500"
-                    [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByTag || []))"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Collections by Tag Chart -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-          <h2 class="text-xl font-semibold text-slate-900 mb-4">Collections by Tag</h2>
-          <div class="space-y-4">
-            <div *ngFor="let item of stats()?.collectionsByTag?.slice(0, 10); let i = index" class="flex items-center gap-4">
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-sm font-medium text-slate-700">{{ formatTag(item.tag) }}</span>
-                  <span class="text-sm font-semibold text-slate-900">{{ item.count }}</span>
-                </div>
-                <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500"
-                    [style.width.%]="getBarHeight(item.count, getMaxValue(stats()?.collectionsByTag || []))"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Growth Charts -->
-      <div class="grid gap-6 lg:grid-cols-2 mb-8">
-        <!-- Users Growth Chart -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-          <h2 class="text-xl font-semibold text-slate-900 mb-4">Users Growth</h2>
-          <div class="flex items-end gap-2 h-64">
-            <div *ngFor="let item of stats()?.usersByMonth" class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full rounded-t bg-gradient-to-t from-blue-500 to-blue-600 transition-all duration-500 hover:from-blue-600 hover:to-blue-700"
-                [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))"
-                [title]="formatMonth(item.month) + ': ' + item.count"
-              ></div>
-              <span class="mt-2 text-xs text-slate-500 transform -rotate-45 origin-bottom-left whitespace-nowrap">
-                {{ formatMonth(item.month) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Prompts Growth Chart -->
-        <div class="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-          <h2 class="text-xl font-semibold text-slate-900 mb-4">Prompts Growth</h2>
-          <div class="flex items-end gap-2 h-64">
-            <div *ngFor="let item of stats()?.promptsByMonth" class="flex-1 flex flex-col items-center">
-              <div
-                class="w-full rounded-t bg-gradient-to-t from-red-500 to-red-600 transition-all duration-500 hover:from-red-600 hover:to-red-700"
-                [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))"
-                [title]="formatMonth(item.month) + ': ' + item.count"
-              ></div>
-              <span class="mt-2 text-xs text-slate-500 transform -rotate-45 origin-bottom-left whitespace-nowrap">
-                {{ formatMonth(item.month) }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </ng-container>
 
     <!-- Prompts Management Section -->
     <div class="rounded-2xl border border-slate-300 bg-white shadow-sm">
       <div class="p-6 border-b border-slate-200">
         <div class="flex items-center justify-between">
-          <button
-            type="button"
-            (click)="isPromptsExpanded.set(!isPromptsExpanded())"
-            class="flex-1 flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition"
-          >
+          <button type="button" (click)="isPromptsExpanded.set(!isPromptsExpanded())"
+            class="flex-1 flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition">
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-semibold text-slate-900">All Prompts</h2>
               <span class="text-sm font-medium text-slate-500">
                 ({{ prompts().length }} prompt{{ prompts().length !== 1 ? 's' : '' }})
               </span>
             </div>
-            <svg
-              [class.rotate-180]="isPromptsExpanded()"
-              class="h-5 w-5 text-slate-500 transition-transform duration-200"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-            >
+            <svg [class.rotate-180]="isPromptsExpanded()"
+              class="h-5 w-5 text-slate-500 transition-transform duration-200" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           <div class="ml-4">
-            <label
-              for="csv-upload"
+            <label for="csv-upload"
               class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              [class.opacity-50]="isProcessingBulkUpload()"
-              [class.cursor-not-allowed]="isProcessingBulkUpload()"
-            >
+              [class.opacity-50]="isProcessingBulkUpload()" [class.cursor-not-allowed]="isProcessingBulkUpload()">
               <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <span *ngIf="!isProcessingBulkUpload()">Upload CSV</span>
               <span *ngIf="isProcessingBulkUpload()">Uploading...</span>
             </label>
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".csv"
-              (change)="onBulkUploadCSV($event)"
-              [disabled]="isProcessingBulkUpload()"
-              class="hidden"
-            />
+            <input id="csv-upload" type="file" accept=".csv" (change)="onBulkUploadCSV($event)"
+              [disabled]="isProcessingBulkUpload()" class="hidden" />
           </div>
         </div>
       </div>
@@ -726,14 +680,14 @@
               Processing CSV: {{ bulkUploadProgress().processed }} / {{ bulkUploadProgress().total }}
             </span>
             <span class="text-sm font-semibold text-blue-900">
-              {{ bulkUploadProgress().total > 0 ? ((bulkUploadProgress().processed / bulkUploadProgress().total) * 100).toFixed(0) : 0 }}%
+              {{ bulkUploadProgress().total > 0 ? ((bulkUploadProgress().processed / bulkUploadProgress().total) *
+              100).toFixed(0) : 0 }}%
             </span>
           </div>
           <div class="w-full bg-blue-200 rounded-full h-2">
-            <div
-              class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0"
-            ></div>
+            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0">
+            </div>
           </div>
           <div class="mt-2 text-xs text-blue-600">
             Success: {{ bulkUploadProgress().success }} | Failed: {{ bulkUploadProgress().failed }}
@@ -741,7 +695,8 @@
         </div>
 
         <!-- Error Message -->
-        <div *ngIf="promptsError()" class="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div *ngIf="promptsError()"
+          class="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {{ promptsError() }}
         </div>
 
@@ -755,51 +710,32 @@
           <div class="flex flex-wrap gap-3">
             <!-- Assign Author -->
             <div class="flex items-center gap-2">
-              <input
-                type="text"
-                [value]="assignedAuthorId()"
-                (input)="assignedAuthorId.set(($any($event.target)).value)"
-                placeholder="Author ID (userId)"
+              <input type="text" [value]="assignedAuthorId()"
+                (input)="assignedAuthorId.set(($any($event.target)).value)" placeholder="Author ID (userId)"
                 class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500"
-                [disabled]="isProcessingBulkAction()"
-              />
-              <button
-                type="button"
-                (click)="onBulkAssignAuthor()"
+                [disabled]="isProcessingBulkAction()" />
+              <button type="button" (click)="onBulkAssignAuthor()"
                 [disabled]="isProcessingBulkAction() || !assignedAuthorId().trim()"
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 Assign Author
               </button>
             </div>
 
             <!-- Delete -->
-            <button
-              type="button"
-              (click)="onBulkDelete()"
-              [disabled]="isProcessingBulkAction()"
-              class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="button" (click)="onBulkDelete()" [disabled]="isProcessingBulkAction()"
+              class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
               Delete Selected
             </button>
 
             <!-- Hide -->
-            <button
-              type="button"
-              (click)="onBulkToggleVisibility(true)"
-              [disabled]="isProcessingBulkAction()"
-              class="inline-flex items-center gap-2 rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="button" (click)="onBulkToggleVisibility(true)" [disabled]="isProcessingBulkAction()"
+              class="inline-flex items-center gap-2 rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed">
               Hide Selected
             </button>
 
             <!-- Show -->
-            <button
-              type="button"
-              (click)="onBulkToggleVisibility(false)"
-              [disabled]="isProcessingBulkAction()"
-              class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="button" (click)="onBulkToggleVisibility(false)" [disabled]="isProcessingBulkAction()"
+              class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
               Show Selected
             </button>
           </div>
@@ -816,43 +752,33 @@
             <thead class="bg-slate-50">
               <tr>
                 <th class="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    [checked]="allSelected"
-                    [indeterminate]="someSelected && !allSelected"
+                  <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected && !allSelected"
                     (change)="toggleSelectAll()"
-                    class="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
-                  />
+                    class="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500" />
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Title</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Status
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
               <ng-container *ngIf="prompts().length > 0; else noPrompts">
                 <tr *ngFor="let prompt of prompts()" class="hover:bg-slate-50 transition-colors">
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      [checked]="selectedPromptIds().has(prompt.id)"
+                    <input type="checkbox" [checked]="selectedPromptIds().has(prompt.id)"
                       (change)="togglePromptSelection(prompt.id)"
-                      class="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
-                    />
+                      class="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500" />
                   </td>
                   <td class="px-6 py-4">
                     <div class="text-sm font-medium text-slate-900">{{ prompt.title }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      *ngIf="prompt.isInvisible"
-                      class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700"
-                    >
+                    <span *ngIf="prompt.isInvisible"
+                      class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
                       Hidden
                     </span>
-                    <span
-                      *ngIf="!prompt.isInvisible"
-                      class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700"
-                    >
+                    <span *ngIf="!prompt.isInvisible"
+                      class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                       Visible
                     </span>
                   </td>
@@ -872,4 +798,3 @@
     </div>
   </main>
 </div>
-
