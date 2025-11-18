@@ -66,6 +66,26 @@ export class AdminDashboardComponent {
     readonly homeContentError = signal<string | null>(null);
     readonly homeContentSuccess = signal<string | null>(null);
 
+    // Metrics for all prompts
+    readonly metricsExpanded = signal(false);
+    readonly totalLaunches = computed(() => {
+        return this.prompts().reduce((sum, prompt) => sum + (prompt.totalLaunch || 0), 0);
+    });
+    readonly launchBreakdown = computed(() => {
+        const prompts = this.prompts();
+        return {
+            gpt: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
+            gemini: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
+            claude: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+            grok: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
+            copied: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0)
+        };
+    });
+
+    toggleMetrics() {
+        this.metricsExpanded.update(v => !v);
+    }
+
     readonly filteredUsers = computed(() => {
         const users = this.users();
         const term = this.searchTerm().trim().toLowerCase();
