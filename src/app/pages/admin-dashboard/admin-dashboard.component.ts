@@ -78,10 +78,10 @@ export class AdminDashboardComponent {
                 label: 'ChatGPT',
                 subtext: 'OpenAI',
                 count: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
-                icon: 'assets/chatgpt.png', // You might need to adjust paths if they are different
+                icon: 'assets/gpt.png',
                 colorClass: 'bg-[#74AA9C]',
                 bgClass: 'bg-emerald-50',
-                isImage: false, // Using emoji for now as placeholder if assets missing, or specific logic
+                isImage: true,
                 emoji: '🤖'
             },
             {
@@ -164,6 +164,30 @@ export class AdminDashboardComponent {
     readonly adminCount = computed(() =>
         this.users().filter(user => user.role === 'admin' || user.admin).length
     );
+
+    readonly userGrowthPath = computed(() => {
+        const stats = this.stats();
+        if (!stats?.usersByMonth?.length) return '';
+        return this.generateChartPath(stats.usersByMonth.map(d => d.count));
+    });
+
+    readonly userGrowthAreaPath = computed(() => {
+        const stats = this.stats();
+        if (!stats?.usersByMonth?.length) return '';
+        return this.generateAreaPath(stats.usersByMonth.map(d => d.count));
+    });
+
+    readonly promptGrowthPath = computed(() => {
+        const stats = this.stats();
+        if (!stats?.promptsByMonth?.length) return '';
+        return this.generateChartPath(stats.promptsByMonth.map(d => d.count));
+    });
+
+    readonly promptGrowthAreaPath = computed(() => {
+        const stats = this.stats();
+        if (!stats?.promptsByMonth?.length) return '';
+        return this.generateAreaPath(stats.promptsByMonth.map(d => d.count));
+    });
 
     readonly promptCountsByUserId = computed(() => {
         const prompts = this.prompts();
@@ -416,6 +440,25 @@ export class AdminDashboardComponent {
         const [year, monthNum] = month.split('-');
         const date = new Date(parseInt(year), parseInt(monthNum) - 1);
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    }
+
+    generateChartPath(data: number[]): string {
+        if (data.length < 2) return '';
+
+        const max = Math.max(...data, 1);
+        const points = data.map((val, index) => {
+            const x = (index / (data.length - 1)) * 100;
+            const y = 100 - (val / max) * 100;
+            return `${x},${y}`;
+        });
+
+        return `M ${points.join(' L ')}`;
+    }
+
+    generateAreaPath(data: number[]): string {
+        if (data.length < 2) return '';
+        const linePath = this.generateChartPath(data);
+        return `${linePath} L 100,100 L 0,100 Z`;
     }
 
     async onBulkUploadCSV(event: Event): Promise<void> {
