@@ -241,6 +241,22 @@ export class PromptPageComponent {
     }
   }
 
+  copyOneClickLink(target: 'gpt' | 'grok') {
+    const text = this.prompt()?.content ?? '';
+    if (!text) return;
+
+    const url = target === 'gpt'
+      ? this.createChatGPTUrl(text)
+      : this.createGrokUrl(text);
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+    });
+  }
+
   copyPromptPageUrl() {
     const p = this.prompt();
     if (!p) return;

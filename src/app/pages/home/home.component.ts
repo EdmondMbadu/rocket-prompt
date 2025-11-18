@@ -304,9 +304,9 @@ export class HomeComponent {
   }
 
   createGrokUrl(prompt: string): string {
-    // Grok doesn't support URL parameters, so we just return the base URL
-    // The prompt will be copied to clipboard before opening
-    return 'https://x.com/i/grok';
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
   async openChatbot(url: string, chatbotName: string) {
@@ -336,6 +336,22 @@ export class HomeComponent {
 
     // open after copying
     window.open(url, '_blank');
+  }
+
+  copyOneClickLink(target: 'gpt' | 'grok') {
+    const promptContent = this.sharePrompt()?.content || '';
+    if (!promptContent) return;
+
+    const url = target === 'gpt'
+      ? this.createChatGPTUrl(promptContent)
+      : this.createGrokUrl(promptContent);
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+    });
   }
 
   copyPromptPageUrl() {

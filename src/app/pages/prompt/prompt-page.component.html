@@ -581,6 +581,19 @@
                 </div>
 
                 <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+                            (click)="copyOneClickLink('gpt')" title="One-click share to ChatGPT">
+                            ⚡ GPT
+                        </button>
+                        <button type="button"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700"
+                            (click)="copyOneClickLink('grok')" title="One-click share to Grok">
+                            ⚡ Grok
+                        </button>
+                    </div>
+
                     <button type="button"
                         class="inline-flex items-center justify-center rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
                         (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
