@@ -150,19 +150,28 @@ export class PromptPageComponent {
     return `https://claude.ai/?prompt=${encodedPrompt}`;
   }
 
+  createGrokUrl(prompt: string): string {
+    // Try passing the prompt directly in the URL (mirrors the ChatGPT flow)
+    // If Grok ignores it, the tab still opens to Grok and the clipboard flow remains as a fallback elsewhere.
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://x.com/i/grok?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // ChatGPT supports URL parameters for pre-filling prompts
-    // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
+    // ChatGPT (and now Grok) support pre-filling via URL parameters
+    // Gemini/Claude still rely on copy to clipboard before opening
     const text = promptText ?? this.prompt()?.content ?? '';
     const p = this.prompt();
 
-    if (chatbotName === 'ChatGPT') {
-      // ChatGPT: open directly (it accepts query param)
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Grok') {
+      // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
       // Track launch
       if (p) {
         try {
-          const result = await this.promptService.trackLaunch(p.id, 'gpt');
+          const launchType = chatbotName === 'ChatGPT' ? 'gpt' : 'grok';
+          const result = await this.promptService.trackLaunch(p.id, launchType);
           this.prompt.set({ ...p, ...result } as Prompt);
         } catch (e) {
           console.error('Failed to track launch', e);
@@ -171,7 +180,7 @@ export class PromptPageComponent {
       return;
     }
 
-    // Gemini and other providers: copy to clipboard first
+    // Gemini/Claude: copy to clipboard first
     try {
       if (text) {
         await navigator.clipboard.writeText(text);
@@ -189,7 +198,14 @@ export class PromptPageComponent {
     // Track launch
     if (p) {
       try {
-        const launchType = chatbotName === 'Gemini' ? 'gemini' : 'claude';
+        let launchType: 'gemini' | 'claude' | 'grok';
+        if (chatbotName === 'Gemini') {
+          launchType = 'gemini';
+        } else if (chatbotName === 'Grok') {
+          launchType = 'grok';
+        } else {
+          launchType = 'claude';
+        }
         const result = await this.promptService.trackLaunch(p.id, launchType);
         this.prompt.set({ ...p, ...result } as Prompt);
       } catch (e) {

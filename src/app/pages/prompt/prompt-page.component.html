@@ -263,6 +263,15 @@
                         <span class="ai-platform-button__label">Claude</span>
                     </button>
 
+                    <button type="button" class="ai-platform-button ai-platform-button--grok"
+                        aria-label="Open in Grok" title="open and paste in Grok"
+                        (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
+                        <div class="ai-platform-button__icon">
+                            <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
+                        </div>
+                        <span class="ai-platform-button__label">Grok</span>
+                    </button>
+
                     <button type="button" class="ai-platform-button ai-platform-button--copy"
                         [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
                         [attr.title]="copied() ? 'Copied' : 'Copy prompt for other AI'" (click)="copyPrompt()">
@@ -408,6 +417,16 @@
                             <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
                         </div>
                         <span class="ai-platform-button__label">Claude</span>
+                    </button>
+
+                    <button type="button" class="ai-platform-button ai-platform-button--grok"
+                        aria-label="Open in Grok" data-tooltip="open and paste in Grok"
+                        title="open and paste in Grok"
+                        (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
+                        <div class="ai-platform-button__icon">
+                            <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
+                        </div>
+                        <span class="ai-platform-button__label">Grok</span>
                     </button>
 
                     <button type="button" class="ai-platform-button ai-platform-button--copy"
@@ -558,6 +577,12 @@
                         class="inline-flex items-center justify-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700"
                         (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
                         Open in Claude
+                    </button>
+
+                    <button type="button"
+                        class="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800"
+                        (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
+                        Open in Grok
                     </button>
 
                     <button type="button"

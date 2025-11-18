@@ -126,6 +126,10 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
     const searchParams = urlObj.searchParams;
 
     const encodedPrompt = searchParams.get('q') || searchParams.get('prompt') || '';
+    // For Grok, we need to get the prompt from the form since it's not in the URL
+    if (url.includes('grok') && !encodedPrompt) {
+      return this.promptForm.get('content')?.value || '';
+    }
     return decodeURIComponent(encodedPrompt);
   }
 
@@ -179,6 +183,12 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
         url: this.createClaudeUrl(promptData.content),
         icon: '🧠',
         color: 'bg-orange-600 hover:bg-orange-700'
+      },
+      {
+        name: 'Grok',
+        url: this.createGrokUrl(promptData.content),
+        icon: '🤖',
+        color: 'bg-black hover:bg-gray-800'
       }
     ];
 
@@ -207,6 +217,12 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   private createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
     return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  private createGrokUrl(prompt: string): string {
+    // Grok doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://x.com/i/grok';
   }
 
   private showCopyMessage(messageText: string) {

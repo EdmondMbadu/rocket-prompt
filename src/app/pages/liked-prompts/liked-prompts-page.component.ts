@@ -23,6 +23,7 @@ interface LikedPromptCard {
   readonly launchGpt: number;
   readonly launchGemini: number;
   readonly launchClaude: number;
+  readonly launchGrok: number;
   readonly copied: number;
   readonly totalLaunch: number;
   readonly customUrl?: string;
@@ -436,6 +437,7 @@ export class LikedPromptsPageComponent {
       launchGpt: prompt.launchGpt ?? 0,
       launchGemini: prompt.launchGemini ?? 0,
       launchClaude: prompt.launchClaude ?? 0,
+      launchGrok: prompt.launchGrok ?? 0,
       copied: prompt.copied ?? 0,
       totalLaunch: prompt.totalLaunch ?? 0,
       customUrl: prompt.customUrl,

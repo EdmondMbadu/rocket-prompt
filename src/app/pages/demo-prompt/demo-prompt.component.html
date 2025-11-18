@@ -86,6 +86,18 @@
                         </button>
 
                         <button type="button" 
+                            class="demo-ai-button demo-ai-button--grok"
+                            (click)="openChatbot(createGrokUrl(demoPrompt.content), 'Grok', demoPrompt.content)">
+                            <div class="demo-ai-button-icon">
+                                <img src="assets/grok.jpg" alt="Grok" class="demo-ai-icon demo-ai-icon--rounded" />
+                            </div>
+                            <div class="demo-ai-button-content">
+                                <span class="demo-ai-button-label">Grok</span>
+                                <span class="demo-ai-button-hint">Copies & opens</span>
+                            </div>
+                        </button>
+
+                        <button type="button" 
                             class="demo-ai-button demo-ai-button--copy"
                             (click)="copyPrompt()">
                             <div class="demo-ai-button-icon">
@@ -151,6 +163,7 @@
         </div>
     </main>
 </div>
+
 
 
 

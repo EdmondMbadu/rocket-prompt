@@ -34,6 +34,7 @@ interface PromptCard {
   readonly launchGpt: number;
   readonly launchGemini: number;
   readonly launchClaude: number;
+  readonly launchGrok: number;
   readonly copied: number;
   readonly totalLaunch: number;
   readonly createdAt?: Date;
@@ -300,6 +301,12 @@ export class HomeComponent {
   createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
     return `https://claude.ai/?prompt=${encodedPrompt}`;
+  }
+
+  createGrokUrl(prompt: string): string {
+    // Grok doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://x.com/i/grok';
   }
 
   async openChatbot(url: string, chatbotName: string) {
@@ -1029,6 +1036,7 @@ export class HomeComponent {
       launchGpt: prompt.launchGpt ?? 0,
       launchGemini: prompt.launchGemini ?? 0,
       launchClaude: prompt.launchClaude ?? 0,
+      launchGrok: prompt.launchGrok ?? 0,
       copied: prompt.copied ?? 0,
       totalLaunch: prompt.totalLaunch ?? 0,
       createdAt: prompt.createdAt,

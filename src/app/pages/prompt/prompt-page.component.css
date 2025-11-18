@@ -955,10 +955,23 @@
     background: #fecaca;
 }
 
+.icon-button--grok {
+    background: #1f2937;
+    /* dark gray */
+    color: #ffffff;
+    /* white */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.icon-button--grok:hover {
+    background: #111827;
+}
+
 /* Slightly larger hit target for brand buttons */
 .icon-button.icon-button--gpt,
 .icon-button.icon-button--gemini,
-.icon-button.icon-button--claude {
+.icon-button.icon-button--claude,
+.icon-button.icon-button--grok {
     height: 3rem;
     width: 3rem;
 }
@@ -1459,6 +1472,22 @@
 
 .ai-platform-button--claude .ai-platform-button__label {
     color: #991b1b;
+}
+
+.ai-platform-button--grok {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.ai-platform-button--grok:hover {
+    background: linear-gradient(135deg, #111827 0%, #030712 100%);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.ai-platform-button--grok .ai-platform-button__label {
+    color: #ffffff;
 }
 
 .ai-platform-button--copy {

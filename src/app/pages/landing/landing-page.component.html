@@ -108,6 +108,7 @@
           <img src="assets/gpt.png" alt="ChatGPT" class="w-8 h-8 md:w-10 md:h-10" />
           <img src="assets/gemini.png" alt="Gemini" class="w-8 h-8 md:w-10 md:h-10" />
           <img src="assets/claude.jpeg" alt="Claude" class="w-8 h-8 md:w-10 md:h-10 rounded-full" />
+          <img src="assets/grok.jpg" alt="Grok" class="w-8 h-8 md:w-10 md:h-10 rounded-full" />
           <span class="text-sm font-medium">Works with all AI tools</span>
         </div>
       </div>
@@ -167,6 +168,7 @@
             <img src="assets/gpt.png" alt="ChatGPT" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14" />
             <img src="assets/gemini.png" alt="Gemini" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14" />
             <img src="assets/claude.jpeg" alt="Claude" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full" />
+            <img src="assets/grok.jpg" alt="Grok" class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full" />
           </div>
           <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-black">Launch</h3>
           <p class="text-black/60 text-sm sm:text-base leading-relaxed">
@@ -360,11 +362,11 @@
           class="bg-white rounded-3xl p-5 sm:p-6 md:p-8 lg:p-10 border-2 border-black/10 shadow-2xl w-full max-w-full">
           <h3 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-center text-black px-2">Launch Your
             Prompt</h3>
-          <p class="text-black/60 text-center mb-6 sm:mb-10 text-sm sm:text-base px-4">
-            All chatbots open in new tabs. Claude & Gemini URLs are also copied for manual pasting
+            <p class="text-black/60 text-center mb-6 sm:mb-10 text-sm sm:text-base px-4">
+            All chatbots open in new tabs. Claude, Gemini & Grok URLs are also copied for manual pasting
           </p>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 w-full">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 w-full">
             <div *ngFor="let chatbot of generatedLinks"
               class="group relative bg-gradient-to-br from-white to-black/5 rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-black/10 hover:border-[#DC2626]/30 transition-all hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 w-full max-w-full">
               <div class="text-center">
@@ -374,6 +376,8 @@
                   <img *ngIf="chatbot.name === 'Gemini'" src="assets/gemini.png" alt="Gemini"
                     class="w-16 h-16 md:w-20 md:h-20" />
                   <img *ngIf="chatbot.name === 'Claude'" src="assets/claude.jpeg" alt="Claude"
+                    class="w-16 h-16 md:w-20 md:h-20 rounded-full" />
+                  <img *ngIf="chatbot.name === 'Grok'" src="assets/grok.jpg" alt="Grok"
                     class="w-16 h-16 md:w-20 md:h-20 rounded-full" />
                 </div>
                 <h4 class="text-xl md:text-2xl font-bold mb-6 text-black">{{ chatbot.name }}</h4>
@@ -466,6 +470,7 @@
                 <img src="assets/gpt.png" alt="ChatGPT" class="w-6 h-6" />
                 <img src="assets/gemini.png" alt="Gemini" class="w-6 h-6" />
                 <img src="assets/claude.jpeg" alt="Claude" class="w-6 h-6 rounded-full" />
+                <img src="assets/grok.jpg" alt="Grok" class="w-6 h-6 rounded-full" />
                 <span class="text-xl">🚀</span>
               </div>
             </li>
@@ -476,6 +481,7 @@
             <img src="assets/gpt.png" alt="ChatGPT" class="w-10 h-10" />
             <img src="assets/gemini.png" alt="Gemini" class="w-10 h-10" />
             <img src="assets/claude.jpeg" alt="Claude" class="w-10 h-10 rounded-full" />
+            <img src="assets/grok.jpg" alt="Grok" class="w-10 h-10 rounded-full" />
             <span class="text-2xl">🚀</span>
           </a>
         </div>
@@ -528,6 +534,7 @@
                 <img src="assets/gpt.png" alt="ChatGPT" class="w-6 h-6" />
                 <img src="assets/gemini.png" alt="Gemini" class="w-6 h-6" />
                 <img src="assets/claude.jpeg" alt="Claude" class="w-6 h-6 rounded-full" />
+                <img src="assets/grok.jpg" alt="Grok" class="w-6 h-6 rounded-full" />
                 <span class="text-xl">🚀</span>
               </div>
             </li>
@@ -602,6 +609,7 @@
                 <img src="assets/gpt.png" alt="ChatGPT" class="w-6 h-6" />
                 <img src="assets/gemini.png" alt="Gemini" class="w-6 h-6" />
                 <img src="assets/claude.jpeg" alt="Claude" class="w-6 h-6 rounded-full" />
+                <img src="assets/grok.jpg" alt="Grok" class="w-6 h-6 rounded-full" />
                 <span class="text-xl">🚀</span>
               </div>
             </li>

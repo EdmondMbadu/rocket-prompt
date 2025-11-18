@@ -51,6 +51,12 @@ Remember: Great prompts are specific, clear, and reusable. They save time and en
     return `https://claude.ai/?prompt=${encodedPrompt}`;
   }
 
+  createGrokUrl(prompt: string): string {
+    // Grok doesn't support URL parameters, so we just return the base URL
+    // The prompt will be copied to clipboard before opening
+    return 'https://x.com/i/grok';
+  }
+
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
     const text = promptText ?? this.demoPrompt.content;
 

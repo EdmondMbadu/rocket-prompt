@@ -195,8 +195,9 @@ export class PromptService {
     const launchGpt = typeof input.launchGpt === 'number' && input.launchGpt >= 0 ? input.launchGpt : 0;
     const launchGemini = typeof input.launchGemini === 'number' && input.launchGemini >= 0 ? input.launchGemini : 0;
     const launchClaude = typeof input.launchClaude === 'number' && input.launchClaude >= 0 ? input.launchClaude : 0;
+    const launchGrok = typeof input.launchGrok === 'number' && input.launchGrok >= 0 ? input.launchGrok : 0;
     const copied = typeof input.copied === 'number' && input.copied >= 0 ? input.copied : 0;
-    const totalLaunch = launchGpt + launchGemini + launchClaude + copied;
+    const totalLaunch = launchGpt + launchGemini + launchClaude + launchGrok + copied;
     const timestamp = firestoreModule.serverTimestamp();
 
     const payload: Record<string, unknown> = {
@@ -354,6 +355,7 @@ export class PromptService {
     const launchGptValue = data['launchGpt'];
     const launchGeminiValue = data['launchGemini'];
     const launchClaudeValue = data['launchClaude'];
+    const launchGrokValue = data['launchGrok'];
     const copiedValue = data['copied'];
     const totalLaunchValue = data['totalLaunch'];
     const isInvisibleValue = data['isInvisible'];
@@ -370,11 +372,12 @@ export class PromptService {
     const launchGpt = typeof launchGptValue === 'number' ? launchGptValue : 0;
     const launchGemini = typeof launchGeminiValue === 'number' ? launchGeminiValue : 0;
     const launchClaude = typeof launchClaudeValue === 'number' ? launchClaudeValue : 0;
+    const launchGrok = typeof launchGrokValue === 'number' ? launchGrokValue : 0;
     const copied = typeof copiedValue === 'number' ? copiedValue : 0;
     // Calculate totalLaunch if not present, otherwise use stored value
     const totalLaunch = typeof totalLaunchValue === 'number' 
       ? totalLaunchValue 
-      : launchGpt + launchGemini + launchClaude + copied;
+      : launchGpt + launchGemini + launchClaude + launchGrok + copied;
 
     return {
       id: doc.id,
@@ -388,6 +391,7 @@ export class PromptService {
       launchGpt,
       launchGemini,
       launchClaude,
+      launchGrok,
       copied,
       totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
@@ -571,10 +575,11 @@ export class PromptService {
    * @param launchType The type of launch: 'gpt', 'gemini', 'claude', or 'copied'
    * @returns The updated launch counts
    */
-  async trackLaunch(promptId: string, launchType: 'gpt' | 'gemini' | 'claude' | 'copied'): Promise<{
+  async trackLaunch(promptId: string, launchType: 'gpt' | 'gemini' | 'claude' | 'grok' | 'copied'): Promise<{
     launchGpt: number;
     launchGemini: number;
     launchClaude: number;
+    launchGrok: number;
     copied: number;
     totalLaunch: number;
   }> {
@@ -592,11 +597,13 @@ export class PromptService {
       const launchGpt = typeof promptData?.['launchGpt'] === 'number' ? promptData['launchGpt'] : 0;
       const launchGemini = typeof promptData?.['launchGemini'] === 'number' ? promptData['launchGemini'] : 0;
       const launchClaude = typeof promptData?.['launchClaude'] === 'number' ? promptData['launchClaude'] : 0;
+      const launchGrok = typeof promptData?.['launchGrok'] === 'number' ? promptData['launchGrok'] : 0;
       const copied = typeof promptData?.['copied'] === 'number' ? promptData['copied'] : 0;
 
       let newLaunchGpt = launchGpt;
       let newLaunchGemini = launchGemini;
       let newLaunchClaude = launchClaude;
+      let newLaunchGrok = launchGrok;
       let newCopied = copied;
 
       switch (launchType) {
@@ -609,17 +616,21 @@ export class PromptService {
         case 'claude':
           newLaunchClaude = launchClaude + 1;
           break;
+        case 'grok':
+          newLaunchGrok = launchGrok + 1;
+          break;
         case 'copied':
           newCopied = copied + 1;
           break;
       }
 
-      const newTotalLaunch = newLaunchGpt + newLaunchGemini + newLaunchClaude + newCopied;
+      const newTotalLaunch = newLaunchGpt + newLaunchGemini + newLaunchClaude + newLaunchGrok + newCopied;
 
       const updateData = {
         launchGpt: newLaunchGpt,
         launchGemini: newLaunchGemini,
         launchClaude: newLaunchClaude,
+        launchGrok: newLaunchGrok,
         copied: newCopied,
         totalLaunch: newTotalLaunch
       };
@@ -630,6 +641,7 @@ export class PromptService {
         launchGpt: newLaunchGpt,
         launchGemini: newLaunchGemini,
         launchClaude: newLaunchClaude,
+        launchGrok: newLaunchGrok,
         copied: newCopied,
         totalLaunch: newTotalLaunch
       };
@@ -639,6 +651,7 @@ export class PromptService {
       launchGpt: number;
       launchGemini: number;
       launchClaude: number;
+      launchGrok: number;
       copied: number;
       totalLaunch: number;
     };

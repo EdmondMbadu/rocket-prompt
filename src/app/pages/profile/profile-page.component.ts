@@ -35,6 +35,7 @@ interface PromptCard {
   readonly launchGpt: number;
   readonly launchGemini: number;
   readonly launchClaude: number;
+  readonly launchGrok: number;
   readonly copied: number;
   readonly totalLaunch: number;
   readonly createdAt?: Date;
@@ -308,6 +309,7 @@ export class ProfilePageComponent {
       gpt: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
       gemini: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
       claude: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+      grok: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
       copied: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0)
     };
   });
@@ -1434,6 +1436,7 @@ export class ProfilePageComponent {
       launchGpt: prompt.launchGpt ?? 0,
       launchGemini: prompt.launchGemini ?? 0,
       launchClaude: prompt.launchClaude ?? 0,
+      launchGrok: prompt.launchGrok ?? 0,
       copied: prompt.copied ?? 0,
       totalLaunch: prompt.totalLaunch ?? 0,
       createdAt: prompt.createdAt,

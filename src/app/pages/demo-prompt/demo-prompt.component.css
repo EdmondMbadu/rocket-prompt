@@ -306,6 +306,11 @@
     background: #fff7ed;
 }
 
+.demo-ai-button--grok:hover {
+    border-color: #1f2937;
+    background: #f9fafb;
+}
+
 .demo-ai-button--copy:hover {
     border-color: #6366f1;
     background: #eef2ff;
@@ -547,6 +552,7 @@
         justify-content: center;
     }
 }
+
 
 
 

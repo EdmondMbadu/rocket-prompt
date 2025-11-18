@@ -10,6 +10,7 @@ export interface Prompt {
   readonly launchGpt: number;
   readonly launchGemini: number;
   readonly launchClaude: number;
+  readonly launchGrok: number;
   readonly copied: number;
   readonly totalLaunch: number;
   readonly isInvisible?: boolean;
@@ -37,6 +38,7 @@ export interface CreatePromptInput {
   readonly launchGpt?: number;
   readonly launchGemini?: number;
   readonly launchClaude?: number;
+  readonly launchGrok?: number;
   readonly copied?: number;
   // Fork-related fields
   readonly forkedFromPromptId?: string;
