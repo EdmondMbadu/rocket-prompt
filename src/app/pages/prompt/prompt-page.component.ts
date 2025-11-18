@@ -31,6 +31,7 @@ export class PromptPageComponent {
   readonly currentUser = signal(this.authService.currentUser);
   readonly authorProfile = signal<UserProfile | undefined>(undefined);
   readonly organization = signal<Organization | undefined>(undefined);
+  readonly useGrokCom = signal(true);
 
   // Provide like state
   readonly liked = signal(false);
@@ -152,26 +153,54 @@ export class PromptPageComponent {
 
   createGrokUrl(prompt: string): string {
     // Try passing the prompt directly in the URL (mirrors the ChatGPT flow)
-    // If Grok ignores it, the tab still opens to Grok and the clipboard flow remains as a fallback elsewhere.
+    // If Grok ignores it, the tab still opens and the user can paste manually.
     const encodedPrompt = encodeURIComponent(prompt);
     const timestamp = Date.now();
-    return `https://x.com/i/grok?q=${encodedPrompt}&t=${timestamp}`;
+    const base = this.useGrokCom() ? 'https://grok.com/' : 'https://x.com/i/grok';
+    return `${base}?q=${encodedPrompt}&t=${timestamp}`;
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // ChatGPT (and now Grok) support pre-filling via URL parameters
-    // Gemini/Claude still rely on copy to clipboard before opening
+    // ChatGPT supports query param. For Grok we try query param but still copy so the user can paste if ignored.
+    // Gemini/Claude rely on copy to clipboard before opening.
     const text = promptText ?? this.prompt()?.content ?? '';
     const p = this.prompt();
 
-    if (chatbotName === 'ChatGPT' || chatbotName === 'Grok') {
+    if (chatbotName === 'ChatGPT') {
       // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
       // Track launch
       if (p) {
         try {
-          const launchType = chatbotName === 'ChatGPT' ? 'gpt' : 'grok';
-          const result = await this.promptService.trackLaunch(p.id, launchType);
+          const result = await this.promptService.trackLaunch(p.id, 'gpt');
+          this.prompt.set({ ...p, ...result } as Prompt);
+        } catch (e) {
+          console.error('Failed to track launch', e);
+        }
+      }
+      return;
+    }
+
+    if (chatbotName === 'Grok') {
+      // Copy so the user can paste if Grok ignores the query param
+      try {
+        if (text) {
+          await navigator.clipboard.writeText(text);
+          this.showCopyMessage('Grok prompt copied!');
+        }
+      } catch (e) {
+        if (text) {
+          this.fallbackCopyTextToClipboard(text);
+          this.showCopyMessage('Grok prompt copied!');
+        }
+      }
+
+      window.open(url, '_blank');
+
+      // Track launch
+      if (p) {
+        try {
+          const result = await this.promptService.trackLaunch(p.id, 'grok');
           this.prompt.set({ ...p, ...result } as Prompt);
         } catch (e) {
           console.error('Failed to track launch', e);
@@ -198,11 +227,9 @@ export class PromptPageComponent {
     // Track launch
     if (p) {
       try {
-        let launchType: 'gemini' | 'claude' | 'grok';
+        let launchType: 'gemini' | 'claude';
         if (chatbotName === 'Gemini') {
           launchType = 'gemini';
-        } else if (chatbotName === 'Grok') {
-          launchType = 'grok';
         } else {
           launchType = 'claude';
         }
@@ -602,5 +629,9 @@ export class PromptPageComponent {
     } else {
       await this.router.navigate(['/']);
     }
+  }
+
+  setGrokDomain(useGrokDotCom: boolean) {
+    this.useGrokCom.set(useGrokDotCom);
   }
 }

@@ -1490,6 +1490,20 @@
     color: #ffffff;
 }
 
+.grok-domain-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    font-size: 0.95rem;
+    color: #4b5563;
+    user-select: none;
+}
+
+.grok-domain-toggle input {
+    accent-color: #2563eb;
+}
+
 .ai-platform-button--copy {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     color: #475569;
