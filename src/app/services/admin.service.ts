@@ -102,16 +102,24 @@ export class AdminService {
             const createdAt = user['createdAt'];
             if (createdAt) {
                 let date: Date | null = null;
-                if (createdAt instanceof firestoreModule.Timestamp) {
-                    date = createdAt.toDate();
-                } else if (createdAt && typeof createdAt === 'object' && 'toDate' in (createdAt as { toDate?: () => Date })) {
-                    const toDate = (createdAt as { toDate: () => Date }).toDate;
-                    if (typeof toDate === 'function') {
-                        date = toDate();
+
+                // Handle Firestore Timestamp (instance or object with seconds)
+                if (createdAt && typeof createdAt === 'object') {
+                    if (createdAt instanceof firestoreModule.Timestamp) {
+                        date = createdAt.toDate();
+                    } else if ('toDate' in createdAt && typeof (createdAt as any).toDate === 'function') {
+                        date = (createdAt as any).toDate();
+                    } else if ('seconds' in createdAt) {
+                        // Handle raw Timestamp object { seconds: number, nanoseconds: number }
+                        date = new Date((createdAt as any).seconds * 1000);
                     }
                 }
+                // Handle string or number
+                else if (typeof createdAt === 'string' || typeof createdAt === 'number') {
+                    date = new Date(createdAt);
+                }
 
-                if (date) {
+                if (date && !isNaN(date.getTime())) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     usersByMonth.set(monthKey, (usersByMonth.get(monthKey) || 0) + 1);
                 }
@@ -124,16 +132,24 @@ export class AdminService {
             const createdAt = prompt['createdAt'];
             if (createdAt) {
                 let date: Date | null = null;
-                if (createdAt instanceof firestoreModule.Timestamp) {
-                    date = createdAt.toDate();
-                } else if (createdAt && typeof createdAt === 'object' && 'toDate' in (createdAt as { toDate?: () => Date })) {
-                    const toDate = (createdAt as { toDate: () => Date }).toDate;
-                    if (typeof toDate === 'function') {
-                        date = toDate();
+
+                // Handle Firestore Timestamp (instance or object with seconds)
+                if (createdAt && typeof createdAt === 'object') {
+                    if (createdAt instanceof firestoreModule.Timestamp) {
+                        date = createdAt.toDate();
+                    } else if ('toDate' in createdAt && typeof (createdAt as any).toDate === 'function') {
+                        date = (createdAt as any).toDate();
+                    } else if ('seconds' in createdAt) {
+                        // Handle raw Timestamp object { seconds: number, nanoseconds: number }
+                        date = new Date((createdAt as any).seconds * 1000);
                     }
                 }
+                // Handle string or number
+                else if (typeof createdAt === 'string' || typeof createdAt === 'number') {
+                    date = new Date(createdAt);
+                }
 
-                if (date) {
+                if (date && !isNaN(date.getTime())) {
                     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     promptsByMonth.set(monthKey, (promptsByMonth.get(monthKey) || 0) + 1);
                 }
