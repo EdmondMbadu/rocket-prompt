@@ -263,19 +263,34 @@
                         <span class="ai-platform-button__label">Claude</span>
                     </button>
 
-                    <button type="button" class="ai-platform-button ai-platform-button--grok"
-                        aria-label="Open in Grok" title="open and paste in Grok ({{ useGrokCom() ? 'grok.com' : 'x.com/grok' }})"
-                        (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
-                        <div class="ai-platform-button__icon">
-                            <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
+                    <div class="grok-combo" aria-label="Launch Grok with domain toggle">
+                        <button type="button" class="ai-platform-button ai-platform-button--grok grok-combo__launch"
+                            aria-label="Open in Grok" title="open and paste in Grok ({{ useGrokCom() ? 'grok.com' : 'x.com/grok' }})"
+                            (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
+                            <div class="ai-platform-button__icon">
+                                <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
+                            </div>
+                            <span class="ai-platform-button__label">Grok</span>
+                        </button>
+                        <div class="grok-domain-switch grok-combo__switch" aria-label="Choose Grok domain">
+                            <button type="button"
+                                class="grok-domain-switch__btn"
+                                [class.is-active]="useGrokCom()"
+                                (click)="setGrokDomain(true)"
+                                title="Launch via grok.com">
+                                <span class="grok-domain-switch__dot"></span>
+                                grok.com
+                            </button>
+                            <button type="button"
+                                class="grok-domain-switch__btn"
+                                [class.is-active]="!useGrokCom()"
+                                (click)="setGrokDomain(false)"
+                                title="Launch via x.com/grok">
+                                <span class="grok-domain-switch__dot grok-domain-switch__dot--alt"></span>
+                                x.com/grok
+                            </button>
                         </div>
-                        <span class="ai-platform-button__label">Grok</span>
-                    </button>
-
-                    <label class="grok-domain-toggle">
-                        <input type="checkbox" [checked]="useGrokCom()" (change)="setGrokDomain($any($event.target).checked)" />
-                        <span>Use grok.com (uncheck for x.com/grok)</span>
-                    </label>
+                    </div>
 
                     <button type="button" class="ai-platform-button ai-platform-button--copy"
                         [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
