@@ -187,7 +187,7 @@ export class ProfilePageComponent {
     switchMap(([params, queryParams]) => {
       const username = params['username'];
       const userId = queryParams['userId'];
-      
+
       if (username) {
         // Viewing profile by username
         return this.authService.userProfileByUsername$(username).pipe(
@@ -209,7 +209,7 @@ export class ProfilePageComponent {
           })
         );
       }
-      
+
       if (userId) {
         // Viewing profile by userId - redirect to username URL
         this.viewingUserId.set(userId);
@@ -236,7 +236,7 @@ export class ProfilePageComponent {
           })
         );
       }
-      
+
       // Viewing own profile
       this.viewingUserId.set(null);
       return this.currentUser$.pipe(
@@ -305,16 +305,70 @@ export class ProfilePageComponent {
 
   readonly launchBreakdown = computed(() => {
     const prompts = this.prompts();
-    return {
-      gpt: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
-      gemini: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
-      claude: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
-      grok: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
-      copied: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0)
-    };
+    const stats = [
+      {
+        id: 'gpt',
+        label: 'ChatGPT',
+        subtext: 'OpenAI',
+        count: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
+        icon: 'assets/gpt.png',
+        isImage: true,
+        bgClass: 'bg-green-50',
+        colorClass: 'bg-green-500'
+      },
+      {
+        id: 'gemini',
+        label: 'Gemini',
+        subtext: 'Google DeepMind',
+        count: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
+        icon: 'assets/gemini.png',
+        isImage: true,
+        bgClass: 'bg-blue-50',
+        colorClass: 'bg-blue-500'
+      },
+      {
+        id: 'claude',
+        label: 'Claude',
+        subtext: 'Anthropic',
+        count: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+        icon: 'assets/claude.jpeg',
+        isImage: true,
+        bgClass: 'bg-orange-50',
+        colorClass: 'bg-orange-500'
+      },
+      {
+        id: 'grok',
+        label: 'Grok',
+        subtext: 'xAI',
+        count: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
+        icon: 'assets/grok.jpg',
+        isImage: true,
+        bgClass: 'bg-slate-50',
+        colorClass: 'bg-slate-900'
+      },
+      {
+        id: 'copied',
+        label: 'Copied',
+        subtext: 'Clipboard',
+        count: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0),
+        icon: 'clipboard',
+        isImage: false,
+        bgClass: 'bg-gray-100',
+        colorClass: 'bg-gray-500'
+      }
+    ];
+
+    return stats.sort((a, b) => b.count - a.count);
   });
 
-  readonly metricsExpanded = signal(false);
+  getBarHeight(value: number, max: number): number {
+    if (!max || max === 0) return 0;
+    // Ensure a minimum visibility for non-zero values
+    const percentage = (value / max) * 100;
+    return value > 0 ? Math.max(percentage, 2) : 0;
+  }
+
+  readonly isModelUsageExpanded = signal(true);
 
   readonly tagSuggestions = computed(() => {
     const term = String(this.tagQueryDebounced()).trim().toLowerCase();
@@ -382,9 +436,7 @@ export class ProfilePageComponent {
     this.activeTab.set(tab);
   }
 
-  toggleMetrics() {
-    this.metricsExpanded.update(v => !v);
-  }
+
 
   private observeCollections() {
     combineLatest([this.route.params, this.route.queryParams, this.profile$]).pipe(
@@ -668,12 +720,12 @@ export class ProfilePageComponent {
     if (!profile) {
       return 'User';
     }
-    
+
     // Use stored username if available, otherwise generate it
     if (profile.username) {
       return profile.username;
     }
-    
+
     const userId = profile.userId || profile.id || '';
     return generateDisplayUsername(profile.firstName, profile.lastName, userId);
   }
@@ -682,7 +734,7 @@ export class ProfilePageComponent {
     if (!profile) {
       return '';
     }
-    
+
     const username = profile.username || this.getDisplayUsername(profile);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}/profile/${username}`;
@@ -819,7 +871,7 @@ export class ProfilePageComponent {
   onCollectionCustomUrlInput(value: string) {
     const trimmed = String(value ?? '').trim();
     this.collectionForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
-    
+
     if (this.collectionCustomUrlTimer) {
       clearTimeout(this.collectionCustomUrlTimer);
     }
@@ -846,7 +898,7 @@ export class ProfilePageComponent {
 
     this.isCheckingCollectionCustomUrl.set(true);
     this.collectionCustomUrlError.set(null);
-    
+
     this.collectionCustomUrlTimer = setTimeout(async () => {
       try {
         const isTaken = await this.collectionService.isCustomUrlTaken(trimmed);
@@ -1150,7 +1202,7 @@ export class ProfilePageComponent {
   onCustomUrlInput(value: string) {
     const trimmed = String(value ?? '').trim();
     this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
-    
+
     if (this.customUrlTimer) {
       clearTimeout(this.customUrlTimer);
     }
@@ -1177,7 +1229,7 @@ export class ProfilePageComponent {
 
     this.isCheckingCustomUrl.set(true);
     this.customUrlError.set(null);
-    
+
     this.customUrlTimer = setTimeout(async () => {
       try {
         const isTaken = await this.promptService.isCustomUrlTaken(trimmed, this.editingPromptId());
@@ -1231,7 +1283,7 @@ export class ProfilePageComponent {
       switchMap(([params, queryParams]) => {
         const username = params['username'];
         const userId = queryParams['userId'];
-        
+
         if (username) {
           // Viewing profile by username - find user first
           return this.authService.userProfileByUsername$(username).pipe(
@@ -1258,7 +1310,7 @@ export class ProfilePageComponent {
             })
           );
         }
-        
+
         if (userId) {
           // Viewing profile by userId (backward compatibility)
           // Pass currentUserId to show private prompts if viewing own profile
@@ -1269,7 +1321,7 @@ export class ProfilePageComponent {
             })
           );
         }
-        
+
         // Viewing own profile - show own prompts
         return this.currentUser$.pipe(
           switchMap(user => {
@@ -1304,19 +1356,19 @@ export class ProfilePageComponent {
           }
         }
 
-          this.prompts.set(cards);
-          this.syncCategories(prompts);
-          this.loadAuthorProfiles(prompts);
-          this.loadOrganizations(prompts);
-          this.isLoadingPrompts.set(false);
-          this.loadPromptsError.set(null);
-          if (this.promptFormError()) {
-            this.promptFormError.set(null);
-          }
-          if (this.deleteError()) {
-            this.deleteError.set(null);
-          }
-        },
+        this.prompts.set(cards);
+        this.syncCategories(prompts);
+        this.loadAuthorProfiles(prompts);
+        this.loadOrganizations(prompts);
+        this.isLoadingPrompts.set(false);
+        this.loadPromptsError.set(null);
+        if (this.promptFormError()) {
+          this.promptFormError.set(null);
+        }
+        if (this.deleteError()) {
+          this.deleteError.set(null);
+        }
+      },
       error: error => {
         console.error('Failed to load prompts', error);
         this.isLoadingPrompts.set(false);
@@ -1362,7 +1414,7 @@ export class ProfilePageComponent {
         }
       });
       this.authorProfiles.set(updatedMap);
-      
+
       // Update prompt cards with author profiles
       const updatedCards = this.prompts().map(card => ({
         ...card,
@@ -1409,7 +1461,7 @@ export class ProfilePageComponent {
         }
       });
       this.organizations.set(updatedMap);
-      
+
       // Update prompt cards with organization profiles
       const updatedCards = this.prompts().map(card => ({
         ...card,
@@ -1504,7 +1556,7 @@ export class ProfilePageComponent {
   async onProfilePictureSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (!file) {
       return;
     }
@@ -1565,18 +1617,18 @@ export class ProfilePageComponent {
     if (!prompt.forkedFromPromptId) {
       return null;
     }
-    
+
     if (prompt.forkedFromCustomUrl) {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       return `${origin}/${prompt.forkedFromCustomUrl}`;
     }
-    
+
     if (prompt.forkedFromPromptId) {
       const short = prompt.forkedFromPromptId.slice(0, 8);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       return `${origin}/prompt/${short}`;
     }
-    
+
     return null;
   }
 
