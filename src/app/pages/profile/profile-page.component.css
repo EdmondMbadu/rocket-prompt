@@ -646,6 +646,19 @@
   padding: clamp(1.75rem, 3vw, 2.5rem);
 }
 
+.modal-card--collection {
+  width: min(100%, 44rem);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.collection-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
 .modal-close {
   position: absolute;
   top: 1rem;

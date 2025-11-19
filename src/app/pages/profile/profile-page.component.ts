@@ -368,7 +368,7 @@ export class ProfilePageComponent {
     return value > 0 ? Math.max(percentage, 2) : 0;
   }
 
-  readonly isModelUsageExpanded = signal(true);
+  readonly isModelUsageExpanded = signal(false);
 
   readonly tagSuggestions = computed(() => {
     const term = String(this.tagQueryDebounced()).trim().toLowerCase();

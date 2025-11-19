@@ -222,9 +222,10 @@
           </div>
 
           <!-- Model Usage Breakdown -->
-          <div class="rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <div
+            class="rounded-2xl bg-white border border-slate-300 shadow-md hover:shadow-lg transition-shadow duration-300">
             <div class="p-6" [class.border-b]="isModelUsageExpanded()"
-              [class.border-slate-200]="isModelUsageExpanded()">
+              [class.border-slate-300]="isModelUsageExpanded()">
               <button type="button" (click)="isModelUsageExpanded.set(!isModelUsageExpanded())"
                 class="w-full flex items-center justify-between text-left hover:bg-slate-50 -m-6 p-6 rounded-t-2xl transition">
                 <h3 class="text-lg font-bold text-slate-900">Model Usage</h3>
@@ -917,7 +918,7 @@
 
     <!-- CREATE COLLECTION MODAL -->
     <div *ngIf="newCollectionModalOpen()" class="modal-overlay" (click)="closeCreateCollectionModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card modal-card--collection" (click)="$event.stopPropagation()">
         <button type="button" class="modal-close" aria-label="Close" (click)="closeCreateCollectionModal()"
           [disabled]="isSavingCollection()">
           <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
@@ -932,7 +933,7 @@
           <p class="mt-1 text-sm text-slate-500">Group your favorite prompts into a reusable set.</p>
         </header>
 
-        <form class="mt-6 space-y-5" [formGroup]="collectionForm" (ngSubmit)="submitCollectionForm()">
+        <form class="mt-6 space-y-5 collection-modal-body" [formGroup]="collectionForm" (ngSubmit)="submitCollectionForm()">
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-slate-600" for="collection-name">Collection name</label>
