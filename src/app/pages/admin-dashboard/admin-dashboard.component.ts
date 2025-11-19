@@ -448,7 +448,9 @@ export class AdminDashboardComponent {
     formatMonth(month: string): string {
         const [year, monthNum] = month.split('-');
         const date = new Date(parseInt(year), parseInt(monthNum) - 1);
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        const monthStr = date.toLocaleDateString('en-US', { month: 'short' });
+        const yearStr = date.toLocaleDateString('en-US', { year: '2-digit' });
+        return `${monthStr} '${yearStr}`;
     }
 
     getBarHeight(count: number, max: number): number {
