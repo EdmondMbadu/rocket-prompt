@@ -217,7 +217,7 @@
         </div>
 
         <!-- Growth Charts Row -->
-        <div class="grid gap-6 lg:grid-cols-2">
+        <div class="grid gap-4 lg:grid-cols-2">
           <!-- Users Growth -->
           <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 relative overflow-hidden">
             <div class="flex items-center justify-between mb-6 relative z-10">
@@ -227,51 +227,48 @@
                 Monthly
               </span>
             </div>
-            <div class="relative h-48 pt-4">
-              <ng-container *ngIf="stats()?.usersByMonth?.length; else noUserData">
-                <!-- SVG Line Chart -->
-                <svg class="absolute inset-0 h-full w-full overflow-visible" preserveAspectRatio="none"
-                  viewBox="0 0 100 100">
-                  <!-- Gradient Defs -->
-                  <defs>
-                    <linearGradient id="userGrowthGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.2" />
-                      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <!-- Area -->
-                  <path [attr.d]="userGrowthAreaPath()" fill="url(#userGrowthGradient)" stroke="none" />
-                  <!-- Line -->
-                  <path [attr.d]="userGrowthPath()" fill="none" stroke="#3B82F6" stroke-width="2"
-                    vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+            <div class="relative h-48 pt-4 pl-8">
+              <!-- Y-Axis Labels -->
+              <div
+                class="absolute left-0 top-4 bottom-0 w-8 flex flex-col justify-between text-[10px] text-slate-400 font-medium py-0">
+                <span>{{ getYAxisLabels(userGrowthMax())[0] }}</span>
+                <span>{{ getYAxisLabels(userGrowthMax())[1] }}</span>
+                <span>0</span>
+              </div>
 
+              <!-- Grid Lines -->
+              <div class="absolute inset-0 pl-8 flex flex-col justify-between pointer-events-none">
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Top -->
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Middle -->
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Bottom -->
+              </div>
+
+              <ng-container *ngIf="stats()?.usersByMonth?.length; else noUserData">
                 <!-- Interactive Bars (Histogram) -->
-                <div class="absolute inset-0 flex items-end gap-2 z-10">
+                <div class="absolute inset-0 pl-8 flex items-end gap-1 z-10 pb-6">
                   <div *ngFor="let item of stats()?.usersByMonth"
                     class="flex-1 flex flex-col items-center group h-full justify-end">
                     <div class="relative w-full flex items-end justify-center h-full">
-                      <!-- Invisible touch target / faint bar -->
+                      <!-- Visible Bar -->
                       <div
-                        class="w-full max-w-[2rem] rounded-t-sm bg-blue-100/0 transition-all duration-300 group-hover:bg-blue-500/10"
-                        [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.usersByMonth || []))">
-
-                        <!-- Dot on the line (visible on hover) -->
-                        <div
-                          class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                        </div>
+                        class="w-full max-w-[2.5rem] rounded-t-md bg-gradient-to-t from-blue-500 to-blue-400 transition-all duration-300 group-hover:from-blue-600 group-hover:to-blue-500 group-hover:shadow-lg shadow-sm relative"
+                        [style.height.%]="getBarHeight(item.count, userGrowthMax())">
 
                         <!-- Tooltip -->
                         <div
                           class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                          <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                          <div
+                            class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg font-medium">
                             {{ item.count }} users
+                          </div>
+                          <!-- Arrow -->
+                          <div class="w-2 h-2 bg-slate-900 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1">
                           </div>
                         </div>
                       </div>
                     </div>
                     <span
-                      class="mt-2 text-[10px] uppercase tracking-wider text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-0">
+                      class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium absolute -bottom-0">
                       {{ formatMonth(item.month).split(' ')[0] }}
                     </span>
                   </div>
@@ -294,51 +291,48 @@
                 Monthly
               </span>
             </div>
-            <div class="relative h-48 pt-4">
-              <ng-container *ngIf="stats()?.promptsByMonth?.length; else noPromptData">
-                <!-- SVG Line Chart -->
-                <svg class="absolute inset-0 h-full w-full overflow-visible" preserveAspectRatio="none"
-                  viewBox="0 0 100 100">
-                  <!-- Gradient Defs -->
-                  <defs>
-                    <linearGradient id="promptGrowthGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.2" />
-                      <stop offset="100%" stop-color="#6366F1" stop-opacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <!-- Area -->
-                  <path [attr.d]="promptGrowthAreaPath()" fill="url(#promptGrowthGradient)" stroke="none" />
-                  <!-- Line -->
-                  <path [attr.d]="promptGrowthPath()" fill="none" stroke="#6366F1" stroke-width="2"
-                    vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+            <div class="relative h-48 pt-4 pl-8">
+              <!-- Y-Axis Labels -->
+              <div
+                class="absolute left-0 top-4 bottom-0 w-8 flex flex-col justify-between text-[10px] text-slate-400 font-medium py-0">
+                <span>{{ getYAxisLabels(promptGrowthMax())[0] }}</span>
+                <span>{{ getYAxisLabels(promptGrowthMax())[1] }}</span>
+                <span>0</span>
+              </div>
 
+              <!-- Grid Lines -->
+              <div class="absolute inset-0 pl-8 flex flex-col justify-between pointer-events-none">
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Top -->
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Middle -->
+                <div class="border-t border-slate-100 w-full h-0"></div> <!-- Bottom -->
+              </div>
+
+              <ng-container *ngIf="stats()?.promptsByMonth?.length; else noPromptData">
                 <!-- Interactive Bars (Histogram) -->
-                <div class="absolute inset-0 flex items-end gap-2 z-10">
+                <div class="absolute inset-0 pl-8 flex items-end gap-1 z-10 pb-6">
                   <div *ngFor="let item of stats()?.promptsByMonth"
                     class="flex-1 flex flex-col items-center group h-full justify-end">
                     <div class="relative w-full flex items-end justify-center h-full">
-                      <!-- Invisible touch target / faint bar -->
+                      <!-- Visible Bar -->
                       <div
-                        class="w-full max-w-[2rem] rounded-t-sm bg-indigo-100/0 transition-all duration-300 group-hover:bg-indigo-500/10"
-                        [style.height.%]="getBarHeight(item.count, getMaxValue(stats()?.promptsByMonth || []))">
-
-                        <!-- Dot on the line (visible on hover) -->
-                        <div
-                          class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-indigo-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                        </div>
+                        class="w-full max-w-[2.5rem] rounded-t-md bg-gradient-to-t from-indigo-500 to-indigo-400 transition-all duration-300 group-hover:from-indigo-600 group-hover:to-indigo-500 group-hover:shadow-lg shadow-sm relative"
+                        [style.height.%]="getBarHeight(item.count, promptGrowthMax())">
 
                         <!-- Tooltip -->
                         <div
                           class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                          <div class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                          <div
+                            class="bg-slate-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg font-medium">
                             {{ item.count }} prompts
+                          </div>
+                          <!-- Arrow -->
+                          <div class="w-2 h-2 bg-slate-900 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1">
                           </div>
                         </div>
                       </div>
                     </div>
                     <span
-                      class="mt-2 text-[10px] uppercase tracking-wider text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-0">
+                      class="mt-3 text-[10px] uppercase tracking-wider text-slate-400 font-medium absolute -bottom-0">
                       {{ formatMonth(item.month).split(' ')[0] }}
                     </span>
                   </div>

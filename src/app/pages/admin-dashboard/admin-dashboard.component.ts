@@ -165,28 +165,40 @@ export class AdminDashboardComponent {
         this.users().filter(user => user.role === 'admin' || user.admin).length
     );
 
+    readonly userGrowthMax = computed(() => {
+        const stats = this.stats();
+        if (!stats?.usersByMonth?.length) return 10; // Default max
+        return Math.max(...stats.usersByMonth.map(d => d.count), 1);
+    });
+
     readonly userGrowthPath = computed(() => {
         const stats = this.stats();
         if (!stats?.usersByMonth?.length) return '';
-        return this.generateChartPath(stats.usersByMonth.map(d => d.count));
+        return this.generateChartPath(stats.usersByMonth.map(d => d.count), this.userGrowthMax());
     });
 
     readonly userGrowthAreaPath = computed(() => {
         const stats = this.stats();
         if (!stats?.usersByMonth?.length) return '';
-        return this.generateAreaPath(stats.usersByMonth.map(d => d.count));
+        return this.generateAreaPath(stats.usersByMonth.map(d => d.count), this.userGrowthMax());
+    });
+
+    readonly promptGrowthMax = computed(() => {
+        const stats = this.stats();
+        if (!stats?.promptsByMonth?.length) return 10; // Default max
+        return Math.max(...stats.promptsByMonth.map(d => d.count), 1);
     });
 
     readonly promptGrowthPath = computed(() => {
         const stats = this.stats();
         if (!stats?.promptsByMonth?.length) return '';
-        return this.generateChartPath(stats.promptsByMonth.map(d => d.count));
+        return this.generateChartPath(stats.promptsByMonth.map(d => d.count), this.promptGrowthMax());
     });
 
     readonly promptGrowthAreaPath = computed(() => {
         const stats = this.stats();
         if (!stats?.promptsByMonth?.length) return '';
-        return this.generateAreaPath(stats.promptsByMonth.map(d => d.count));
+        return this.generateAreaPath(stats.promptsByMonth.map(d => d.count), this.promptGrowthMax());
     });
 
     readonly promptCountsByUserId = computed(() => {
@@ -431,10 +443,7 @@ export class AdminDashboardComponent {
         return Math.max(...data.map(d => d.count), 1);
     }
 
-    getBarHeight(count: number, max: number): number {
-        if (max === 0) return 0;
-        return Math.max((count / max) * 100, 5);
-    }
+
 
     formatMonth(month: string): string {
         const [year, monthNum] = month.split('-');
@@ -442,12 +451,18 @@ export class AdminDashboardComponent {
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
     }
 
-    generateChartPath(data: number[]): string {
+    getBarHeight(count: number, max: number): number {
+        if (max === 0) return 0;
+        // Ensure we don't exceed 100% and have a minimum visibility
+        return Math.min(Math.max((count / max) * 100, 5), 100);
+    }
+
+    generateChartPath(data: number[], max: number): string {
         if (data.length < 2) return '';
 
-        const max = Math.max(...data, 1);
         const points = data.map((val, index) => {
             const x = (index / (data.length - 1)) * 100;
+            // Invert Y because SVG 0 is at top
             const y = 100 - (val / max) * 100;
             return `${x},${y}`;
         });
@@ -455,10 +470,17 @@ export class AdminDashboardComponent {
         return `M ${points.join(' L ')}`;
     }
 
-    generateAreaPath(data: number[]): string {
+    generateAreaPath(data: number[], max: number): string {
         if (data.length < 2) return '';
-        const linePath = this.generateChartPath(data);
+        const linePath = this.generateChartPath(data, max);
         return `${linePath} L 100,100 L 0,100 Z`;
+    }
+
+    getYAxisLabels(max: number): number[] {
+        // Returns 3 labels: Max, Half, 0 (implied at bottom)
+        // We'll just return [Max, Max/2] for display
+        if (max <= 0) return [10, 5];
+        return [max, Math.round(max / 2)];
     }
 
     async onBulkUploadCSV(event: Event): Promise<void> {
