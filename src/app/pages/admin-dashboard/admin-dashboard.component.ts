@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { AdminService, type AdminStats } from '../../services/admin.service';
 import { PromptService } from '../../services/prompt.service';
 import { HomeContentService } from '../../services/home-content.service';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { HomeContent } from '../../models/home-content.model';
@@ -16,7 +17,7 @@ import type { User } from 'firebase/auth';
 @Component({
     selector: 'app-admin-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, NavbarComponent],
     templateUrl: './admin-dashboard.component.html',
     styleUrl: './admin-dashboard.component.css'
 })
@@ -827,4 +828,3 @@ export class AdminDashboardComponent {
         }
     }
 }
-

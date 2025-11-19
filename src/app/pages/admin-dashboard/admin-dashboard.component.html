@@ -2,18 +2,14 @@
   <!-- Header -->
   <header class="bg-white border-b border-slate-200 shadow-sm">
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
           <p class="mt-1 text-sm text-slate-500">Manage users and monitor platform statistics</p>
         </div>
-        <button type="button" (click)="router.navigate(['/home'])"
-          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Home
-        </button>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <app-navbar [profile]="profile$ | async"></app-navbar>
+        </div>
       </div>
     </div>
   </header>
