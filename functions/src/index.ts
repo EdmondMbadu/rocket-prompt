@@ -48,12 +48,12 @@ type PlanType = "plus" | "team";
 
 const planCatalog: Record<PlanType, {amount: number; name: string; description: string}> = {
   plus: {
-    amount: 100,
+    amount: 1999,
     name: "RocketPrompt Plus",
     description: "Lifetime access to RocketPrompt Plus"
   },
   team: {
-    amount: 200,
+    amount: 9999,
     name: "RocketPrompt Pro (Team)",
     description: "One year of Team/Pro access"
   }

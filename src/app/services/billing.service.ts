@@ -34,8 +34,8 @@ export class BillingService {
     }
 
     const origin = this.getWindowOrigin();
-    const successUrl = `${origin}/home?checkout=success`;
-    const cancelUrl = `${origin}/?checkout=cancelled`;
+    const successUrl = `${origin}/home?checkout=success&plan=${plan}`;
+    const cancelUrl = `${origin}/?checkout=cancelled&plan=${plan}`;
 
     const { functions, functionsModule } = await this.getFunctionsContext();
     const callable = functionsModule.httpsCallable<CheckoutPayload, CheckoutResponse>(

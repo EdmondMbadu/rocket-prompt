@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -65,6 +65,7 @@ export class HomeComponent {
   private readonly homeContentService = inject(HomeContentService);
   private readonly organizationService = inject(OrganizationService);
   readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -134,6 +135,7 @@ export class HomeComponent {
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
   // Fork-related state
   readonly forkingPromptId = signal<string | null>(null);
+  readonly checkoutNotice = signal<{ type: 'success' | 'error'; plan?: 'plus' | 'team' } | null>(null);
 
   // Home content (daily tip and most launched prompt)
   readonly dailyTip = signal<DailyTip | null>(null);
@@ -158,6 +160,12 @@ export class HomeComponent {
   // Map of timers for each copied prompt so we can clear them if the user copies again
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  constructor() {
+    this.observeCheckoutStatus();
+    this.observePrompts();
+    this.observeHomeContent();
+  }
 
   readonly createPromptForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
@@ -270,11 +278,6 @@ export class HomeComponent {
   readonly userPromptCount = computed(() => {
     return this.prompts().length;
   });
-
-  constructor() {
-    this.observePrompts();
-    this.observeHomeContent();
-  }
 
   openShareModal(prompt: PromptCard) {
     this.sharePrompt.set(prompt);
@@ -1292,6 +1295,61 @@ export class HomeComponent {
     }
     const prompt = this.prompts().find(p => p.id === forkingId);
     return prompt?.title || 'Original prompt';
+  }
+
+  dismissCheckoutNotice() {
+    this.checkoutNotice.set(null);
+  }
+
+  private observeCheckoutStatus() {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const checkout = params.get('checkout');
+        if (!checkout) {
+          return;
+        }
+
+        if (checkout === 'success') {
+          const plan = this.normalizePlan(params.get('plan'));
+          this.checkoutNotice.set({
+            type: 'success',
+            plan
+          });
+        } else if (checkout === 'error') {
+          this.checkoutNotice.set({
+            type: 'error'
+          });
+        }
+
+        this.clearCheckoutParams();
+      });
+  }
+
+  private normalizePlan(plan: string | null): 'plus' | 'team' | undefined {
+    if (plan === 'team' || plan === 'plus') {
+      return plan;
+    }
+    return undefined;
+  }
+
+  getPlanLabel(plan: 'plus' | 'team' | undefined) {
+    if (plan === 'team') {
+      return 'Your Pro / Team plan';
+    }
+    if (plan === 'plus') {
+      return 'Your Plus plan';
+    }
+    return 'Your plan';
+  }
+
+  private clearCheckoutParams() {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { checkout: null, plan: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   async navigateToHomeOrLanding() {

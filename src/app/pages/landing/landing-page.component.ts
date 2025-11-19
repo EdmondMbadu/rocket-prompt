@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { take } from 'rxjs/operators';
 import { BillingService } from '../../services/billing.service';
@@ -36,12 +36,14 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   characterCount = 0;
   readonly processingPlan = signal<'plus' | 'team' | null>(null);
   readonly checkoutError = signal<string | null>(null);
+  readonly checkoutNotice = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private billingService: BillingService
+    private billingService: BillingService,
+    private route: ActivatedRoute
   ) {
     this.promptForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -62,11 +64,17 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
     this.mobileMenuOpen.set(false);
   }
 
+  private hasCheckoutQueryParam = false;
+
   ngOnInit() {
-    // Redirect logged-in users to home page
+    this.observeCheckoutStatus();
+
+    // Redirect logged-in users to home page when no checkout status to show
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (user && user.emailVerified) {
-        this.router.navigate(['/home']);
+        if (!this.hasCheckoutQueryParam) {
+          this.router.navigate(['/home']);
+        }
       }
     });
   }
@@ -195,6 +203,63 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   isProcessing(plan: 'plus' | 'team') {
     return this.processingPlan() === plan;
+  }
+
+  dismissCheckoutNotice() {
+    this.checkoutNotice.set(null);
+  }
+
+  private observeCheckoutStatus() {
+    const snapshotCheckout = this.route.snapshot.queryParamMap.get('checkout');
+    if (snapshotCheckout) {
+      this.hasCheckoutQueryParam = true;
+    }
+
+    this.route.queryParamMap.pipe(take(1)).subscribe(params => {
+      const checkout = params.get('checkout');
+      if (!checkout) {
+        return;
+      }
+
+      const planLabel = this.formatPlanLabel(params.get('plan'));
+      if (checkout === 'cancelled') {
+        this.checkoutNotice.set({
+          type: 'error',
+          message: `Checkout was cancelled. ${planLabel} has not been activated.`
+        });
+      } else if (checkout === 'error') {
+        this.checkoutNotice.set({
+          type: 'error',
+          message: 'We were unable to complete your payment. Please try again or contact support.'
+        });
+      } else if (checkout === 'success') {
+        this.checkoutNotice.set({
+          type: 'success',
+          message: `${planLabel} is now active.`
+        });
+      }
+
+      this.hasCheckoutQueryParam = false;
+      this.clearCheckoutParams();
+    });
+  }
+
+  private formatPlanLabel(plan: string | null) {
+    if (plan === 'team') {
+      return 'Your Pro / Team plan';
+    }
+    if (plan === 'plus') {
+      return 'Your Plus plan';
+    }
+    return 'Your plan';
+  }
+
+  private clearCheckoutParams() {
+    void this.router.navigate([], {
+      queryParams: { checkout: null, plan: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   private generateShortenedLinks(promptData: PromptData) {

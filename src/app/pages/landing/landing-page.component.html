@@ -52,6 +52,22 @@
     </div>
   </nav>
 
+  <div *ngIf="checkoutNotice() as notice" class="fixed top-24 left-0 right-0 z-40 px-4">
+    <div
+      [ngClass]="notice.type === 'success'
+        ? 'bg-green-50 border-green-200 text-green-800'
+        : 'bg-amber-50 border-amber-200 text-amber-800'"
+      class="max-w-xl mx-auto rounded-2xl border px-4 py-3 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="text-sm font-semibold">
+        {{ notice.message }}
+      </div>
+      <button type="button" (click)="dismissCheckoutNotice()"
+        class="text-sm font-bold text-black/60 hover:text-black transition">
+        Dismiss
+      </button>
+    </div>
+  </div>
+
   <!-- Hero Section -->
   <section class="relative pt-8 pb-10 md:pt-12 md:pb-16 overflow-hidden w-full max-w-full">
     <!-- Animated background gradient -->
@@ -494,7 +510,7 @@
           <div class="mb-6 sm:mb-8">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Plus</h3>
             <div class="flex items-baseline mb-3 sm:mb-4">
-              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$1</span>
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$19.99</span>
               <span class="text-black/60 ml-2 text-base sm:text-lg">lifetime</span>
             </div>
             <p class="text-black/60 text-sm sm:text-base">For power users</p>
@@ -565,7 +581,7 @@
           <div class="mb-6 sm:mb-8">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Pro</h3>
             <div class="flex items-baseline mb-3 sm:mb-4">
-              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$2</span>
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$99.99</span>
               <span class="text-black/60 ml-2 text-base sm:text-lg">/year</span>
             </div>
             <p class="text-black/60 text-sm sm:text-base">For teams and businesses</p>
