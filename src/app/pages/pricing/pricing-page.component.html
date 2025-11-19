@@ -1,0 +1,124 @@
+<div class="min-h-screen bg-gradient-to-b from-white to-red-50 text-slate-900">
+  <header class="bg-white/90 backdrop-blur-xl border-b border-black/5 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a routerLink="/home" class="flex items-center hover:opacity-80 transition">
+          <img src="assets/rocket-logo.png" alt="Rocket Prompt Logo" class="h-10 w-auto" />
+        </a>
+        <div class="text-sm text-black/60 hidden sm:block">
+          <div class="font-semibold text-black">RocketPrompt</div>
+          <div>Choose plan & unlock unlimited prompts</div>
+        </div>
+      </div>
+      <a routerLink="/home"
+        class="inline-flex items-center gap-2 rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold text-black hover:border-black/20 hover:bg-black/5">
+        <span>Back to Home</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+    <section class="text-center space-y-4">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#DC2626]/30 shadow">
+        <span class="text-sm font-semibold text-[#DC2626]">Upgrade</span>
+        <span class="text-xs text-black/60">Lifetime & Team plans</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-black">Pick the plan that fits your workflow</h1>
+      <p class="text-black/70 max-w-2xl mx-auto text-base sm:text-lg">
+        Stay logged in and purchase directly from here. Lifetime Plus unlocks all pro features forever.
+        Team (Pro) unlocks collaboration and renews annually so we can remind you when it expires.
+      </p>
+      <div *ngIf="checkoutError()" class="text-red-600 font-semibold bg-red-50 border border-red-100 px-4 py-2 rounded-xl">
+        {{ checkoutError() }}
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        class="group relative bg-white rounded-3xl border-2 border-black/10 p-6 sm:p-8 flex flex-col hover:border-[#DC2626]/40 hover:-translate-y-1 hover:shadow-2xl transition-all">
+        <div class="mb-6">
+          <p class="text-sm font-semibold text-[#DC2626] mb-2">Plus</p>
+          <h2 class="text-3xl font-black text-black mb-2">Lifetime Access</h2>
+          <div class="flex items-baseline gap-2">
+            <span class="text-5xl font-black text-black">$1</span>
+            <span class="text-black/60 text-lg">one-time</span>
+          </div>
+          <p class="text-black/60 mt-3">Perfect for solo creators who want unlimited prompts without subscriptions.</p>
+        </div>
+
+        <ul class="space-y-3 text-black/80 mb-8 flex-1">
+          <li class="flex items-start gap-3">
+            <span class="text-[#DC2626] font-bold">✓</span> Unlimited prompts & collections
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#DC2626] font-bold">✓</span> Private prompts & custom URLs
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#DC2626] font-bold">✓</span> Bulk upload CSV support
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#DC2626] font-bold">✓</span> Lifetime feature updates
+          </li>
+        </ul>
+
+        <button type="button"
+          class="relative w-full rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white font-bold py-4 shadow-lg hover:shadow-red-500/40 hover:scale-105 transition disabled:opacity-70 disabled:cursor-not-allowed"
+          (click)="startCheckout('plus')" [disabled]="isProcessing('plus')" [attr.aria-busy]="isProcessing('plus')">
+          <span *ngIf="!isProcessing('plus')">Upgrade to Plus</span>
+          <span *ngIf="isProcessing('plus')">Redirecting…</span>
+        </button>
+      </div>
+
+      <div
+        class="group relative bg-gradient-to-br from-white to-[#DC2626]/5 rounded-3xl border-2 border-[#DC2626] p-6 sm:p-8 flex flex-col shadow-xl hover:shadow-red-500/30 hover:-translate-y-1 transition-all">
+        <div class="absolute top-0 right-6 -translate-y-1/2 bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white text-xs font-black px-4 py-1 rounded-full shadow">
+          Teams
+        </div>
+        <div class="mb-6">
+          <p class="text-sm font-semibold text-[#B91C1C] mb-2">Pro / Team</p>
+          <h2 class="text-3xl font-black text-black mb-2">One Year Access</h2>
+          <div class="flex items-baseline gap-2">
+            <span class="text-5xl font-black text-black">$2</span>
+            <span class="text-black/60 text-lg">per year</span>
+          </div>
+          <p class="text-black/60 mt-3">Includes lifetime reminders, renewal tracking, and everything teams need.</p>
+        </div>
+
+        <ul class="space-y-3 text-black/80 mb-8 flex-1">
+          <li class="flex items-start gap-3">
+            <span class="text-[#B91C1C] font-bold">✓</span> All Plus features
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#B91C1C] font-bold">✓</span> Team management & invites
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#B91C1C] font-bold">✓</span> Organization pages & shared prompts
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-[#B91C1C] font-bold">✓</span> Renewal reminders (1 year tracking)
+          </li>
+        </ul>
+
+        <button type="button"
+          class="relative w-full rounded-2xl bg-gradient-to-r from-[#B91C1C] to-[#DC2626] text-white font-bold py-4 shadow-lg hover:shadow-red-500/40 hover:scale-105 transition disabled:opacity-70 disabled:cursor-not-allowed"
+          (click)="startCheckout('team')" [disabled]="isProcessing('team')" [attr.aria-busy]="isProcessing('team')">
+          <span *ngIf="!isProcessing('team')">Upgrade to Pro</span>
+          <span *ngIf="isProcessing('team')">Redirecting…</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="rounded-3xl border border-black/10 bg-white/80 p-6 md:p-8">
+      <h3 class="text-xl font-bold mb-3">How billing works</h3>
+      <ul class="space-y-2 text-black/70 text-sm sm:text-base">
+        <li>• Stripe processes the payment securely. We never store card details.</li>
+        <li>• We immediately mark your account as <strong>Plus</strong> or <strong>Team</strong> after checkout.</li>
+        <li>• Team plan comes with renewal reminders one year after purchase.</li>
+      </ul>
+    </section>
+  </main>
+</div>

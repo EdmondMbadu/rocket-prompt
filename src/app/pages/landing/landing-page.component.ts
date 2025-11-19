@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { take } from 'rxjs/operators';
+import { BillingService } from '../../services/billing.service';
 
 interface PromptData {
   name: string;
@@ -33,11 +34,14 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   generatedLinks: ChatbotLink[] = [];
   showResults = false;
   characterCount = 0;
+  readonly processingPlan = signal<'plus' | 'team' | null>(null);
+  readonly checkoutError = signal<string | null>(null);
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private billingService: BillingService
   ) {
     this.promptForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -69,6 +73,31 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     this.setupSmoothScrolling();
+  }
+
+  async startCheckout(plan: 'plus' | 'team') {
+    const user = this.authService.currentUser;
+    if (!user) {
+      await this.router.navigate(['/auth'], {
+        queryParams: {
+          mode: 'login',
+          redirectTo: '/home'
+        }
+      });
+      return;
+    }
+
+    this.checkoutError.set(null);
+    this.processingPlan.set(plan);
+
+    try {
+      await this.billingService.startCheckout(plan);
+    } catch (error) {
+      console.error('Failed to start checkout', error);
+      this.checkoutError.set(this.mapCheckoutError(error));
+    } finally {
+      this.processingPlan.set(null);
+    }
   }
 
   onSubmit() {
@@ -162,6 +191,10 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
     const content = this.promptForm.get('content')?.value || '';
     const customUrl = this.promptForm.get('customUrl')?.value || '';
     return name.trim().length > 0 || content.trim().length > 0 || customUrl.trim().length > 0;
+  }
+
+  isProcessing(plan: 'plus' | 'team') {
+    return this.processingPlan() === plan;
   }
 
   private generateShortenedLinks(promptData: PromptData) {
@@ -273,5 +306,28 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
         }
       });
     });
+  }
+
+  private mapCheckoutError(error: unknown): string {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'message' in error &&
+      typeof (error as { message?: unknown }).message === 'string'
+    ) {
+      const firebaseCode = (error as { code?: unknown }).code;
+      if (firebaseCode === 'functions/unauthenticated') {
+        return 'Please sign in before upgrading your account.';
+      }
+
+      const firebaseMessage = (error as { details?: unknown }).details;
+      if (typeof firebaseMessage === 'string' && firebaseMessage.trim()) {
+        return firebaseMessage;
+      }
+
+      return (error as { message: string }).message;
+    }
+
+    return 'We could not start the checkout. Please try again.';
   }
 }

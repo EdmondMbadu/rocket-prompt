@@ -157,9 +157,7 @@ export class OrganizationsPageComponent {
     }
 
     navigateToUpgrade() {
-        // TODO: Navigate to pricing/upgrade page or open modal
-        // For now, just show an alert
-        alert('Upgrade to Team subscription to create organizations. This feature is coming soon!');
+        void this.router.navigate(['/pricing']);
     }
 
     getOrganizationInitials(organization: Organization): string {
@@ -173,4 +171,3 @@ export class OrganizationsPageComponent {
         return name.substring(0, 2).toUpperCase();
     }
 }
-

@@ -494,7 +494,7 @@
           <div class="mb-6 sm:mb-8">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Plus</h3>
             <div class="flex items-baseline mb-3 sm:mb-4">
-              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$19.99</span>
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$1</span>
               <span class="text-black/60 ml-2 text-base sm:text-lg">lifetime</span>
             </div>
             <p class="text-black/60 text-sm sm:text-base">For power users</p>
@@ -544,13 +544,15 @@
             </li>
           </ul>
 
-          <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
-            class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
-            <span class="relative z-10">Upgrade to Plus</span>
+          <button type="button"
+            class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+            (click)="startCheckout('plus')" [disabled]="isProcessing('plus')" [attr.aria-busy]="isProcessing('plus')">
+            <span class="relative z-10" *ngIf="!isProcessing('plus')">Upgrade to Plus</span>
+            <span class="relative z-10" *ngIf="isProcessing('plus')">Redirecting…</span>
             <div
               class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
             </div>
-          </a>
+          </button>
         </div>
 
         <!-- Pro Plan -->
@@ -563,7 +565,7 @@
           <div class="mb-6 sm:mb-8">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-black text-black mb-2 sm:mb-3">Pro</h3>
             <div class="flex items-baseline mb-3 sm:mb-4">
-              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$99.99</span>
+              <span class="text-4xl sm:text-5xl md:text-6xl font-black text-black">$2</span>
               <span class="text-black/60 ml-2 text-base sm:text-lg">/year</span>
             </div>
             <p class="text-black/60 text-sm sm:text-base">For teams and businesses</p>
@@ -621,14 +623,20 @@
             </li>
           </ul>
 
-          <a routerLink="/auth" [queryParams]="{ mode: 'signup' }"
-            class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105">
-            <span class="relative z-10">Upgrade to Pro</span>
+          <button type="button"
+            class="group relative w-full text-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-6 py-4 text-base font-bold text-white transition-all hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+            (click)="startCheckout('team')" [disabled]="isProcessing('team')" [attr.aria-busy]="isProcessing('team')">
+            <span class="relative z-10" *ngIf="!isProcessing('team')">Upgrade to Pro</span>
+            <span class="relative z-10" *ngIf="isProcessing('team')">Redirecting…</span>
             <div
               class="absolute inset-0 bg-gradient-to-r from-[#B91C1C] to-[#DC2626] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
             </div>
-          </a>
+          </button>
         </div>
+      </div>
+
+      <div *ngIf="checkoutError()" class="mt-6 text-center text-red-600 font-semibold">
+        {{ checkoutError() }}
       </div>
 
       <!-- Enterprise Section -->

@@ -30,6 +30,12 @@ export const routes: Routes = [
       import('./pages/home/home.component').then(m => m.HomeComponent)
   },
   {
+    path: 'pricing',
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/pricing/pricing-page.component').then(m => m.PricingPageComponent)
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('./pages/profile/profile-page.component').then(m => m.ProfilePageComponent)
