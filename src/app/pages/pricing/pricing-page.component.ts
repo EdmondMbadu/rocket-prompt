@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { Component, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { BillingService } from '../../services/billing.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -11,15 +11,31 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './pricing-page.component.html',
   styleUrl: './pricing-page.component.css'
 })
-export class PricingPageComponent {
+export class PricingPageComponent implements OnInit {
   readonly processingPlan = signal<'plus' | 'team' | null>(null);
   readonly checkoutError = signal<string | null>(null);
 
   constructor(
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) { }
+
+  ngOnInit() {
+    const planParam = this.normalizePlan(this.route.snapshot.queryParamMap.get('plan'));
+    const shouldAutoCheckout = this.route.snapshot.queryParamMap.get('autoCheckout') === '1';
+
+    if (shouldAutoCheckout && planParam) {
+      setTimeout(() => {
+        void this.startCheckout(planParam);
+      }, 0);
+    }
+
+    if (shouldAutoCheckout || planParam) {
+      this.clearCheckoutParams();
+    }
+  }
 
   async startCheckout(plan: 'plus' | 'team') {
     const user = this.authService.currentUser;
@@ -27,7 +43,7 @@ export class PricingPageComponent {
       await this.router.navigate(['/auth'], {
         queryParams: {
           mode: 'login',
-          redirectTo: '/pricing'
+          redirectTo: `/pricing?plan=${plan}&autoCheckout=1`
         }
       });
       return;
@@ -66,5 +82,21 @@ export class PricingPageComponent {
     }
 
     return 'We could not start the checkout. Please try again.';
+  }
+
+  private normalizePlan(input: string | null): 'plus' | 'team' | null {
+    if (input === 'plus' || input === 'team') {
+      return input;
+    }
+    return null;
+  }
+
+  private clearCheckoutParams() {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { plan: null, autoCheckout: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 }

@@ -89,7 +89,7 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
       await this.router.navigate(['/auth'], {
         queryParams: {
           mode: 'login',
-          redirectTo: '/home'
+          redirectTo: `/pricing?plan=${plan}&autoCheckout=1`
         }
       });
       return;
