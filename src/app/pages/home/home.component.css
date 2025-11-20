@@ -40,10 +40,12 @@
   max-width: fit-content;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .home-upgrade-banner {
     width: auto;
     margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
   }
 }
 
@@ -101,33 +103,24 @@
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .home-upgrade-banner {
     display: inline-flex;
     width: auto;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 0.5rem 0.875rem;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.5625rem 1rem;
+    gap: 0.5625rem;
+    margin-top: 0;
+    align-self: center;
   }
   
   .home-upgrade-banner-icon {
-    font-size: 0.9375rem;
+    font-size: 1rem;
   }
   
   .home-upgrade-banner-text {
-    font-size: 0.75rem;
-  }
-  
-  .home-actions-upgrade {
-    display: inline-flex;
-    padding: 0.625rem 1rem;
     font-size: 0.8125rem;
-  }
-  
-  .home-actions-upgrade span {
-    font-size: 0.75rem;
   }
 }
 
