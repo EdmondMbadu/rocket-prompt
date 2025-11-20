@@ -128,21 +128,43 @@
                 </ng-template>
               </button>
             </div>
-            <div *ngIf="isViewingOwnProfile() && subscriptionDetails(profile.subscriptionStatus) as tier"
-              class="profile-subscription-badge"
-              [ngClass]="tier.key === 'team'
-                ? 'profile-subscription-badge--team'
-                : tier.key === 'pro'
-                ? 'profile-subscription-badge--pro'
-                : 'profile-subscription-badge--plus'">
-              <span class="profile-subscription-badge__icon">
-                {{ tier.key === 'team' ? '🚀' : tier.key === 'pro' ? '⭐' : '✨' }}
-              </span>
-              <div>
-                <p class="profile-subscription-badge__label">{{ tier.label }}</p>
-                <p class="profile-subscription-badge__caption">
-                  {{ tier.key === 'team' ? 'Team perks unlocked' : tier.key === 'pro' ? 'Pro access active' : 'Lifetime access active' }}
-                </p>
+            <!-- Subscription badge - only show if NOT expired -->
+            <ng-container *ngIf="isViewingOwnProfile() && !isSubscriptionExpired(profile)">
+              <div *ngIf="subscriptionDetails(profile.subscriptionStatus) as tier"
+                class="profile-subscription-badge"
+                [ngClass]="tier.key === 'team'
+                  ? 'profile-subscription-badge--team'
+                  : tier.key === 'pro'
+                  ? 'profile-subscription-badge--pro'
+                  : 'profile-subscription-badge--plus'">
+                <span class="profile-subscription-badge__icon">
+                  {{ tier.key === 'team' ? '🚀' : tier.key === 'pro' ? '⭐' : '✨' }}
+                </span>
+                <div>
+                  <p class="profile-subscription-badge__label">{{ tier.label }}</p>
+                  <p class="profile-subscription-badge__caption">
+                    {{ tier.key === 'team' ? 'Team perks unlocked' : tier.key === 'pro' ? 'Pro access active' : 'Lifetime access active' }}
+                  </p>
+                </div>
+              </div>
+            </ng-container>
+            <!-- Expiration warning banner - only show if expired -->
+            <div *ngIf="isViewingOwnProfile() && isSubscriptionExpired(profile)"
+              class="mt-3 rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 shadow-sm">
+              <div class="flex items-center gap-3">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-red-900">Your membership has expired</p>
+                  <p class="text-xs text-red-700 mt-0.5">Upgrade now to restore your Pro features and continue enjoying all benefits.</p>
+                </div>
+                <a routerLink="/pricing" class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-red-700 hover:shadow-md">
+                  Upgrade
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </a>
               </div>
             </div>
             <!-- Profile picture error message -->

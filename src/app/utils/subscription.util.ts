@@ -86,10 +86,23 @@ export function shouldShowUpgradeBanner(
     // 1. Date instance (already converted)
     // 2. Firestore Timestamp object with toDate() method
     // 3. Plain object with seconds (and optionally nanoseconds) properties
+    // 4. String date (manually entered or from database)
     let expirationDate: Date | null = null;
     
     if (subscriptionExpiresAt instanceof Date) {
       expirationDate = subscriptionExpiresAt;
+    } else if (typeof subscriptionExpiresAt === 'string') {
+      // Handle string dates - try parsing the date string
+      try {
+        expirationDate = new Date(subscriptionExpiresAt);
+        // Check if the date is valid
+        if (isNaN(expirationDate.getTime())) {
+          expirationDate = null;
+        }
+      } catch (e) {
+        console.warn('Failed to parse expiration date string', e);
+        expirationDate = null;
+      }
     } else if (subscriptionExpiresAt && typeof subscriptionExpiresAt === 'object') {
       // Handle Firestore Timestamp - try toDate() first (Firebase SDK format)
       const timestamp = subscriptionExpiresAt as { 
@@ -130,4 +143,65 @@ export function shouldShowUpgradeBanner(
 
   // For any other status, show banner
   return true;
+}
+
+/**
+ * Checks if a subscription has expired.
+ * 
+ * @param subscriptionStatus - The user's subscription status ('pro', 'team', 'plus', or undefined)
+ * @param subscriptionExpiresAt - The expiration timestamp (Firestore Timestamp, Date, string, or null/undefined)
+ * @returns true if the subscription has expired, false otherwise
+ */
+export function isSubscriptionExpired(
+  subscriptionStatus?: string | null,
+  subscriptionExpiresAt?: unknown
+): boolean {
+  // Plus users never expire
+  if (subscriptionStatus?.toLowerCase() === 'plus') {
+    return false;
+  }
+
+  // If no expiration date, assume it doesn't expire (legacy plus users)
+  if (!subscriptionExpiresAt) {
+    return false;
+  }
+
+  // Parse the expiration date
+  let expirationDate: Date | null = null;
+  
+  if (subscriptionExpiresAt instanceof Date) {
+    expirationDate = subscriptionExpiresAt;
+  } else if (typeof subscriptionExpiresAt === 'string') {
+    try {
+      expirationDate = new Date(subscriptionExpiresAt);
+      if (isNaN(expirationDate.getTime())) {
+        return false; // Invalid date, assume not expired
+      }
+    } catch (e) {
+      return false; // Can't parse, assume not expired
+    }
+  } else if (subscriptionExpiresAt && typeof subscriptionExpiresAt === 'object') {
+    const timestamp = subscriptionExpiresAt as { 
+      seconds?: number; 
+      nanoseconds?: number;
+      toDate?: () => Date 
+    };
+    
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      try {
+        expirationDate = timestamp.toDate();
+      } catch (e) {
+        return false;
+      }
+    } else if (typeof timestamp.seconds === 'number') {
+      expirationDate = new Date(timestamp.seconds * 1000);
+    }
+  }
+
+  if (!expirationDate || isNaN(expirationDate.getTime())) {
+    return false; // Can't determine expiration, assume not expired
+  }
+
+  // Check if current time is past expiration
+  return new Date() > expirationDate;
 }
