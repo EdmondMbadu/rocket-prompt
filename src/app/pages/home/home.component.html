@@ -806,15 +806,14 @@
         <div *ngIf="createPromptMode() === 'bulk' && showBulkUploadTab()" class="mt-5 space-y-4 sm:mt-6 sm:space-y-6">
           <div
             class="rounded-3xl border border-white/60 bg-gradient-to-br from-[#fdf2f8] via-white to-[#eff6ff] p-5 shadow-lg shadow-rose-200/40 sm:p-6">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="max-w-xl">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.4em] text-rose-400 sm:text-xs">Bulk workflow
-                </p>
-                <h3 class="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Drop a CSV to launch dozens of prompts
-                  at once</h3>
-                <p class="mt-2 text-sm text-slate-600 sm:text-base">Each row becomes a prompt authored by
-                  {{ profile.firstName }} and synced to your library automatically.</p>
-              </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-sm text-slate-700 sm:text-base">
+                Import your prompts in one go. Follow the
+                <a class="font-semibold text-[#DC2626]" [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
+                  bulk upload guide
+                </a>
+                before selecting a CSV.
+              </p>
               <a class="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/70 px-4 py-2 text-sm font-semibold text-[#DC2626] shadow-sm transition hover:border-[#DC2626]"
                 [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
                 View guide
@@ -823,24 +822,6 @@
                 </svg>
               </a>
             </div>
-            <ul class="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">1</span>
-                Use our template (title, content, tag) plus optional metrics.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">2</span>
-                Drop the CSV below — we validate every row and show progress in real time.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">3</span>
-                Private or invisible prompts are respected via the optional columns.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">4</span>
-                Need help? The instructions cover column formats, samples, and FAQs.
-              </li>
-            </ul>
           </div>
 
           <ng-container *ngIf="canUseBulkUpload(profile); else bulkLocked">

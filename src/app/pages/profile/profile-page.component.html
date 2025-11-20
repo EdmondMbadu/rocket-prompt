@@ -1007,15 +1007,14 @@
         <div *ngIf="createPromptMode() === 'bulk' && showBulkUploadTab()" class="mt-5 space-y-4 sm:mt-6 sm:space-y-6">
           <div
             class="rounded-3xl border border-white/60 bg-gradient-to-br from-[#fdf2f8] via-white to-[#eff6ff] p-5 shadow-lg shadow-rose-200/40 sm:p-6">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="max-w-xl">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.4em] text-rose-400 sm:text-xs">Bulk workflow
-                </p>
-                <h3 class="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Import your prompt archive instantly
-                </h3>
-                <p class="mt-2 text-sm text-slate-600 sm:text-base">Each CSV row becomes a prompt authored by your
-                  account, complete with optional stats and visibility controls.</p>
-              </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-sm text-slate-700 sm:text-base">
+                Upload a CSV whenever you're ready. The
+                <a class="font-semibold text-[#DC2626]" [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
+                  bulk upload guide
+                </a>
+                covers the required columns before you select a file.
+              </p>
               <a class="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/70 px-4 py-2 text-sm font-semibold text-[#DC2626] shadow-sm transition hover:border-[#DC2626]"
                 [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
                 View guide
@@ -1024,24 +1023,6 @@
                 </svg>
               </a>
             </div>
-            <ul class="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">1</span>
-                Title, content, and tag are required — everything else is optional metadata.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">2</span>
-                Invisible/private prompts stay hidden when you set the flag in the CSV.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">3</span>
-                Our parser validates each row so you immediately know what needs fixing.
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">4</span>
-                Keep the header row untouched and feel free to use AI to generate sample data.
-              </li>
-            </ul>
           </div>
 
           <ng-container *ngIf="canUseBulkUpload(currentUserProfile()); else profileBulkLocked">
