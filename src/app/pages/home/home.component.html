@@ -633,7 +633,28 @@
           </div>
         </header>
 
-        <form class="mt-4 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createPromptForm"
+        <div *ngIf="showBulkUploadTab()" class="mt-4 sm:mt-5">
+          <div class="inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1 text-xs font-semibold text-slate-500 sm:text-sm">
+            <button type="button"
+              (click)="switchCreatePromptMode('single')"
+              class="rounded-xl px-4 py-2 transition-all duration-200"
+              [class.bg-white]="createPromptMode() === 'single'"
+              [class.text-slate-900]="createPromptMode() === 'single'"
+              [class.shadow-sm]="createPromptMode() === 'single'">
+              Single Prompt
+            </button>
+            <button type="button"
+              (click)="switchCreatePromptMode('bulk')"
+              class="rounded-xl px-4 py-2 transition-all duration-200"
+              [class.bg-white]="createPromptMode() === 'bulk'"
+              [class.text-slate-900]="createPromptMode() === 'bulk'"
+              [class.shadow-sm]="createPromptMode() === 'bulk'">
+              Bulk Upload
+            </button>
+          </div>
+        </div>
+
+        <form *ngIf="createPromptMode() === 'single' || !showBulkUploadTab()" class="mt-4 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createPromptForm"
           (ngSubmit)="submitPromptForm()">
           <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
             <div>
@@ -768,6 +789,98 @@
             </button>
           </div>
         </form>
+
+        <div *ngIf="createPromptMode() === 'bulk' && showBulkUploadTab()" class="mt-4 space-y-4 sm:mt-6 sm:space-y-5">
+          <div class="rounded-2xl border border-slate-200 bg-white/90 px-4 py-4 sm:px-5 sm:py-5">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold text-slate-900 sm:text-base">Upload multiple prompts at once</p>
+                <p class="text-xs text-slate-500 sm:text-sm">Each CSV row becomes a prompt saved under your account.</p>
+              </div>
+              <a class="inline-flex items-center gap-1 text-xs font-semibold text-[#DC2626] sm:text-sm"
+                [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
+                See instructions
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M11 7h6v6" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <ng-container *ngIf="canUseBulkUpload(profile); else bulkLocked">
+            <div class="rounded-2xl border border-slate-200 bg-white/95 px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">Upload CSV</p>
+                  <p class="text-xs text-slate-500">Include title, content, tag, and optional columns like customUrl.</p>
+                </div>
+                <label for="bulk-csv-upload"
+                  class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-2 text-xs font-bold text-white shadow-lg transition hover:shadow-red-500/40 sm:text-sm cursor-pointer disabled:opacity-50"
+                  [class.opacity-60]="isProcessingBulkUpload()"
+                  [class.cursor-not-allowed]="isProcessingBulkUpload()">
+                  <svg class="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span>{{ isProcessingBulkUpload() ? 'Uploading…' : 'Select CSV' }}</span>
+                </label>
+                <input id="bulk-csv-upload" class="hidden" type="file" accept=".csv" (change)="onBulkUploadCSV($event)"
+                  [disabled]="isProcessingBulkUpload()" />
+              </div>
+
+              <div *ngIf="isProcessingBulkUpload()" class="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                <div class="flex items-center justify-between text-xs font-semibold text-blue-800 sm:text-sm">
+                  <span>Processing CSV…</span>
+                  <span>
+                    {{
+                    bulkUploadProgress().total > 0
+                    ? ((bulkUploadProgress().processed / bulkUploadProgress().total) * 100).toFixed(0)
+                    : 0
+                    }}%
+                  </span>
+                </div>
+                <div class="mt-2 h-2 w-full rounded-full bg-blue-200">
+                  <div class="h-2 rounded-full bg-blue-600 transition-all duration-300"
+                    [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0"></div>
+                </div>
+                <p class="mt-2 text-[11px] text-blue-700 sm:text-xs">
+                  Success: {{ bulkUploadProgress().success }} • Failed: {{ bulkUploadProgress().failed }}
+                </p>
+              </div>
+
+              <div *ngIf="bulkUploadError()" class="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-xs text-red-700 sm:text-sm">
+                {{ bulkUploadError() }}
+              </div>
+
+              <div *ngIf="bulkUploadSuccess()" class="mt-4 rounded-xl border border-green-200 bg-green-50 px-3 py-3 text-xs text-green-800 sm:text-sm">
+                {{ bulkUploadSuccess() }}
+              </div>
+
+              <p class="mt-4 text-[11px] text-slate-500 sm:text-xs">
+                Need help formatting? Follow the instructions linked above and be sure to keep the header row intact.
+              </p>
+            </div>
+          </ng-container>
+
+          <ng-template #bulkLocked>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-6 py-7 text-center">
+              <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-[#DC2626]">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 11V7a4 4 0 118 0v4m-9 3h10a1 1 0 011 1v5a1 1 0 01-1 1H7a1 1 0 01-1-1v-5a1 1 0 011-1z" />
+                </svg>
+              </div>
+              <h3 class="mt-3 text-base font-semibold text-slate-900">Bulk upload is for Plus & Pro</h3>
+              <p class="mt-2 text-sm text-slate-600">
+                Upgrade to unlock CSV uploads and speed through your prompt library imports.
+              </p>
+              <a routerLink="/pricing"
+                class="mt-4 inline-flex items-center justify-center rounded-2xl border border-[#DC2626] px-4 py-2 text-sm font-semibold text-[#DC2626] transition hover:bg-[#DC2626] hover:text-white">
+                See plans
+              </a>
+            </div>
+          </ng-template>
+        </div>
       </div>
     </div>
   </div>

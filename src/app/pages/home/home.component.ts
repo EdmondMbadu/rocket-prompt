@@ -53,6 +53,13 @@ interface PromptCard {
   readonly isPrivate?: boolean;
 }
 
+interface BulkUploadProgress {
+  processed: number;
+  total: number;
+  success: number;
+  failed: number;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -137,6 +144,13 @@ export class HomeComponent {
   // Fork-related state
   readonly forkingPromptId = signal<string | null>(null);
   readonly checkoutNotice = signal<{ type: 'success' | 'error'; plan?: 'plus' | 'team' } | null>(null);
+  readonly createPromptMode = signal<'single' | 'bulk'>('single');
+  readonly showBulkUploadTab = computed(() => !this.isEditingPrompt() && !this.forkingPromptId());
+  readonly bulkUploadInstructionsUrl = 'https://rocketprompt.io/bulk-prompts';
+  readonly isProcessingBulkUpload = signal(false);
+  readonly bulkUploadProgress = signal<BulkUploadProgress>({ processed: 0, total: 0, success: 0, failed: 0 });
+  readonly bulkUploadError = signal<string | null>(null);
+  readonly bulkUploadSuccess = signal<string | null>(null);
 
   // Home content (daily tip and most launched prompt)
   readonly dailyTip = signal<DailyTip | null>(null);
@@ -626,6 +640,8 @@ export class HomeComponent {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(null);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -644,6 +660,8 @@ export class HomeComponent {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(prompt.id);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -680,6 +698,8 @@ export class HomeComponent {
     this.clearCustomUrlDebounce();
     this.isEditingPrompt.set(true);
     this.editingPromptId.set(prompt.id);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.createPromptForm.setValue({
       title: prompt.title,
       tag: prompt.tag,
@@ -762,9 +782,48 @@ export class HomeComponent {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(null);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
+  }
+
+  switchCreatePromptMode(mode: 'single' | 'bulk') {
+    const isSameMode = this.createPromptMode() === mode;
+    if (isSameMode) {
+      return;
+    }
+
+    if (mode === 'bulk' && !this.showBulkUploadTab()) {
+      return;
+    }
+
+    if (mode === 'bulk') {
+      this.resetBulkUploadState();
+      this.bulkUploadError.set(null);
+      this.bulkUploadSuccess.set(null);
+    }
+
+    if (mode === 'single') {
+      this.bulkUploadError.set(null);
+      this.bulkUploadSuccess.set(null);
+    }
+
+    this.createPromptMode.set(mode);
+  }
+
+  canUseBulkUpload(profile: UserProfile | null | undefined): boolean {
+    if (!profile) {
+      return false;
+    }
+
+    if (profile.role === 'admin' || profile.admin) {
+      return true;
+    }
+
+    const status = profile.subscriptionStatus?.toLowerCase();
+    return status === 'pro' || status === 'plus' || status === 'team';
   }
 
   async submitPromptForm() {
@@ -882,6 +941,165 @@ export class HomeComponent {
     }
   }
 
+  async onBulkUploadCSV(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    input.value = '';
+
+    if (this.isProcessingBulkUpload()) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+
+    if (!currentUser) {
+      this.bulkUploadError.set('You must be signed in to upload prompts.');
+      return;
+    }
+
+    let profile: UserProfile | undefined;
+
+    try {
+      profile = await this.authService.fetchUserProfile(currentUser.uid);
+    } catch (error) {
+      console.error('Failed to load profile for bulk upload', error);
+    }
+
+    if (!this.canUseBulkUpload(profile)) {
+      this.bulkUploadError.set('Bulk upload is available for Plus and Pro members.');
+      return;
+    }
+
+    this.isProcessingBulkUpload.set(true);
+    this.bulkUploadError.set(null);
+    this.bulkUploadSuccess.set(null);
+    this.bulkUploadProgress.set({ processed: 0, total: 0, success: 0, failed: 0 });
+
+    try {
+      const text = await file.text();
+      const rows = this.parseCSV(text);
+
+      if (rows.length === 0) {
+        throw new Error('CSV file is empty or invalid.');
+      }
+
+      const headerRow = rows[0].map(header => header?.trim() ?? '');
+      const normalizedHeaders = headerRow.map(header => header.toLowerCase());
+      const requiredHeaders = ['title', 'content', 'tag'];
+      const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
+
+      if (missingHeaders.length > 0) {
+        throw new Error(`Missing required columns: ${missingHeaders.join(', ')}. Required columns are: title, content, tag. Optional columns: customUrl, views, likes, launchGpt, launchGemini, launchClaude, launchGrok, copied, isInvisible`);
+      }
+
+      const dataRows = rows.slice(1);
+      this.bulkUploadProgress.set({ processed: 0, total: dataRows.length, success: 0, failed: 0 });
+
+      let successCount = 0;
+      let failedCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        if (row.every(cell => !cell?.trim())) {
+          // Skip completely empty rows but still advance progress
+          this.bulkUploadProgress.set({
+            processed: Math.min(i + 1, dataRows.length),
+            total: dataRows.length,
+            success: successCount,
+            failed: failedCount
+          });
+          continue;
+        }
+
+        const rowData: Record<string, string> = {};
+        headerRow.forEach((header, index) => {
+          const key = header.toLowerCase();
+          if (key) {
+            rowData[key] = row[index]?.trim() || '';
+          }
+        });
+
+        try {
+          const title = rowData['title'];
+          const content = rowData['content'];
+          const tag = rowData['tag'];
+          const customUrl = rowData['customurl'] || rowData['custom_url'] || '';
+          const views = this.parseNumber(rowData['views'], 0);
+          const likes = this.parseNumber(rowData['likes'], 0);
+          const launchGpt = this.parseNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
+          const launchGemini = this.parseNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
+          const launchClaude = this.parseNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
+          const launchGrok = this.parseNumber(rowData['launchgrok'] || rowData['launch_grok'], 0);
+          const copied = this.parseNumber(rowData['copied'], 0);
+          const isInvisible = this.parseBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
+
+          if (!title || !content || !tag) {
+            throw new Error(`Row ${i + 2}: Missing required fields (title, content, or tag)`);
+          }
+
+          const promptId = await this.promptService.createPrompt({
+            authorId: currentUser.uid,
+            title,
+            content,
+            tag,
+            customUrl: customUrl || undefined,
+            views,
+            likes,
+            launchGpt,
+            launchGemini,
+            launchClaude,
+            launchGrok,
+            copied
+          });
+
+          if (isInvisible) {
+            await this.promptService.bulkToggleVisibility([promptId], true);
+          }
+
+          successCount++;
+        } catch (error) {
+          failedCount++;
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Row ${i + 2}: ${message}`);
+        }
+
+        this.bulkUploadProgress.set({
+          processed: Math.min(i + 1, dataRows.length),
+          total: dataRows.length,
+          success: successCount,
+          failed: failedCount
+        });
+      }
+
+      if (failedCount > 0) {
+        this.bulkUploadError.set(
+          `Upload completed with ${failedCount} error(s). ${successCount} prompt(s) created successfully. Errors: ${errors.slice(0, 5).join('; ')}${errors.length > 5 ? ` (and ${errors.length - 5} more)` : ''}`
+        );
+        if (successCount > 0) {
+          this.bulkUploadSuccess.set(`${successCount} prompt${successCount === 1 ? '' : 's'} created successfully before errors.`);
+        }
+      } else {
+        this.bulkUploadError.set(null);
+        const successMessage =
+          successCount > 0
+            ? `${successCount} prompt${successCount === 1 ? '' : 's'} uploaded successfully.`
+            : 'No prompts were created from this CSV.';
+        this.bulkUploadSuccess.set(successMessage);
+      }
+    } catch (error) {
+      console.error('Failed to process CSV upload', error);
+      this.bulkUploadError.set(error instanceof Error ? error.message : 'Failed to process CSV file.');
+    } finally {
+      this.isProcessingBulkUpload.set(false);
+    }
+  }
+
   async onDeletePrompt(prompt: PromptCard) {
     if (this.deletingPromptId() === prompt.id) {
       return;
@@ -929,6 +1147,72 @@ export class HomeComponent {
     }
 
     // Menu handling moved to NavbarComponent
+  }
+
+  private resetBulkUploadState() {
+    this.isProcessingBulkUpload.set(false);
+    this.bulkUploadProgress.set({ processed: 0, total: 0, success: 0, failed: 0 });
+    this.bulkUploadError.set(null);
+    this.bulkUploadSuccess.set(null);
+  }
+
+  private parseCSV(text: string): string[][] {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          currentField += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        currentRow.push(currentField);
+        currentField = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+        if (currentField || currentRow.length > 0) {
+          currentRow.push(currentField);
+          rows.push(currentRow);
+          currentRow = [];
+          currentField = '';
+        }
+      } else {
+        currentField += char;
+      }
+    }
+
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      rows.push(currentRow);
+    }
+
+    return rows;
+  }
+
+  private parseNumber(value: string | undefined, defaultValue: number): number {
+    if (!value) {
+      return defaultValue;
+    }
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? defaultValue : Math.max(0, parsed);
+  }
+
+  private parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+    if (!value) {
+      return defaultValue;
+    }
+    const lower = value.toLowerCase().trim();
+    return lower === 'true' || lower === '1' || lower === 'yes';
   }
 
   private observePrompts() {
