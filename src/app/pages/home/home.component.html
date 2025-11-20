@@ -55,7 +55,7 @@
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-2 self-end sm:gap-3 sm:gap-5 flex-shrink-0">
-            <a *ngIf="profile.subscriptionStatus !== 'pro' && profile.subscriptionStatus !== 'team' && profile.subscriptionStatus !== 'plus'" routerLink="/pricing" class="home-upgrade-banner">
+            <a *ngIf="shouldShowUpgradeBanner(profile)" routerLink="/pricing" class="home-upgrade-banner">
               <span class="home-upgrade-banner-icon">✨</span>
               <span class="home-upgrade-banner-text">Upgrade to Plus →</span>
             </a>

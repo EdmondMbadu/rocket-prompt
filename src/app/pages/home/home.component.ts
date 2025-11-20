@@ -14,6 +14,7 @@ import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { DailyTip } from '../../models/home-content.model';
+import { shouldShowUpgradeBanner } from '../../utils/subscription.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -730,6 +731,13 @@ export class HomeComponent {
 
     const status = profile.subscriptionStatus?.toLowerCase();
     return status === 'pro' || status === 'plus';
+  }
+
+  shouldShowUpgradeBanner(profile: UserProfile | null | undefined): boolean {
+    if (!profile) {
+      return true;
+    }
+    return shouldShowUpgradeBanner(profile.subscriptionStatus, profile.subscriptionExpiresAt);
   }
 
   redirectToPricing() {

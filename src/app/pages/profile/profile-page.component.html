@@ -16,7 +16,7 @@
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
-            <a *ngIf="isViewingOwnProfile() && currentUserProfile() && currentUserProfile()!.subscriptionStatus !== 'pro' && currentUserProfile()!.subscriptionStatus !== 'team' && currentUserProfile()!.subscriptionStatus !== 'plus'" routerLink="/pricing" class="home-upgrade-banner">
+            <a *ngIf="isViewingOwnProfile() && currentUserProfile() && shouldShowUpgradeBanner(currentUserProfile())" routerLink="/pricing" class="home-upgrade-banner">
               <span class="home-upgrade-banner-icon">✨</span>
               <span class="home-upgrade-banner-text">Upgrade to Plus →</span>
             </a>
