@@ -14,7 +14,7 @@ import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { DailyTip } from '../../models/home-content.model';
-import { shouldShowUpgradeBanner } from '../../utils/subscription.util';
+import { shouldShowUpgradeBanner, getUpgradeBannerConfig } from '../../utils/subscription.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -738,6 +738,15 @@ export class HomeComponent {
       return true;
     }
     return shouldShowUpgradeBanner(profile.subscriptionStatus, profile.subscriptionExpiresAt);
+  }
+
+  getUpgradeBannerText(profile: UserProfile | null | undefined): string {
+    return getUpgradeBannerConfig(profile?.subscriptionStatus).label;
+  }
+
+  getUpgradeBannerQueryParams(profile: UserProfile | null | undefined) {
+    const config = getUpgradeBannerConfig(profile?.subscriptionStatus);
+    return { plan: config.plan };
   }
 
   redirectToPricing() {

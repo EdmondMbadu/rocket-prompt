@@ -39,41 +39,56 @@
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
-        class="group relative bg-white rounded-3xl border-2 border-black/10 p-6 sm:p-8 flex flex-col hover:border-[#DC2626]/40 hover:-translate-y-1 hover:shadow-2xl transition-all">
-        <div class="mb-6">
-          <p class="text-sm font-semibold text-[#DC2626] mb-2">Plus</p>
-          <h2 class="text-3xl font-black text-black mb-2">Lifetime Access</h2>
-          <div class="flex items-baseline gap-2">
-            <span class="text-5xl font-black text-black">$19.99</span>
-            <span class="text-black/60 text-lg">one-time</span>
+        class="group relative bg-white rounded-3xl border-2 border-black/10 p-6 sm:p-8 flex flex-col overflow-hidden">
+        <div class="flex h-full flex-col"
+          [class.blur-sm]="isPlusUser()" [class.opacity-60]="isPlusUser()" [class.pointer-events-none]="isPlusUser()">
+          <div class="mb-6">
+            <p class="text-sm font-semibold text-[#DC2626] mb-2">Plus</p>
+            <h2 class="text-3xl font-black text-black mb-2">Lifetime Access</h2>
+            <div class="flex items-baseline gap-2">
+              <span class="text-5xl font-black text-black">$19.99</span>
+              <span class="text-black/60 text-lg">one-time</span>
+            </div>
+            <p class="text-black/60 mt-3">Perfect for solo creators who want unlimited prompts without subscriptions.</p>
           </div>
-          <p class="text-black/60 mt-3">Perfect for solo creators who want unlimited prompts without subscriptions.</p>
+
+          <ul class="space-y-3 text-black/80 mb-8 flex-1">
+            <li class="flex items-start gap-3">
+              <span class="text-[#DC2626] font-bold">✓</span> Unlimited prompts & collections
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[#DC2626] font-bold">✓</span> Private prompts & custom URLs
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[#DC2626] font-bold">✓</span> Bulk upload CSV support
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[#DC2626] font-bold">✓</span> Lifetime feature updates
+            </li>
+          </ul>
+
+          <button type="button"
+            class="relative w-full rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white font-bold py-4 shadow-lg hover:shadow-red-500/40 hover:scale-105 transition disabled:opacity-70 disabled:cursor-not-allowed"
+            (click)="startCheckout('plus')" [disabled]="isProcessing('plus') || isPlusUser()"
+            [attr.aria-busy]="isProcessing('plus')">
+            <span *ngIf="!isProcessing('plus') && !isPlusUser()">Upgrade to Plus</span>
+            <span *ngIf="isProcessing('plus')">Redirecting…</span>
+            <span *ngIf="!isProcessing('plus') && isPlusUser()">Included in your plan</span>
+          </button>
         </div>
 
-        <ul class="space-y-3 text-black/80 mb-8 flex-1">
-          <li class="flex items-start gap-3">
-            <span class="text-[#DC2626] font-bold">✓</span> Unlimited prompts & collections
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#DC2626] font-bold">✓</span> Private prompts & custom URLs
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#DC2626] font-bold">✓</span> Bulk upload CSV support
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#DC2626] font-bold">✓</span> Lifetime feature updates
-          </li>
-        </ul>
-
-        <button type="button"
-          class="relative w-full rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white font-bold py-4 shadow-lg hover:shadow-red-500/40 hover:scale-105 transition disabled:opacity-70 disabled:cursor-not-allowed"
-          (click)="startCheckout('plus')" [disabled]="isProcessing('plus')" [attr.aria-busy]="isProcessing('plus')">
-          <span *ngIf="!isProcessing('plus')">Upgrade to Plus</span>
-          <span *ngIf="isProcessing('plus')">Redirecting…</span>
-        </button>
+        <div *ngIf="isPlusUser()" class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-3xl
+          border-2 border-dashed border-[#DC2626]/30 bg-white/85 px-6 text-center shadow-inner backdrop-blur-sm">
+          <p class="text-base font-bold text-slate-800">You're already a Plus member.</p>
+          <p class="text-sm text-slate-600 mt-2 max-w-sm">Upgrade to the Pro plan to unlock team collaboration, organization pages, and renewal tracking.</p>
+          <button type="button" (click)="scrollToProPlan()"
+            class="mt-4 inline-flex items-center justify-center rounded-full border border-[#DC2626] px-4 py-2 text-sm font-semibold text-[#DC2626] hover:bg-[#DC2626]/10">
+            View Pro Plan
+          </button>
+        </div>
       </div>
 
-      <div
+      <div #proPlanCard
         class="group relative bg-gradient-to-br from-white to-[#DC2626]/5 rounded-3xl border-2 border-[#DC2626] p-6 sm:p-8 flex flex-col shadow-xl hover:shadow-red-500/30 hover:-translate-y-1 transition-all">
         <div class="absolute top-0 right-6 -translate-y-1/2 bg-gradient-to-r from-[#DC2626] to-[#B91C1C] text-white text-xs font-black px-4 py-1 rounded-full shadow">
           Teams

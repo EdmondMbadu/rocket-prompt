@@ -15,7 +15,7 @@ import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
-import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired } from '../../utils/subscription.util';
+import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig } from '../../utils/subscription.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -817,6 +817,15 @@ export class ProfilePageComponent {
       return true;
     }
     return shouldShowUpgradeBanner(profile.subscriptionStatus, profile.subscriptionExpiresAt);
+  }
+
+  getUpgradeBannerText(profile: UserProfile | null | undefined): string {
+    return getUpgradeBannerConfig(profile?.subscriptionStatus).label;
+  }
+
+  getUpgradeBannerQueryParams(profile: UserProfile | null | undefined) {
+    const config = getUpgradeBannerConfig(profile?.subscriptionStatus);
+    return { plan: config.plan };
   }
 
   isSubscriptionExpired(profile: UserProfile | null | undefined): boolean {

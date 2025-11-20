@@ -1,5 +1,10 @@
 export type SubscriptionTier = 'pro' | 'team' | 'plus';
 
+export interface UpgradeBannerConfig {
+  label: string;
+  plan: 'plus' | 'team';
+}
+
 interface SubscriptionInfo {
   key: SubscriptionTier;
   label: string;
@@ -37,7 +42,7 @@ export function getSubscriptionDetails(status?: string | null): SubscriptionInfo
  * Determines if the upgrade banner should be shown for a user.
  * 
  * Rules:
- * - "plus" users have lifetime access, never show banner
+ * - "plus" users have lifetime access but can upgrade to Pro, so show banner for upsell
  * - "pro" users have 1-year subscriptions, show banner if expired
  * - "team" users have 1-year subscriptions, show banner if expired
  * - All other users should see the banner
@@ -60,9 +65,9 @@ export function shouldShowUpgradeBanner(
 
   const status = subscriptionStatus.toLowerCase();
 
-  // "plus" users have lifetime access, never show banner
+  // Plus users can now upgrade to Pro, so always show banner for them
   if (status === 'plus') {
-    return false;
+    return true;
   }
 
   // "pro" users: check if they have an expiration date
@@ -143,6 +148,20 @@ export function shouldShowUpgradeBanner(
 
   // For any other status, show banner
   return true;
+}
+
+export function getUpgradeBannerConfig(subscriptionStatus?: string | null): UpgradeBannerConfig {
+  const status = subscriptionStatus?.toLowerCase();
+
+  if (status === 'plus') {
+    return { label: 'Upgrade to Pro →', plan: 'team' };
+  }
+
+  if (status === 'pro' || status === 'team') {
+    return { label: 'Renew Pro →', plan: 'team' };
+  }
+
+  return { label: 'Upgrade to Plus →', plan: 'plus' };
 }
 
 /**
