@@ -15,6 +15,27 @@
   overflow: visible;
 }
 
+.avatar-tier-pill {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  border-radius: 9999px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+  letter-spacing: 0.02em;
+}
+
+.avatar-tier-pill--plus {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+}
+
+.avatar-tier-pill--team {
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+}
+
 .avatar-button:hover {
   background: #e2e8f0;
   border-color: #94a3b8;
@@ -176,6 +197,19 @@
   line-height: 1.4;
 }
 
+.menu-subscription-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid transparent;
+  margin-top: 0.4rem;
+  width: fit-content;
+}
+
 .menu-item {
   align-items: center;
   background: rgba(220, 38, 38, 0.08);
@@ -263,7 +297,6 @@
   white-space: nowrap;
   border-width: 0;
 }
-
 
 
 

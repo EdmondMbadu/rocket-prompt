@@ -2,6 +2,62 @@
   display: block;
 }
 
+.profile-subscription-badge {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 1.75rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid transparent;
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(4px);
+  animation: badgePop 0.35s ease;
+}
+
+.profile-subscription-badge__icon {
+  font-size: 1.1rem;
+}
+
+.profile-subscription-badge__label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.profile-subscription-badge__caption {
+  margin: 0;
+  font-size: 0.65rem;
+  opacity: 0.8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-subscription-badge--plus {
+  background: linear-gradient(120deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.25));
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #92400e;
+}
+
+.profile-subscription-badge--team {
+  background: linear-gradient(120deg, rgba(129, 140, 248, 0.15), rgba(99, 102, 241, 0.25));
+  border-color: rgba(99, 102, 241, 0.55);
+  color: #312e81;
+}
+
+@keyframes badgePop {
+  from {
+    transform: translateY(8px) scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Author Avatar Button */
 .author-avatar-button {
   display: inline-flex;

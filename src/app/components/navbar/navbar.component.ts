@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { OrganizationService } from '../../services/organization.service';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
+import { getSubscriptionDetails } from '../../utils/subscription.util';
 
 @Component({
   selector: 'app-navbar',
@@ -157,6 +158,10 @@ export class NavbarComponent {
     this.closeMenu();
   }
 
+  subscriptionDetails(status?: string | null) {
+    return getSubscriptionDetails(status);
+  }
+
   async signOut() {
     try {
       await this.authService.signOut();
@@ -167,4 +172,3 @@ export class NavbarComponent {
     }
   }
 }
-

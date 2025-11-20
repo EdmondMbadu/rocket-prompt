@@ -124,6 +124,21 @@
                 </ng-template>
               </button>
             </div>
+            <div *ngIf="isViewingOwnProfile() && subscriptionDetails(profile.subscriptionStatus) as tier"
+              class="profile-subscription-badge"
+              [ngClass]="tier.key === 'team'
+                ? 'profile-subscription-badge--team'
+                : 'profile-subscription-badge--plus'">
+              <span class="profile-subscription-badge__icon">
+                {{ tier.key === 'team' ? '🚀' : '✨' }}
+              </span>
+              <div>
+                <p class="profile-subscription-badge__label">{{ tier.label }}</p>
+                <p class="profile-subscription-badge__caption">
+                  {{ tier.key === 'team' ? 'Team perks unlocked' : 'Lifetime access active' }}
+                </p>
+              </div>
+            </div>
             <!-- Profile picture error message -->
             <div *ngIf="profilePictureError()"
               class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

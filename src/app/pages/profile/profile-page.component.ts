@@ -15,6 +15,7 @@ import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
+import { getSubscriptionDetails } from '../../utils/subscription.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -1640,6 +1641,10 @@ export class ProfilePageComponent {
     }
   }
 
+  subscriptionDetails(status?: string | null) {
+    return getSubscriptionDetails(status);
+  }
+
   async navigateToHomeOrLanding() {
     const user = this.authService.currentUser;
     if (user) {
@@ -1649,4 +1654,3 @@ export class ProfilePageComponent {
     }
   }
 }
-
