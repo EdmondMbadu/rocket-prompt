@@ -7,12 +7,23 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  border-radius: 1.75rem;
-  padding: 0.55rem 0.95rem;
-  border: 1px solid transparent;
-  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(4px);
+  border-radius: 1.5rem;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(6px);
+  position: relative;
+  overflow: hidden;
   animation: badgePop 0.35s ease;
+}
+
+.profile-subscription-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
 }
 
 .profile-subscription-badge__icon {
@@ -35,15 +46,13 @@
 }
 
 .profile-subscription-badge--plus {
-  background: linear-gradient(120deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.25));
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #92400e;
+  background: radial-gradient(circle at top, rgba(255, 248, 229, 0.85), rgba(254, 215, 170, 0.5));
+  color: #7c2d12;
 }
 
 .profile-subscription-badge--team {
-  background: linear-gradient(120deg, rgba(129, 140, 248, 0.15), rgba(99, 102, 241, 0.25));
-  border-color: rgba(99, 102, 241, 0.55);
-  color: #312e81;
+  background: radial-gradient(circle at top, rgba(224, 231, 255, 0.9), rgba(165, 180, 252, 0.5));
+  color: #1e1b4b;
 }
 
 @keyframes badgePop {
