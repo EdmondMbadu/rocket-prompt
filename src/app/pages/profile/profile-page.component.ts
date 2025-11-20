@@ -799,6 +799,23 @@ export class ProfilePageComponent {
     }
   }
 
+  canManagePrivatePrompts(profile: UserProfile | null | undefined): boolean {
+    if (!profile) {
+      return false;
+    }
+
+    if (profile.role === 'admin' || profile.admin) {
+      return true;
+    }
+
+    const status = profile.subscriptionStatus?.toLowerCase();
+    return status === 'pro' || status === 'plus';
+  }
+
+  redirectToPricing() {
+    void this.router.navigate(['/pricing']);
+  }
+
   navigateToCollection(collection: PromptCollection) {
     if (!collection?.id) {
       return;
@@ -1130,9 +1147,9 @@ export class ProfilePageComponent {
         throw new Error('You must be signed in to create or update a prompt.');
       }
 
-      // Check if user is admin
+      // Check if the user can manage private prompts (admins or Pro/Plus subscribers)
       const profile = await this.authService.fetchUserProfile(currentUser.uid);
-      const isAdmin = profile && (profile.role === 'admin' || profile.admin);
+      const canSetPrivate = this.canManagePrivatePrompts(profile);
 
       if (this.isEditingPrompt() && this.editingPromptId()) {
         const updateInput: UpdatePromptInput = {
@@ -1140,7 +1157,7 @@ export class ProfilePageComponent {
           content,
           tag,
           customUrl: trimmedCustomUrl,
-          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
       } else {
@@ -1151,7 +1168,7 @@ export class ProfilePageComponent {
           content,
           tag,
           customUrl: trimmedCustomUrl || undefined,
-          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.createPrompt(createInput);
       }

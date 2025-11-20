@@ -894,14 +894,26 @@
             </p>
           </div>
 
-          <div *ngIf="(currentUserProfile$ | async)?.role === 'admin' || (currentUserProfile$ | async)?.admin"
-            class="flex items-center gap-2">
-            <input id="prompt-is-private" type="checkbox" formControlName="isPrivate"
-              class="h-4 w-4 rounded border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/40" />
-            <label for="prompt-is-private" class="text-sm font-medium text-slate-600 cursor-pointer">
-              Make this prompt private
-            </label>
-          </div>
+          <ng-container *ngIf="canManagePrivatePrompts(currentUserProfile()); else profilePrivateFirewall">
+            <div class="flex items-center gap-2">
+              <input id="prompt-is-private" type="checkbox" formControlName="isPrivate"
+                class="h-4 w-4 rounded border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/40" />
+              <label for="prompt-is-private" class="text-sm font-medium text-slate-600 cursor-pointer">
+                Make this prompt private
+              </label>
+            </div>
+          </ng-container>
+          <ng-template #profilePrivateFirewall>
+            <button type="button" (click)="redirectToPricing()"
+              class="flex w-full items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5 text-left text-sm text-slate-600 transition hover:border-[#DC2626]/40 hover:bg-white">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-white text-base">🔒</span>
+              <span class="flex-1 text-left">
+                <span class="block font-semibold text-slate-700">Private prompts are a Plus feature.</span>
+                <span class="block text-xs text-slate-500">Tap to upgrade instantly.</span>
+              </span>
+              <span class="text-[#DC2626] text-xs font-semibold">Upgrade →</span>
+            </button>
+          </ng-template>
 
           <div *ngIf="promptFormError()"
             class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

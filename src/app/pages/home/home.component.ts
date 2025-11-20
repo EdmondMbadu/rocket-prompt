@@ -719,6 +719,23 @@ export class HomeComponent {
     }
   }
 
+  canManagePrivatePrompts(profile: UserProfile | null | undefined): boolean {
+    if (!profile) {
+      return false;
+    }
+
+    if (profile.role === 'admin' || profile.admin) {
+      return true;
+    }
+
+    const status = profile.subscriptionStatus?.toLowerCase();
+    return status === 'pro' || status === 'plus';
+  }
+
+  redirectToPricing() {
+    void this.router.navigate(['/pricing']);
+  }
+
   closeCreatePromptModal() {
     if (this.isSavingPrompt()) {
       return;
@@ -782,9 +799,9 @@ export class HomeComponent {
         throw new Error('You must be signed in to create a prompt.');
       }
 
-      // Check if user is admin
+      // Check if the user can manage private prompts (admins or Plus/Pro subscribers)
       const profile = await this.authService.fetchUserProfile(currentUser.uid);
-      const isAdmin = profile && (profile.role === 'admin' || profile.admin);
+      const canSetPrivate = this.canManagePrivatePrompts(profile);
 
       if (this.isEditingPrompt() && this.editingPromptId()) {
         const updateInput: UpdatePromptInput = {
@@ -792,7 +809,7 @@ export class HomeComponent {
           content,
           tag,
           customUrl: trimmedCustomUrl,
-          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
       } else if (this.forkingPromptId()) {
@@ -809,7 +826,7 @@ export class HomeComponent {
             forkedFromAuthorId: originalPrompt.authorId,
             forkedFromTitle: originalPrompt.title,
             forkedFromCustomUrl: originalPrompt.customUrl,
-            ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+            ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
           };
           await this.promptService.createPrompt(createInput);
         } else {
@@ -822,7 +839,7 @@ export class HomeComponent {
           content,
           tag,
           customUrl: trimmedCustomUrl || undefined,
-          ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.createPrompt(createInput);
       }
