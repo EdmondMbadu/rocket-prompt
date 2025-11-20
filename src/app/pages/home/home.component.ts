@@ -15,6 +15,15 @@ import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { DailyTip } from '../../models/home-content.model';
 import { shouldShowUpgradeBanner, getUpgradeBannerConfig } from '../../utils/subscription.util';
+import {
+  BULK_UPLOAD_INSTRUCTIONS_URL,
+  type BulkUploadProgressState,
+  canUseBulkUploadFeature,
+  createEmptyBulkProgress,
+  parseCsv,
+  parseCsvBoolean,
+  parseCsvNumber
+} from '../../utils/bulk-upload.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -51,13 +60,6 @@ interface PromptCard {
   readonly forkedFromCustomUrl?: string;
   readonly forkCount?: number;
   readonly isPrivate?: boolean;
-}
-
-interface BulkUploadProgress {
-  processed: number;
-  total: number;
-  success: number;
-  failed: number;
 }
 
 @Component({
@@ -146,9 +148,9 @@ export class HomeComponent {
   readonly checkoutNotice = signal<{ type: 'success' | 'error'; plan?: 'plus' | 'team' } | null>(null);
   readonly createPromptMode = signal<'single' | 'bulk'>('single');
   readonly showBulkUploadTab = computed(() => !this.isEditingPrompt() && !this.forkingPromptId());
-  readonly bulkUploadInstructionsUrl = 'https://rocketprompt.io/bulk-prompts';
+  readonly bulkUploadInstructionsUrl = BULK_UPLOAD_INSTRUCTIONS_URL;
   readonly isProcessingBulkUpload = signal(false);
-  readonly bulkUploadProgress = signal<BulkUploadProgress>({ processed: 0, total: 0, success: 0, failed: 0 });
+  readonly bulkUploadProgress = signal<BulkUploadProgressState>(createEmptyBulkProgress());
   readonly bulkUploadError = signal<string | null>(null);
   readonly bulkUploadSuccess = signal<string | null>(null);
 
@@ -814,16 +816,7 @@ export class HomeComponent {
   }
 
   canUseBulkUpload(profile: UserProfile | null | undefined): boolean {
-    if (!profile) {
-      return false;
-    }
-
-    if (profile.role === 'admin' || profile.admin) {
-      return true;
-    }
-
-    const status = profile.subscriptionStatus?.toLowerCase();
-    return status === 'pro' || status === 'plus' || status === 'team';
+    return canUseBulkUploadFeature(profile);
   }
 
   async submitPromptForm() {
@@ -978,11 +971,11 @@ export class HomeComponent {
     this.isProcessingBulkUpload.set(true);
     this.bulkUploadError.set(null);
     this.bulkUploadSuccess.set(null);
-    this.bulkUploadProgress.set({ processed: 0, total: 0, success: 0, failed: 0 });
+    this.bulkUploadProgress.set(createEmptyBulkProgress());
 
     try {
       const text = await file.text();
-      const rows = this.parseCSV(text);
+      const rows = parseCsv(text);
 
       if (rows.length === 0) {
         throw new Error('CSV file is empty or invalid.');
@@ -1030,14 +1023,14 @@ export class HomeComponent {
           const content = rowData['content'];
           const tag = rowData['tag'];
           const customUrl = rowData['customurl'] || rowData['custom_url'] || '';
-          const views = this.parseNumber(rowData['views'], 0);
-          const likes = this.parseNumber(rowData['likes'], 0);
-          const launchGpt = this.parseNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
-          const launchGemini = this.parseNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
-          const launchClaude = this.parseNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
-          const launchGrok = this.parseNumber(rowData['launchgrok'] || rowData['launch_grok'], 0);
-          const copied = this.parseNumber(rowData['copied'], 0);
-          const isInvisible = this.parseBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
+          const views = parseCsvNumber(rowData['views'], 0);
+          const likes = parseCsvNumber(rowData['likes'], 0);
+          const launchGpt = parseCsvNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
+          const launchGemini = parseCsvNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
+          const launchClaude = parseCsvNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
+          const launchGrok = parseCsvNumber(rowData['launchgrok'] || rowData['launch_grok'], 0);
+          const copied = parseCsvNumber(rowData['copied'], 0);
+          const isInvisible = parseCsvBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
 
           if (!title || !content || !tag) {
             throw new Error(`Row ${i + 2}: Missing required fields (title, content, or tag)`);
@@ -1151,68 +1144,9 @@ export class HomeComponent {
 
   private resetBulkUploadState() {
     this.isProcessingBulkUpload.set(false);
-    this.bulkUploadProgress.set({ processed: 0, total: 0, success: 0, failed: 0 });
+    this.bulkUploadProgress.set(createEmptyBulkProgress());
     this.bulkUploadError.set(null);
     this.bulkUploadSuccess.set(null);
-  }
-
-  private parseCSV(text: string): string[][] {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentField = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const nextChar = text[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          currentField += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        currentRow.push(currentField);
-        currentField = '';
-      } else if ((char === '\n' || char === '\r') && !inQuotes) {
-        if (char === '\r' && nextChar === '\n') {
-          i++;
-        }
-        if (currentField || currentRow.length > 0) {
-          currentRow.push(currentField);
-          rows.push(currentRow);
-          currentRow = [];
-          currentField = '';
-        }
-      } else {
-        currentField += char;
-      }
-    }
-
-    if (currentField || currentRow.length > 0) {
-      currentRow.push(currentField);
-      rows.push(currentRow);
-    }
-
-    return rows;
-  }
-
-  private parseNumber(value: string | undefined, defaultValue: number): number {
-    if (!value) {
-      return defaultValue;
-    }
-    const parsed = parseInt(value, 10);
-    return Number.isNaN(parsed) ? defaultValue : Math.max(0, parsed);
-  }
-
-  private parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
-    if (!value) {
-      return defaultValue;
-    }
-    const lower = value.toLowerCase().trim();
-    return lower === 'true' || lower === '1' || lower === 'yes';
   }
 
   private observePrompts() {

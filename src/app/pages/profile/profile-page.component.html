@@ -837,7 +837,40 @@
           </p>
         </header>
 
-        <form class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
+        <div *ngIf="showBulkUploadTab()" class="mt-5">
+          <div class="flex flex-col gap-2 sm:gap-3">
+            <span class="text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-400 sm:text-xs">Workflow</span>
+            <div class="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-100/80 p-1">
+              <button type="button" (click)="switchCreatePromptMode('single')"
+                class="flex items-center gap-2 rounded-2xl px-4 py-2 text-[11px] font-semibold uppercase tracking-wide transition-all duration-200 sm:text-xs"
+                [class.bg-white]="createPromptMode() === 'single'"
+                [class.text-slate-900]="createPromptMode() === 'single'"
+                [class.shadow-lg]="createPromptMode() === 'single'"
+                [class.text-slate-500]="createPromptMode() !== 'single'">
+                <span class="h-2 w-2 rounded-full"
+                  [class.bg-[#DC2626]]="createPromptMode() === 'single'"
+                  [class.bg-slate-300]="createPromptMode() !== 'single'"></span>
+                Single Prompt
+              </button>
+              <button type="button" (click)="switchCreatePromptMode('bulk')"
+                class="flex items-center gap-2 rounded-2xl px-4 py-2 text-[11px] font-semibold uppercase tracking-wide transition-all duration-200 sm:text-xs"
+                [class.bg-white]="createPromptMode() === 'bulk'"
+                [class.text-slate-900]="createPromptMode() === 'bulk'"
+                [class.shadow-lg]="createPromptMode() === 'bulk'"
+                [class.text-slate-500]="createPromptMode() !== 'bulk'">
+                <svg class="h-3.5 w-3.5"
+                  [class.text-[#DC2626]]="createPromptMode() === 'bulk'"
+                  [class.text-slate-400]="createPromptMode() !== 'bulk'"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M7 12h10M10 18h4" />
+                </svg>
+                Bulk Upload
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <form *ngIf="createPromptMode() === 'single' || !showBulkUploadTab()" class="mt-6 space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-slate-600" for="prompt-title">Title</label>
@@ -946,7 +979,7 @@
             {{ promptFormError() }}
           </div>
 
-          <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+          <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end" *ngIf="createPromptMode() === 'single' || !showBulkUploadTab()">
             <button type="button"
               class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               (click)="closeCreatePromptModal()" [disabled]="isSavingPrompt()">
@@ -970,6 +1003,138 @@
             </button>
           </div>
         </form>
+
+        <div *ngIf="createPromptMode() === 'bulk' && showBulkUploadTab()" class="mt-5 space-y-4 sm:mt-6 sm:space-y-6">
+          <div
+            class="rounded-3xl border border-white/60 bg-gradient-to-br from-[#fdf2f8] via-white to-[#eff6ff] p-5 shadow-lg shadow-rose-200/40 sm:p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="max-w-xl">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.4em] text-rose-400 sm:text-xs">Bulk workflow
+                </p>
+                <h3 class="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Import your prompt archive instantly
+                </h3>
+                <p class="mt-2 text-sm text-slate-600 sm:text-base">Each CSV row becomes a prompt authored by your
+                  account, complete with optional stats and visibility controls.</p>
+              </div>
+              <a class="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/70 px-4 py-2 text-sm font-semibold text-[#DC2626] shadow-sm transition hover:border-[#DC2626]"
+                [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
+                View guide
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M11 7h6v6" />
+                </svg>
+              </a>
+            </div>
+            <ul class="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">1</span>
+                Title, content, and tag are required — everything else is optional metadata.
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">2</span>
+                Invisible/private prompts stay hidden when you set the flag in the CSV.
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">3</span>
+                Our parser validates each row so you immediately know what needs fixing.
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-xs font-bold text-[#DC2626]">4</span>
+                Keep the header row untouched and feel free to use AI to generate sample data.
+              </li>
+            </ul>
+          </div>
+
+          <ng-container *ngIf="canUseBulkUpload(currentUserProfile()); else profileBulkLocked">
+            <div
+              class="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-2xl shadow-slate-200/80 sm:p-6">
+              <div
+                class="flex flex-col items-center justify-between gap-4 rounded-3xl border-2 border-dashed border-slate-300/80 bg-slate-50/70 px-6 py-8 text-center">
+                <div
+                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[#DC2626] shadow-inner shadow-rose-200/40">
+                  <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-sm font-semibold text-slate-900 sm:text-base">Drop or select your CSV</p>
+                  <p class="text-xs text-slate-500 sm:text-sm">Every prompt will be attributed to your account.</p>
+                </div>
+                <label for="profile-bulk-csv-upload"
+                  class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:shadow-red-500/40 cursor-pointer disabled:opacity-60"
+                  [class.opacity-60]="isProcessingBulkUpload()"
+                  [class.cursor-not-allowed]="isProcessingBulkUpload()">
+                  {{ isProcessingBulkUpload() ? 'Uploading…' : 'Select CSV' }}
+                </label>
+                <input id="profile-bulk-csv-upload" class="hidden" type="file" accept=".csv"
+                  (change)="onBulkUploadCSV($event)" [disabled]="isProcessingBulkUpload()" />
+              </div>
+
+              <div *ngIf="isProcessingBulkUpload()" class="mt-5 rounded-2xl border border-blue-100 bg-blue-50/80 p-5">
+                <div class="flex items-center justify-between text-sm font-semibold text-blue-900">
+                  <span>Processing CSV…</span>
+                  <span>
+                    {{
+                    bulkUploadProgress().total > 0
+                    ? ((bulkUploadProgress().processed / bulkUploadProgress().total) * 100).toFixed(0)
+                    : 0
+                    }}%
+                  </span>
+                </div>
+                <div class="mt-3 h-2.5 w-full rounded-full bg-blue-200/80">
+                  <div class="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
+                    [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0"></div>
+                </div>
+                <p class="mt-2 text-xs text-blue-700">
+                  Success: {{ bulkUploadProgress().success }} • Failed: {{ bulkUploadProgress().failed }}
+                </p>
+              </div>
+
+              <div *ngIf="bulkUploadError()"
+                class="mt-4 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-800">
+                <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v4m0 4h.01M10.29 3.86l-7.4 12.8A1 1 0 003.71 18h16.58a1 1 0 00.86-1.5l-7.4-12.64a1 1 0 00-1.72 0z" />
+                </svg>
+                <span>{{ bulkUploadError() }}</span>
+              </div>
+
+              <div *ngIf="bulkUploadSuccess()"
+                class="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{{ bulkUploadSuccess() }}</span>
+              </div>
+
+              <p class="mt-5 text-[11px] text-slate-500 sm:text-xs">
+                Need help formatting? Follow the guide above — the CSV template covers every supported column and sample
+                values.
+              </p>
+            </div>
+          </ng-container>
+
+          <ng-template #profileBulkLocked>
+            <div
+              class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-white px-6 py-8 text-center shadow-inner shadow-slate-200/60">
+              <div
+                class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#DC2626] shadow shadow-rose-200/40">
+                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 11V7a4 4 0 118 0v4m-9 3h10a1 1 0 011 1v5a1 1 0 01-1 1H7a1 1 0 01-1-1v-5a1 1 0 011-1z" />
+                </svg>
+              </div>
+              <h3 class="mt-4 text-lg font-semibold text-slate-900">Bulk upload is a Plus perk</h3>
+              <p class="mt-2 text-sm text-slate-600">Upgrade to import prompt libraries with one polished CSV.</p>
+              <a routerLink="/pricing"
+                class="mt-5 inline-flex items-center justify-center rounded-2xl border border-[#DC2626] px-5 py-2.5 text-sm font-semibold text-[#DC2626] transition hover:bg-[#DC2626] hover:text-white">
+                See plans
+              </a>
+            </div>
+          </ng-template>
+        </div>
       </div>
     </div>
 

@@ -16,6 +16,15 @@ import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import { generateDisplayUsername } from '../../utils/username.util';
 import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig } from '../../utils/subscription.util';
+import {
+  BULK_UPLOAD_INSTRUCTIONS_URL,
+  type BulkUploadProgressState,
+  canUseBulkUploadFeature,
+  createEmptyBulkProgress,
+  parseCsv,
+  parseCsvBoolean,
+  parseCsvNumber
+} from '../../utils/bulk-upload.util';
 
 interface PromptCategory {
   readonly label: string;
@@ -108,6 +117,13 @@ export class ProfilePageComponent {
   readonly promptFormError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
+  readonly createPromptMode = signal<'single' | 'bulk'>('single');
+  readonly showBulkUploadTab = computed(() => !this.isEditingPrompt());
+  readonly bulkUploadInstructionsUrl = BULK_UPLOAD_INSTRUCTIONS_URL;
+  readonly isProcessingBulkUpload = signal(false);
+  readonly bulkUploadProgress = signal<BulkUploadProgressState>(createEmptyBulkProgress());
+  readonly bulkUploadError = signal<string | null>(null);
+  readonly bulkUploadSuccess = signal<string | null>(null);
 
   // Collection creation
   readonly newCollectionModalOpen = signal(false);
@@ -1037,6 +1053,8 @@ export class ProfilePageComponent {
   openCreatePromptModal() {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -1062,6 +1080,8 @@ export class ProfilePageComponent {
     this.clearCustomUrlDebounce();
     this.isEditingPrompt.set(true);
     this.editingPromptId.set(prompt.id);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.createPromptForm.setValue({
       title: prompt.title,
       tag: prompt.tag,
@@ -1120,9 +1140,196 @@ export class ProfilePageComponent {
     this.newPromptModalOpen.set(false);
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
+  }
+
+  switchCreatePromptMode(mode: 'single' | 'bulk') {
+    if (this.createPromptMode() === mode) {
+      return;
+    }
+
+    if (mode === 'bulk' && !this.showBulkUploadTab()) {
+      return;
+    }
+
+    if (mode === 'bulk') {
+      this.resetBulkUploadState();
+      this.bulkUploadError.set(null);
+      this.bulkUploadSuccess.set(null);
+    }
+
+    if (mode === 'single') {
+      this.bulkUploadError.set(null);
+      this.bulkUploadSuccess.set(null);
+    }
+
+    this.createPromptMode.set(mode);
+  }
+
+  canUseBulkUpload(profile: UserProfile | null | undefined): boolean {
+    return canUseBulkUploadFeature(profile);
+  }
+
+  async onBulkUploadCSV(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    input.value = '';
+
+    if (this.isProcessingBulkUpload()) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+
+    if (!currentUser) {
+      this.bulkUploadError.set('You must be signed in to upload prompts.');
+      return;
+    }
+
+    let profile: UserProfile | undefined;
+
+    try {
+      profile = await this.authService.fetchUserProfile(currentUser.uid);
+    } catch (error) {
+      console.error('Failed to load profile for bulk upload', error);
+    }
+
+    if (!this.canUseBulkUpload(profile)) {
+      this.bulkUploadError.set('Bulk upload is available for Plus and Pro members.');
+      return;
+    }
+
+    this.isProcessingBulkUpload.set(true);
+    this.bulkUploadError.set(null);
+    this.bulkUploadSuccess.set(null);
+    this.bulkUploadProgress.set(createEmptyBulkProgress());
+
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+
+      if (rows.length === 0) {
+        throw new Error('CSV file is empty or invalid.');
+      }
+
+      const headerRow = rows[0].map(header => header?.trim() ?? '');
+      const normalizedHeaders = headerRow.map(header => header.toLowerCase());
+      const requiredHeaders = ['title', 'content', 'tag'];
+      const missingHeaders = requiredHeaders.filter(h => !normalizedHeaders.includes(h));
+
+      if (missingHeaders.length > 0) {
+        throw new Error(`Missing required columns: ${missingHeaders.join(', ')}. Required columns are: title, content, tag. Optional columns: customUrl, views, likes, launchGpt, launchGemini, launchClaude, launchGrok, copied, isInvisible`);
+      }
+
+      const dataRows = rows.slice(1);
+      this.bulkUploadProgress.set({ processed: 0, total: dataRows.length, success: 0, failed: 0 });
+
+      let successCount = 0;
+      let failedCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        if (row.every(cell => !cell?.trim())) {
+          this.bulkUploadProgress.set({
+            processed: Math.min(i + 1, dataRows.length),
+            total: dataRows.length,
+            success: successCount,
+            failed: failedCount
+          });
+          continue;
+        }
+
+        const rowData: Record<string, string> = {};
+        headerRow.forEach((header, index) => {
+          const key = header.toLowerCase();
+          if (key) {
+            rowData[key] = row[index]?.trim() || '';
+          }
+        });
+
+        try {
+          const title = rowData['title'];
+          const content = rowData['content'];
+          const tag = rowData['tag'];
+          const customUrl = rowData['customurl'] || rowData['custom_url'] || '';
+          const views = parseCsvNumber(rowData['views'], 0);
+          const likes = parseCsvNumber(rowData['likes'], 0);
+          const launchGpt = parseCsvNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
+          const launchGemini = parseCsvNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
+          const launchClaude = parseCsvNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
+          const launchGrok = parseCsvNumber(rowData['launchgrok'] || rowData['launch_grok'], 0);
+          const copied = parseCsvNumber(rowData['copied'], 0);
+          const isInvisible = parseCsvBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
+
+          if (!title || !content || !tag) {
+            throw new Error(`Row ${i + 2}: Missing required fields (title, content, or tag)`);
+          }
+
+          const promptId = await this.promptService.createPrompt({
+            authorId: currentUser.uid,
+            title,
+            content,
+            tag,
+            customUrl: customUrl || undefined,
+            views,
+            likes,
+            launchGpt,
+            launchGemini,
+            launchClaude,
+            launchGrok,
+            copied
+          });
+
+          if (isInvisible) {
+            await this.promptService.bulkToggleVisibility([promptId], true);
+          }
+
+          successCount++;
+        } catch (error) {
+          failedCount++;
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Row ${i + 2}: ${message}`);
+        }
+
+        this.bulkUploadProgress.set({
+          processed: Math.min(i + 1, dataRows.length),
+          total: dataRows.length,
+          success: successCount,
+          failed: failedCount
+        });
+      }
+
+      if (failedCount > 0) {
+        this.bulkUploadError.set(
+          `Upload completed with ${failedCount} error(s). ${successCount} prompt(s) created successfully. Errors: ${errors.slice(0, 5).join('; ')}${errors.length > 5 ? ` (and ${errors.length - 5} more)` : ''}`
+        );
+        if (successCount > 0) {
+          this.bulkUploadSuccess.set(`${successCount} prompt${successCount === 1 ? '' : 's'} created successfully before errors.`);
+        }
+      } else {
+        this.bulkUploadError.set(null);
+        const successMessage =
+          successCount > 0
+            ? `${successCount} prompt${successCount === 1 ? '' : 's'} uploaded successfully.`
+            : 'No prompts were created from this CSV.';
+        this.bulkUploadSuccess.set(successMessage);
+      }
+    } catch (error) {
+      console.error('Failed to process CSV upload', error);
+      this.bulkUploadError.set(error instanceof Error ? error.message : 'Failed to process CSV file.');
+    } finally {
+      this.isProcessingBulkUpload.set(false);
+    }
   }
 
   async submitPromptForm() {
@@ -1317,6 +1524,13 @@ export class ProfilePageComponent {
     }
 
     // Menu handling moved to NavbarComponent
+  }
+
+  private resetBulkUploadState() {
+    this.isProcessingBulkUpload.set(false);
+    this.bulkUploadProgress.set(createEmptyBulkProgress());
+    this.bulkUploadError.set(null);
+    this.bulkUploadSuccess.set(null);
   }
 
   private observePrompts() {
