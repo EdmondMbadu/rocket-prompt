@@ -46,7 +46,7 @@ const webhookSecret =
 
 type PlanType = "plus" | "team";
 
-const planCatalog: Record<PlanType, {amount: number; name: string; description: string}> = {
+const planCatalog: Record<PlanType, { amount: number; name: string; description: string }> = {
   plus: {
     amount: 1999,
     name: "RocketPrompt Plus",
@@ -105,14 +105,14 @@ const resolveReturnUrl = (rawUrl: unknown, fallbackOrigin?: string): string => {
 };
 
 const getRequestOrigin = (context: functions.https.CallableContext): string | undefined => {
-  const raw = context.rawRequest as {headers?: Record<string, unknown>} | undefined;
+  const raw = context.rawRequest as { headers?: Record<string, unknown> } | undefined;
   const originHeader = raw?.headers?.origin;
   return typeof originHeader === "string" ? originHeader : undefined;
 };
 
 export const createCheckoutSession = functions
   .region("us-central1")
-  .runWith({secrets: ["STRIPE_SECRET_KEY"]})
+  .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
   .https.onCall(async (data, context) => {
     if (!context.auth?.uid) {
       throw new functions.https.HttpsError(
@@ -172,7 +172,7 @@ export const createCheckoutSession = functions
           undefined
       });
 
-      return {sessionId: session.id, sessionUrl: session.url ?? null};
+      return { sessionId: session.id, sessionUrl: session.url ?? null };
     } catch (error) {
       functions.logger.error("Failed to create Stripe checkout session", error);
       throw new functions.https.HttpsError(
@@ -255,7 +255,7 @@ export const stripeWebhook = functions
         null;
 
     const updates: Record<string, unknown> = {
-      subscriptionStatus: planType === "team" ? "team" : "pro",
+      subscriptionStatus: planType === "team" ? "pro" : "plus",
       subscriptionPaidAt: paidAt,
     };
 

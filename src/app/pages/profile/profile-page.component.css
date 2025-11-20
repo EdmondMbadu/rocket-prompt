@@ -180,6 +180,11 @@
   color: #7c2d12;
 }
 
+.profile-subscription-badge--pro {
+  background: radial-gradient(circle at top, rgba(219, 234, 254, 0.9), rgba(147, 197, 253, 0.5));
+  color: #1e3a8a;
+}
+
 .profile-subscription-badge--team {
   background: radial-gradient(circle at top, rgba(224, 231, 255, 0.9), rgba(165, 180, 252, 0.5));
   color: #1e1b4b;

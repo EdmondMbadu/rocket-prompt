@@ -1,4 +1,4 @@
-export type SubscriptionTier = 'pro' | 'team';
+export type SubscriptionTier = 'pro' | 'team' | 'plus';
 
 interface SubscriptionInfo {
   key: SubscriptionTier;
@@ -7,10 +7,15 @@ interface SubscriptionInfo {
 }
 
 const SUBSCRIPTION_MAP: Record<SubscriptionTier, SubscriptionInfo> = {
-  pro: {
-    key: 'pro',
+  plus: {
+    key: 'plus',
     label: 'Plus Member',
     shortLabel: 'Plus'
+  },
+  pro: {
+    key: 'pro',
+    label: 'Pro Member',
+    shortLabel: 'Pro'
   },
   team: {
     key: 'team',
@@ -33,11 +38,15 @@ export function getSubscriptionDetails(status?: string | null): SubscriptionInfo
  * 
  * Rules:
  * - "plus" users have lifetime access, never show banner
- * - "pro" and "team" users have 1-year subscriptions, show banner if expired
+ * - "pro" users have 1-year subscriptions, show banner if expired
+ * - "team" users have 1-year subscriptions, show banner if expired
  * - All other users should see the banner
  * 
+ * Note: Backend sets subscriptionStatus: "plus" for Plus plan (lifetime, no expiration)
+ *       Backend sets subscriptionStatus: "pro" for Team/Pro plan (1-year, with expiration)
+ * 
  * @param subscriptionStatus - The user's subscription status ('pro', 'team', 'plus', or undefined)
- * @param subscriptionExpiresAt - The expiration timestamp (Firestore Timestamp or Date)
+ * @param subscriptionExpiresAt - The expiration timestamp (Firestore Timestamp or Date, or null/undefined for lifetime)
  * @returns true if the upgrade banner should be shown, false otherwise
  */
 export function shouldShowUpgradeBanner(
@@ -56,9 +65,18 @@ export function shouldShowUpgradeBanner(
     return false;
   }
 
-  // "pro" and "team" users have 1-year subscriptions
+  // "pro" users: check if they have an expiration date
+  // If no expiration date, they're legacy plus users (lifetime), never show banner
+  if (status === 'pro') {
+    if (!subscriptionExpiresAt) {
+      return false; // Legacy plus user (lifetime access)
+    }
+    // Has expiration date, so it's a 1-year subscription - check expiration below
+  }
+
+  // "team" users and "pro" users with expiration dates have 1-year subscriptions
   if (status === 'pro' || status === 'team') {
-    // If no expiration date, show banner (shouldn't happen, but be safe)
+    // If no expiration date at this point, show banner (shouldn't happen for team, but be safe)
     if (!subscriptionExpiresAt) {
       return true;
     }
@@ -81,7 +99,11 @@ export function shouldShowUpgradeBanner(
       };
       
       if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-        expirationDate = timestamp.toDate();
+        try {
+          expirationDate = timestamp.toDate();
+        } catch (e) {
+          console.warn('Failed to call toDate() on timestamp', e);
+        }
       } else if (typeof timestamp.seconds === 'number') {
         // Handle plain object format: { seconds: number, nanoseconds?: number }
         // Convert seconds to milliseconds (nanoseconds precision not needed for date comparison)
@@ -89,13 +111,21 @@ export function shouldShowUpgradeBanner(
       }
     }
 
-    // If we couldn't parse the date, show banner to be safe
-    if (!expirationDate) {
-      return true;
+    // If we couldn't parse the date, don't show banner (assume valid subscription)
+    // This is safer than showing banner for users who might have valid subscriptions
+    if (!expirationDate || isNaN(expirationDate.getTime())) {
+      console.warn('Could not parse expiration date, assuming subscription is valid', { 
+        subscriptionStatus: status, 
+        subscriptionExpiresAt 
+      });
+      return false; // Don't show banner if we can't verify expiration
     }
 
-    // Show banner if subscription has expired (current time is past expiration)
-    return new Date() > expirationDate;
+    // Show banner only if subscription has expired (current time is past expiration)
+    const now = new Date();
+    const isExpired = now > expirationDate;
+    
+    return isExpired;
   }
 
   // For any other status, show banner

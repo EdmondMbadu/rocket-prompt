@@ -590,6 +590,8 @@
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Role
                   </th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Subscription
+                  </th>
                   <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Prompts
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Joined
@@ -628,6 +630,12 @@
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                      <span [ngClass]="getSubscriptionStatus(user).badgeClass + ' ' + getSubscriptionStatus(user).textClass"
+                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">
+                        {{ getSubscriptionStatus(user).label }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                       <div class="text-sm font-medium text-slate-900">{{ getPromptCount(user) }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -637,7 +645,7 @@
                 </ng-container>
                 <ng-template #noUsers>
                   <tr>
-                    <td colspan="5" class="px-6 py-12 text-center">
+                    <td colspan="6" class="px-6 py-12 text-center">
                       <p class="text-sm text-slate-500">No users found</p>
                     </td>
                   </tr>

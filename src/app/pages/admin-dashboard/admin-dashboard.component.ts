@@ -222,6 +222,41 @@ export class AdminDashboardComponent {
             0;
     }
 
+    getSubscriptionStatus(user: UserProfile): { label: string; badgeClass: string; textClass: string } {
+        const status = user.subscriptionStatus?.toLowerCase() || '';
+        
+        if (status === 'plus') {
+            return {
+                label: 'Plus',
+                badgeClass: 'bg-green-100',
+                textClass: 'text-green-700'
+            };
+        }
+        
+        if (status === 'pro' || status === 'team') {
+            return {
+                label: status === 'pro' ? 'Pro' : 'Team',
+                badgeClass: 'bg-blue-100',
+                textClass: 'text-blue-700'
+            };
+        }
+        
+        if (status === 'free') {
+            return {
+                label: 'Free',
+                badgeClass: 'bg-slate-100',
+                textClass: 'text-slate-700'
+            };
+        }
+        
+        // No subscription status
+        return {
+            label: '—',
+            badgeClass: 'bg-gray-100',
+            textClass: 'text-gray-500'
+        };
+    }
+
     navigateToUserProfile(user: UserProfile, event: Event): void {
         event.preventDefault();
         event.stopPropagation();

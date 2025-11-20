@@ -132,14 +132,16 @@
               class="profile-subscription-badge"
               [ngClass]="tier.key === 'team'
                 ? 'profile-subscription-badge--team'
+                : tier.key === 'pro'
+                ? 'profile-subscription-badge--pro'
                 : 'profile-subscription-badge--plus'">
               <span class="profile-subscription-badge__icon">
-                {{ tier.key === 'team' ? '🚀' : '✨' }}
+                {{ tier.key === 'team' ? '🚀' : tier.key === 'pro' ? '⭐' : '✨' }}
               </span>
               <div>
                 <p class="profile-subscription-badge__label">{{ tier.label }}</p>
                 <p class="profile-subscription-badge__caption">
-                  {{ tier.key === 'team' ? 'Team perks unlocked' : 'Lifetime access active' }}
+                  {{ tier.key === 'team' ? 'Team perks unlocked' : tier.key === 'pro' ? 'Pro access active' : 'Lifetime access active' }}
                 </p>
               </div>
             </div>
