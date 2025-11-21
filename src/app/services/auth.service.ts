@@ -53,7 +53,8 @@ export class AuthService {
       username,
       createdAt: firestoreModule.serverTimestamp(),
       preferences: {
-        sidebarCollapsed: false
+        sidebarCollapsed: false,
+        defaultChatbot: 'chatgpt'
       }
     });
 
@@ -93,7 +94,8 @@ export class AuthService {
         username,
         createdAt: firestoreModule.serverTimestamp(),
         preferences: {
-          sidebarCollapsed: false
+          sidebarCollapsed: false,
+          defaultChatbot: 'chatgpt'
         }
       });
     } else {

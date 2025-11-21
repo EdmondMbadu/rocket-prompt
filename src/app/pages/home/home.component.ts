@@ -11,7 +11,7 @@ import { HomeContentService } from '../../services/home-content.service';
 import { OrganizationService } from '../../services/organization.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
-import type { UserProfile } from '../../models/user-profile.model';
+import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { DailyTip } from '../../models/home-content.model';
 import { shouldShowUpgradeBanner, getUpgradeBannerConfig } from '../../utils/subscription.util';
@@ -61,8 +61,6 @@ interface PromptCard {
   readonly forkCount?: number;
   readonly isPrivate?: boolean;
 }
-
-type DirectLaunchTarget = 'chatgpt' | 'gemini' | 'claude' | 'grok';
 
 interface ChatbotOption {
   readonly id: DirectLaunchTarget;
@@ -200,6 +198,7 @@ export class HomeComponent {
     this.observeCheckoutStatus();
     this.observePrompts();
     this.observeHomeContent();
+    this.subscribeToDefaultChatbotPreference();
   }
 
   readonly createPromptForm = this.fb.nonNullable.group({
@@ -461,17 +460,17 @@ export class HomeComponent {
     return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
   }
 
-  setDefaultChatbot(option: DirectLaunchTarget) {
+  setDefaultChatbot(option: DirectLaunchTarget, persistPreference = true) {
     if (!this.isValidChatbot(option)) {
       return;
     }
+    if (this.defaultChatbot() === option) {
+      return;
+    }
     this.defaultChatbot.set(option);
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(this.defaultChatbotStorageKey, option);
-      } catch (e) {
-        console.warn('Could not persist chatbot preference', e);
-      }
+    this.persistDefaultChatbotLocally(option);
+    if (persistPreference) {
+      void this.saveDefaultChatbotPreference(option);
     }
   }
 
@@ -479,17 +478,62 @@ export class HomeComponent {
     return this.chatbotOptions.find(option => option.id === this.defaultChatbot())?.label ?? 'ChatGPT';
   }
 
-  private restoreDefaultChatbotPreference() {
+  private subscribeToDefaultChatbotPreference() {
+    this.profile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(profile => {
+        this.applyDefaultChatbotFromPreferences(profile?.preferences?.defaultChatbot);
+      });
+  }
+
+  private applyDefaultChatbotFromPreferences(preference?: DirectLaunchTarget | null) {
+    if (preference && this.isValidChatbot(preference)) {
+      this.setDefaultChatbot(preference, false);
+    }
+  }
+
+  private persistDefaultChatbotLocally(option: DirectLaunchTarget) {
     if (typeof window === 'undefined') {
       return;
     }
     try {
+      window.localStorage.setItem(this.defaultChatbotStorageKey, option);
+    } catch (e) {
+      console.warn('Could not persist chatbot preference', e);
+    }
+  }
+
+  private readDefaultChatbotFromStorage(): DirectLaunchTarget | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    try {
       const stored = window.localStorage.getItem(this.defaultChatbotStorageKey);
-      if (stored && this.isValidChatbot(stored as DirectLaunchTarget)) {
-        this.defaultChatbot.set(stored as DirectLaunchTarget);
+      if (stored && this.isValidChatbot(stored)) {
+        return stored;
       }
     } catch (e) {
       console.warn('Failed to read chatbot preference', e);
+    }
+    return null;
+  }
+
+  private async saveDefaultChatbotPreference(option: DirectLaunchTarget) {
+    const user = this.authService.currentUser;
+    if (!user) {
+      return;
+    }
+    try {
+      await this.authService.updateUserPreferences(user.uid, { defaultChatbot: option });
+    } catch (error) {
+      console.error('Failed to save chatbot preference', error);
+    }
+  }
+
+  private restoreDefaultChatbotPreference() {
+    const stored = this.readDefaultChatbotFromStorage();
+    if (stored && this.isValidChatbot(stored)) {
+      this.setDefaultChatbot(stored, false);
     }
   }
 

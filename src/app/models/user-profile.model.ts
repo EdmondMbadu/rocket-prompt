@@ -1,5 +1,8 @@
+export type DirectLaunchTarget = 'chatgpt' | 'gemini' | 'claude' | 'grok';
+
 export interface UserPreferences {
   sidebarCollapsed?: boolean;
+  defaultChatbot?: DirectLaunchTarget;
 }
 
 export interface UserProfile {
