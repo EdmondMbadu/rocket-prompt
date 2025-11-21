@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
 import type { Prompt } from '../../models/prompt.model';
 
-type LaunchTarget = 'gpt' | 'grok';
+type LaunchTarget = 'gpt' | 'grok' | 'claude';
 
 @Component({
   selector: 'app-prompt-launch',
@@ -24,7 +24,10 @@ export class PromptLaunchComponent {
   readonly promptTitle = signal<string>('');
   readonly promptUrl = signal<string>('');
   readonly launchTarget = signal<LaunchTarget>('gpt');
-  readonly launchTargetLabel = computed(() => this.launchTarget() === 'gpt' ? 'GPT' : 'Grok');
+  readonly launchTargetLabel = computed(() => {
+    const target = this.launchTarget();
+    return target === 'gpt' ? 'GPT' : target === 'grok' ? 'Grok' : 'Claude';
+  });
 
   private lastIdentifier: string | null = null;
   private lastIdentifierType: 'id' | 'custom' = 'custom';
@@ -35,7 +38,7 @@ export class PromptLaunchComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         const rawTarget = (params.get('target') ?? '').toLowerCase();
-        const target: LaunchTarget = rawTarget === 'grok' ? 'grok' : 'gpt';
+        const target: LaunchTarget = rawTarget === 'grok' ? 'grok' : rawTarget === 'claude' ? 'claude' : 'gpt';
         this.launchTarget.set(target);
 
         const idParam = params.get('id');
@@ -102,9 +105,14 @@ export class PromptLaunchComponent {
 
     this.status.set('launching');
     const target = this.launchTarget();
-    const url = target === 'gpt'
-      ? this.createChatGPTUrl(text)
-      : this.createGrokUrl(text);
+    let url: string;
+    if (target === 'gpt') {
+      url = this.createChatGPTUrl(text);
+    } else if (target === 'grok') {
+      url = this.createGrokUrl(text);
+    } else {
+      url = this.createClaudeUrl(text);
+    }
 
     try {
       await this.promptService.trackLaunch(prompt.id, target);
@@ -134,5 +142,10 @@ export class PromptLaunchComponent {
     const encodedPrompt = encodeURIComponent(prompt);
     const timestamp = Date.now();
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  private createClaudeUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 }

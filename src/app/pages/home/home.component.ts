@@ -344,18 +344,19 @@ export class HomeComponent {
     window.open(url, '_blank');
   }
 
-  copyOneClickLink(target: 'gpt' | 'grok') {
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
     const prompt = this.sharePrompt();
     if (!prompt) return;
 
     const url = this.buildOneShotLink(prompt, target);
     if (!url) return;
 
+    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
     navigator.clipboard.writeText(url).then(() => {
-      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
+      this.showCopyMessage(`${label} link copied!`);
     }).catch(() => {
       this.fallbackCopyTextToClipboard(url);
-      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
+      this.showCopyMessage(`${label} link copied!`);
     });
   }
 
@@ -423,12 +424,12 @@ export class HomeComponent {
     return prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
   }
 
-  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok'): string | null {
+  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok' | 'claude'): string | null {
     const base = this.getPromptUrl(prompt);
     if (!base) {
       return null;
     }
-    const suffix = target === 'gpt' ? 'GPT' : 'GROK';
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
     return `${base}/${suffix}`;
   }
 
