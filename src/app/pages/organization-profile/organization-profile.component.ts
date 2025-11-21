@@ -11,9 +11,16 @@ import { OrganizationService } from '../../services/organization.service';
 import { PromptService } from '../../services/prompt.service';
 import { CollectionService } from '../../services/collection.service';
 import type { Organization } from '../../models/organization.model';
-import type { UserProfile } from '../../models/user-profile.model';
+import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
 import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../../models/prompt.model';
 import type { PromptCollection } from '../../models/collection.model';
+
+interface ChatbotOption {
+  readonly id: DirectLaunchTarget;
+  readonly label: string;
+  readonly description: string;
+  readonly icon: string;
+}
 
 @Component({
   selector: 'app-organization-profile',
@@ -85,10 +92,16 @@ export class OrganizationProfileComponent {
   readonly forkingPromptId = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
-  readonly recentlyCopied = signal<Set<string>>(new Set());
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
-  private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  readonly chatbotOptions: readonly ChatbotOption[] = [
+    { id: 'chatgpt', label: 'ChatGPT', description: 'Best for most prompts', icon: 'assets/gpt.png' },
+    { id: 'gemini', label: 'Gemini', description: 'Google Bard successor', icon: 'assets/gemini.png' },
+    { id: 'claude', label: 'Claude', description: 'Anthropic assistant', icon: 'assets/claude.jpeg' },
+    { id: 'grok', label: 'Grok', description: 'xAI experimental model', icon: 'assets/grok.jpg' }
+  ];
+  readonly defaultChatbot = signal<DirectLaunchTarget>('chatgpt');
+  private readonly defaultChatbotStorageKey = 'rocketPromptDefaultChatbot';
   readonly editingName = signal(false);
   readonly editingDescription = signal(false);
   readonly isSaving = signal(false);
@@ -287,7 +300,10 @@ export class OrganizationProfileComponent {
       )
       .subscribe(profile => {
         this.currentUserProfile.set(profile ?? null);
+        this.applyDefaultChatbotFromPreferences(profile?.preferences?.defaultChatbot);
       });
+
+    this.restoreDefaultChatbotPreference();
   }
 
   getOrganizationInitials(organization: Organization | null): string {
@@ -1069,50 +1085,6 @@ export class OrganizationProfileComponent {
     }
   }
 
-  // Copy prompt functionality
-  async copyPrompt(prompt: Prompt) {
-    if (!prompt) return;
-
-    const text = prompt.content ?? '';
-
-    try {
-      await navigator.clipboard.writeText(text);
-      this.showCopyMessage('Prompt copied!');
-      this.markPromptAsCopied(prompt.id);
-    } catch (e) {
-      this.fallbackCopyTextToClipboard(text);
-      this.showCopyMessage('Prompt copied!');
-      this.markPromptAsCopied(prompt.id);
-    }
-  }
-
-  private markPromptAsCopied(id: string) {
-    if (!id) return;
-
-    this.recentlyCopied.update(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-
-    const existing = this.copyTimers.get(id);
-    if (existing) {
-      clearTimeout(existing);
-    }
-
-    const DURATION = 2500;
-    const timer = setTimeout(() => {
-      this.recentlyCopied.update(prev => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      this.copyTimers.delete(id);
-    }, DURATION);
-
-    this.copyTimers.set(id, timer);
-  }
-
   async copyPromptUrl(prompt: Prompt) {
     if (!prompt) return;
 
@@ -1164,6 +1136,32 @@ export class OrganizationProfileComponent {
     return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
   }
 
+  private async trackPromptLaunch(prompt: Prompt, launchType: 'gpt' | 'gemini' | 'claude' | 'grok') {
+    if (!prompt?.id) {
+      return;
+    }
+
+    try {
+      const result = await this.promptService.trackLaunch(prompt.id, launchType);
+      this.organizationPrompts.update(prev => prev.map(p => {
+        if (p.id !== prompt.id) {
+          return p;
+        }
+        return {
+          ...p,
+          launchGpt: result.launchGpt,
+          launchGemini: result.launchGemini,
+          launchClaude: result.launchClaude,
+          launchGrok: result.launchGrok,
+          copied: result.copied,
+          totalLaunch: result.totalLaunch
+        };
+      }));
+    } catch (error) {
+      console.error('Failed to record launch', error);
+    }
+  }
+
   // Share modal functionality
   openShareModal(prompt: Prompt) {
     this.sharePrompt.set(prompt);
@@ -1196,8 +1194,8 @@ export class OrganizationProfileComponent {
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  async openChatbot(url: string, chatbotName: string) {
-    const promptText = this.sharePrompt()?.content || '';
+  async openChatbot(url: string, chatbotName: string, promptText?: string) {
+    const text = promptText ?? this.sharePrompt()?.content ?? '';
     
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       window.open(url, '_blank');
@@ -1205,18 +1203,132 @@ export class OrganizationProfileComponent {
     }
 
     try {
-      if (promptText) {
-        await navigator.clipboard.writeText(promptText);
+      if (text) {
+        await navigator.clipboard.writeText(text);
         this.showCopyMessage(`${chatbotName} prompt copied!`);
       }
     } catch (e) {
-      if (promptText) {
-        this.fallbackCopyTextToClipboard(promptText);
+      if (text) {
+        this.fallbackCopyTextToClipboard(text);
         this.showCopyMessage(`${chatbotName} prompt copied!`);
       }
     }
 
     window.open(url, '_blank');
+  }
+
+  async launchPrompt(prompt: Prompt) {
+    if (!prompt?.content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+
+    const target = this.defaultChatbot();
+    const text = prompt.content;
+
+    let url = '';
+    let chatbotName: string;
+    let launchType: 'gpt' | 'gemini' | 'claude' | 'grok';
+
+    switch (target) {
+      case 'gemini':
+        url = this.createGeminiUrl(text);
+        chatbotName = 'Gemini';
+        launchType = 'gemini';
+        break;
+      case 'claude':
+        url = this.createClaudeUrl(text);
+        chatbotName = 'Claude';
+        launchType = 'claude';
+        break;
+      case 'grok':
+        url = this.createGrokUrl(text);
+        chatbotName = 'Grok';
+        launchType = 'grok';
+        break;
+      case 'chatgpt':
+      default:
+        url = this.createChatGPTUrl(text);
+        chatbotName = 'ChatGPT';
+        launchType = 'gpt';
+        break;
+    }
+
+    await this.openChatbot(url, chatbotName, text);
+    await this.trackPromptLaunch(prompt, launchType);
+  }
+
+  setDefaultChatbot(option: DirectLaunchTarget, persistPreference = true) {
+    if (!this.isValidChatbot(option)) {
+      return;
+    }
+    if (this.defaultChatbot() === option) {
+      return;
+    }
+    this.defaultChatbot.set(option);
+    this.persistDefaultChatbotLocally(option);
+    if (persistPreference) {
+      void this.saveDefaultChatbotPreference(option);
+    }
+  }
+
+  getDefaultChatbotLabel(): string {
+    return this.chatbotOptions.find(option => option.id === this.defaultChatbot())?.label ?? 'ChatGPT';
+  }
+
+  private restoreDefaultChatbotPreference() {
+    const stored = this.readDefaultChatbotFromStorage();
+    if (stored && this.isValidChatbot(stored)) {
+      this.setDefaultChatbot(stored, false);
+    }
+  }
+
+  private applyDefaultChatbotFromPreferences(preference?: DirectLaunchTarget | null) {
+    if (preference && this.isValidChatbot(preference)) {
+      this.setDefaultChatbot(preference, false);
+    }
+  }
+
+  private persistDefaultChatbotLocally(option: DirectLaunchTarget) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(this.defaultChatbotStorageKey, option);
+    } catch (e) {
+      console.warn('Could not persist chatbot preference', e);
+    }
+  }
+
+  private readDefaultChatbotFromStorage(): DirectLaunchTarget | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    try {
+      const stored = window.localStorage.getItem(this.defaultChatbotStorageKey);
+      if (stored && this.isValidChatbot(stored)) {
+        return stored;
+      }
+    } catch (e) {
+      console.warn('Failed to read chatbot preference', e);
+    }
+    return null;
+  }
+
+  private async saveDefaultChatbotPreference(option: DirectLaunchTarget) {
+    const user = this.authService.currentUser;
+    if (!user) {
+      return;
+    }
+    try {
+      await this.authService.updateUserPreferences(user.uid, { defaultChatbot: option });
+    } catch (error) {
+      console.error('Failed to save chatbot preference', error);
+    }
+  }
+
+  private isValidChatbot(option: string): option is DirectLaunchTarget {
+    return this.chatbotOptions.some(bot => bot.id === option);
   }
 
   copyPromptPageUrl() {
