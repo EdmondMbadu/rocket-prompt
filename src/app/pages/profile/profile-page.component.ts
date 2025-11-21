@@ -16,6 +16,7 @@ import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { generateDisplayUsername } from '../../utils/username.util';
 import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig } from '../../utils/subscription.util';
 import {
@@ -43,7 +44,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, NavbarComponent, PromptCardComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, NavbarComponent, PromptCardComponent, ShareModalComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.css'
 })
@@ -88,6 +89,8 @@ export class ProfilePageComponent {
   readonly recentlyCopiedUrl = signal<Set<string>>(new Set());
   readonly profileUrlCopied = signal(false);
   readonly newPromptModalOpen = signal(false);
+  readonly shareModalOpen = signal(false);
+  readonly sharePrompt = signal<PromptCard | null>(null);
   readonly isEditingPrompt = signal(false);
   readonly editingPromptId = signal<string | null>(null);
   readonly isSavingPrompt = signal(false);
@@ -668,6 +671,77 @@ export class ProfilePageComponent {
     const encodedPrompt = encodeURIComponent(prompt);
     const timestamp = Date.now();
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  openShareModal(prompt: PromptCard) {
+    this.sharePrompt.set(prompt);
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+    this.sharePrompt.set(null);
+  }
+
+  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok'): void {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) return;
+
+    let url: string;
+    switch (chatbotName) {
+      case 'ChatGPT':
+        url = this.createChatGPTUrl(prompt.content);
+        break;
+      case 'Gemini':
+        url = this.createGeminiUrl(prompt.content);
+        break;
+      case 'Claude':
+        url = this.createClaudeUrl(prompt.content);
+        break;
+      case 'Grok':
+        url = this.createGrokUrl(prompt.content);
+        break;
+    }
+    void this.openChatbot(url, chatbotName, prompt.content);
+  }
+
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.buildOneShotLink(prompt, target);
+    if (!url) return;
+
+    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage(`${label} link copied!`);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage(`${label} link copied!`);
+    });
+  }
+
+  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok' | 'claude'): string | null {
+    const base = this.getPromptUrl(prompt);
+    if (!base) {
+      return null;
+    }
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
+    return `${base}/${suffix}`;
+  }
+
+  copyPromptPageUrlFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.getPromptUrl(prompt);
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+    });
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {

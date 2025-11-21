@@ -16,6 +16,7 @@ import type { Organization } from '../../models/organization.model';
 import type { DailyTip } from '../../models/home-content.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { shouldShowUpgradeBanner, getUpgradeBannerConfig } from '../../utils/subscription.util';
 import {
   BULK_UPLOAD_INSTRUCTIONS_URL,
@@ -42,7 +43,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NavbarComponent, PromptCardComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NavbarComponent, PromptCardComponent, ShareModalComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -314,6 +315,28 @@ export class HomeComponent {
     const encodedPrompt = encodeURIComponent(prompt);
     const timestamp = Date.now();
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok'): void {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) return;
+
+    let url: string;
+    switch (chatbotName) {
+      case 'ChatGPT':
+        url = this.createChatGPTUrl(prompt.content);
+        break;
+      case 'Gemini':
+        url = this.createGeminiUrl(prompt.content);
+        break;
+      case 'Claude':
+        url = this.createClaudeUrl(prompt.content);
+        break;
+      case 'Grok':
+        url = this.createGrokUrl(prompt.content);
+        break;
+    }
+    void this.openChatbot(url, chatbotName, prompt.content);
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {

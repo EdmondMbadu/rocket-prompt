@@ -512,6 +512,7 @@
                 [originalPromptUrl]="getOriginalPromptUrl(prompt)"
                 [canEdit]="canEditPrompt(prompt)"
                 (launchPrompt)="launchPrompt($event)"
+                (sharePrompt)="openShareModal($event)"
                 (openPrompt)="openPrompt($event)"
                 (editPrompt)="openEditPromptModal($event)"
                 (deletePrompt)="onDeletePrompt($event)"
@@ -1155,6 +1156,16 @@
     </a>
   </div>
 </ng-template>
+
+<!-- SHARE PROMPT MODAL -->
+<app-share-modal 
+  [isOpen]="shareModalOpen()" 
+  [prompt]="sharePrompt() ? { id: sharePrompt()!.id, title: sharePrompt()!.title, content: sharePrompt()!.content, preview: sharePrompt()!.preview, customUrl: sharePrompt()!.customUrl } : null"
+  (close)="closeShareModal()"
+  (copyOneClickLink)="copyOneClickLink($event)"
+  (openChatbot)="handleOpenChatbot($event)"
+  (copyPromptUrl)="copyPromptPageUrlFromShare()">
+</app-share-modal>
 
 <!-- LOADING -->
 <ng-template #loading>
