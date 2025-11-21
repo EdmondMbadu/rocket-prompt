@@ -14,6 +14,8 @@ import type { Organization } from '../../models/organization.model';
 import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
 import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../../models/prompt.model';
 import type { PromptCollection } from '../../models/collection.model';
+import type { PromptCard } from '../../models/prompt-card.model';
+import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 
 interface ChatbotOption {
   readonly id: DirectLaunchTarget;
@@ -25,7 +27,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-organization-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent],
   templateUrl: './organization-profile.component.html',
   styleUrl: './organization-profile.component.css'
 })
@@ -1060,6 +1062,38 @@ export class OrganizationProfileComponent {
       .join(' ');
   }
 
+  promptToCard(prompt: Prompt): PromptCard {
+    return {
+      id: prompt.id,
+      authorId: prompt.authorId,
+      title: prompt.title,
+      content: prompt.content,
+      preview: this.buildPreview(prompt.content),
+      tag: prompt.tag,
+      tagLabel: this.formatTagLabel(prompt.tag),
+      customUrl: prompt.customUrl,
+      views: prompt.views || 0,
+      likes: prompt.likes || 0,
+      launchGpt: prompt.launchGpt || 0,
+      launchGemini: prompt.launchGemini || 0,
+      launchClaude: prompt.launchClaude || 0,
+      launchGrok: prompt.launchGrok || 0,
+      copied: prompt.copied || 0,
+      totalLaunch: prompt.totalLaunch || 0,
+      createdAt: prompt.createdAt,
+      updatedAt: prompt.updatedAt,
+      authorProfile: this.getAuthorProfile(prompt.authorId),
+      organizationId: prompt.organizationId,
+      organizationProfile: prompt.organizationId ? this.organization() || undefined : undefined,
+      forkedFromPromptId: prompt.forkedFromPromptId,
+      forkedFromAuthorId: prompt.forkedFromAuthorId,
+      forkedFromTitle: prompt.forkedFromTitle,
+      forkedFromCustomUrl: prompt.forkedFromCustomUrl,
+      forkCount: prompt.forkCount,
+      isPrivate: prompt.isPrivate
+    };
+  }
+
   getPromptUrl(prompt: Prompt): string {
     const short = prompt.id ? prompt.id.slice(0, 8) : '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -1497,6 +1531,29 @@ export class OrganizationProfileComponent {
     const url = this.getOriginalPromptUrl(prompt);
     if (url) {
       void this.router.navigateByUrl(url.replace(window.location.origin, ''));
+    }
+  }
+
+  navigateToOrganization(organizationId: string, event: Event, prompt?: Prompt) {
+    event.stopPropagation();
+    if (organizationId) {
+      const organization = this.organization();
+      if (organization && organization.id === organizationId) {
+        // Already on this organization's page, no need to navigate
+        return;
+      }
+      
+      // Load organization and navigate to it
+      this.organizationService.fetchOrganization(organizationId).then(orgData => {
+        if (orgData?.username) {
+          void this.router.navigate(['/organization', orgData.username]);
+        } else if (orgData) {
+          // Fallback to ID if username not available
+          void this.router.navigate(['/organization', orgData.id]);
+        }
+      }).catch(error => {
+        console.error('Failed to load organization', error);
+      });
     }
   }
 

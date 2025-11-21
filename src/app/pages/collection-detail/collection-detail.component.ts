@@ -12,27 +12,8 @@ import type { PromptCollection } from '../../models/collection.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
-
-interface PromptCard {
-  readonly id: string;
-  readonly authorId: string;
-  readonly title: string;
-  readonly content: string;
-  readonly preview: string;
-  readonly tag: string;
-  readonly tagLabel: string;
-  readonly customUrl?: string;
-  readonly authorProfile?: UserProfile;
-  // Organization-related fields
-  readonly organizationId?: string;
-  readonly organizationProfile?: Organization;
-  // Fork-related fields
-  readonly forkedFromPromptId?: string;
-  readonly forkedFromAuthorId?: string;
-  readonly forkedFromTitle?: string;
-  readonly forkedFromCustomUrl?: string;
-  readonly forkCount?: number;
-}
+import type { PromptCard } from '../../models/prompt-card.model';
+import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 
 interface PromptOption {
   readonly id: string;
@@ -44,7 +25,7 @@ interface PromptOption {
 @Component({
   selector: 'app-collection-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PromptCardComponent],
   templateUrl: './collection-detail.component.html',
   styleUrl: './collection-detail.component.css'
 })
@@ -791,6 +772,16 @@ export class CollectionDetailComponent {
       tag,
       tagLabel: this.formatTagLabel(tag),
       customUrl: prompt.customUrl,
+      views: prompt.views || 0,
+      likes: prompt.likes || 0,
+      launchGpt: prompt.launchGpt || 0,
+      launchGemini: prompt.launchGemini || 0,
+      launchClaude: prompt.launchClaude || 0,
+      launchGrok: prompt.launchGrok || 0,
+      copied: prompt.copied || 0,
+      totalLaunch: prompt.totalLaunch || 0,
+      createdAt: prompt.createdAt,
+      updatedAt: prompt.updatedAt,
       authorProfile: prompt.authorId ? this.authorProfiles().get(prompt.authorId) : undefined,
       organizationId: prompt.organizationId,
       organizationProfile: prompt.organizationId ? this.organizations().get(prompt.organizationId) : undefined,
@@ -798,7 +789,8 @@ export class CollectionDetailComponent {
       forkedFromAuthorId: prompt.forkedFromAuthorId,
       forkedFromTitle: prompt.forkedFromTitle,
       forkedFromCustomUrl: prompt.forkedFromCustomUrl,
-      forkCount: prompt.forkCount
+      forkCount: prompt.forkCount,
+      isPrivate: prompt.isPrivate
     };
   }
 

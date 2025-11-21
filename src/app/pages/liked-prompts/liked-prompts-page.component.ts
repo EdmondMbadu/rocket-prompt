@@ -10,6 +10,8 @@ import { OrganizationService } from '../../services/organization.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
+import type { PromptCard } from '../../models/prompt-card.model';
+import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 
 interface LikedPromptCard {
   readonly id: string;
@@ -42,7 +44,7 @@ interface LikedPromptCard {
 @Component({
   selector: 'app-liked-prompts-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PromptCardComponent],
   templateUrl: './liked-prompts-page.component.html',
   styleUrl: './liked-prompts-page.component.css'
 })
@@ -128,23 +130,55 @@ export class LikedPromptsPageComponent {
     await this.loadLikedPrompts(true);
   }
 
-  async openPrompt(prompt: LikedPromptCard) {
-    if (!prompt?.id) {
+  likedPromptToCard(prompt: LikedPromptCard): PromptCard {
+    return {
+      id: prompt.id,
+      authorId: prompt.authorId,
+      title: prompt.title,
+      content: prompt.content,
+      preview: prompt.preview,
+      tag: prompt.tag,
+      tagLabel: prompt.tagLabel,
+      customUrl: prompt.customUrl,
+      views: 0, // LikedPromptCard doesn't have views
+      likes: prompt.likes,
+      launchGpt: prompt.launchGpt || 0,
+      launchGemini: prompt.launchGemini || 0,
+      launchClaude: prompt.launchClaude || 0,
+      launchGrok: prompt.launchGrok || 0,
+      copied: prompt.copied || 0,
+      totalLaunch: prompt.totalLaunch || 0,
+      authorProfile: prompt.authorProfile,
+      organizationId: prompt.organizationId,
+      organizationProfile: prompt.organizationProfile,
+      forkedFromPromptId: prompt.forkedFromPromptId,
+      forkedFromAuthorId: prompt.forkedFromAuthorId,
+      forkedFromTitle: prompt.forkedFromTitle,
+      forkedFromCustomUrl: prompt.forkedFromCustomUrl,
+      forkCount: prompt.forkCount,
+      isPrivate: false // Liked prompts are not private
+    };
+  }
+
+  async openPrompt(prompt: PromptCard | LikedPromptCard) {
+    const likedPrompt = prompt as LikedPromptCard;
+    if (!likedPrompt?.id) {
       return;
     }
 
-    if (prompt.customUrl) {
-      await this.router.navigate([`/${prompt.customUrl}`]);
+    if (likedPrompt.customUrl) {
+      await this.router.navigate([`/${likedPrompt.customUrl}`]);
     } else {
-      const short = prompt.id.slice(0, 8) || prompt.id;
+      const short = likedPrompt.id.slice(0, 8) || likedPrompt.id;
       await this.router.navigate(['/prompt', short]);
     }
   }
 
-  async removeLike(prompt: LikedPromptCard, event?: Event) {
+  async removeLike(prompt: PromptCard | LikedPromptCard, event?: Event) {
+    const likedPrompt = prompt as LikedPromptCard;
     event?.stopPropagation();
 
-    if (!prompt?.id) {
+    if (!likedPrompt?.id) {
       return;
     }
 
@@ -153,33 +187,33 @@ export class LikedPromptsPageComponent {
       return;
     }
 
-    if (this.isPromptLiking(prompt.id)) {
+    if (this.isPromptLiking(likedPrompt.id)) {
       return;
     }
 
     this.likingPrompts.update(prev => {
       const next = new Set(prev);
-      next.add(prompt.id);
+      next.add(likedPrompt.id);
       return next;
     });
 
     try {
-      const result = await this.promptService.toggleLike(prompt.id, actor);
+      const result = await this.promptService.toggleLike(likedPrompt.id, actor);
 
       if (result.liked) {
         this.likedPrompts.update(prev =>
-          prev.map(item => (item.id === prompt.id ? { ...item, likes: result.likes } : item))
+          prev.map(item => (item.id === likedPrompt.id ? { ...item, likes: result.likes } : item))
         );
         return;
       }
 
-      this.likedPrompts.update(prev => prev.filter(item => item.id !== prompt.id));
+      this.likedPrompts.update(prev => prev.filter(item => item.id !== likedPrompt.id));
     } catch (error) {
       console.error('Failed to update liked prompt', error);
     } finally {
       this.likingPrompts.update(prev => {
         const next = new Set(prev);
-        next.delete(prompt.id);
+        next.delete(likedPrompt.id);
         return next;
       });
     }
@@ -286,7 +320,7 @@ export class LikedPromptsPageComponent {
     return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
   }
 
-  async navigateToAuthorProfile(authorId: string, event: Event) {
+  async navigateToAuthorProfile(authorId: string, event: Event, prompt?: LikedPromptCard | PromptCard) {
     event.stopPropagation();
     if (authorId) {
       // Try to get the profile to get the username
@@ -319,7 +353,7 @@ export class LikedPromptsPageComponent {
     return name.charAt(0).toUpperCase() || 'ORG';
   }
 
-  navigateToOrganization(organizationId: string, event: Event) {
+  navigateToOrganization(organizationId: string, event: Event, prompt?: LikedPromptCard | PromptCard) {
     event.stopPropagation();
     if (organizationId) {
       const organization = this.getOrganization(organizationId);
@@ -567,7 +601,7 @@ export class LikedPromptsPageComponent {
     }
   }
 
-  getOriginalPromptUrl(prompt: LikedPromptCard): string | null {
+  getOriginalPromptUrl(prompt: LikedPromptCard | PromptCard): string | null {
     if (!prompt.forkedFromPromptId) {
       return null;
     }
@@ -586,12 +620,24 @@ export class LikedPromptsPageComponent {
     return null;
   }
 
-  navigateToOriginalPrompt(prompt: LikedPromptCard, event: Event) {
+  navigateToOriginalPrompt(prompt: LikedPromptCard | PromptCard, event: Event) {
     event.stopPropagation();
     const url = this.getOriginalPromptUrl(prompt);
     if (url) {
       void this.router.navigateByUrl(url.replace(window.location.origin, ''));
     }
+  }
+
+  getPromptUrl(prompt: LikedPromptCard): string {
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
+  }
+
+  getPromptDisplayUrl(prompt: LikedPromptCard): string {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
+    const short = prompt.id ? prompt.id.slice(0, 8) : '';
+    return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
   }
 
   async navigateToHomeOrLanding() {

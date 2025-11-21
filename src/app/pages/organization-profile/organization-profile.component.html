@@ -813,213 +813,32 @@
           <ng-template #promptsList>
             <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
               <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
-                <article *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-                  class="group flex h-full flex-col rounded-3xl border-2 border-black/5 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-2 hover:border-[#DC2626]/20 w-full min-w-0 max-w-full overflow-hidden box-border">
-
-                  <!-- Tag at the top -->
-                  <span class="w-fit rounded-full bg-white border-2 border-[#DC2626]/30 px-3 py-1.5 text-xs font-bold capitalize text-[#DC2626] shadow-sm">
-                    {{ formatTagLabel(prompt.tag) }}
-                  </span>
-
-                  <!-- Author section with fork info -->
-                  <div class="mt-3 flex items-center gap-2.5 flex-wrap">
-                    <div *ngIf="prompt.authorId || prompt.organizationId" class="flex items-center gap-2.5">
-                      <button type="button" (click)="navigateToAuthorProfile(prompt.authorId || '', $event, prompt)"
-                        class="author-avatar-button"
-                        [attr.aria-label]="prompt.organizationId ? 'View organization profile' : 'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
-                        [title]="prompt.organizationId ? 'View organization profile' : 'View author profile'">
-                        <img *ngIf="prompt.organizationId && organization()?.logoUrl"
-                          [src]="organization()?.logoUrl"
-                          [alt]="organization()?.name"
-                          class="w-full h-full rounded-full object-cover" />
-                        <img *ngIf="!prompt.organizationId && getAuthorProfile(prompt.authorId)?.profilePictureUrl"
-                          [src]="getAuthorProfile(prompt.authorId)?.profilePictureUrl"
-                          [alt]="(getAuthorProfile(prompt.authorId)?.firstName || '') + ' ' + (getAuthorProfile(prompt.authorId)?.lastName || '')"
-                          class="w-full h-full rounded-full object-cover" />
-                        <span *ngIf="!prompt.organizationId && !getAuthorProfile(prompt.authorId)?.profilePictureUrl"
-                          class="author-avatar-initials">{{ getAuthorInitials(prompt.authorId) }}</span>
-                        <span *ngIf="prompt.organizationId && !organization()?.logoUrl"
-                          class="author-avatar-initials">{{ getOrganizationInitials(organization()) }}</span>
-                      </button>
-                      <button type="button" (click)="navigateToAuthorProfile(prompt.authorId || '', $event, prompt)"
-                        class="author-name-button"
-                        [attr.aria-label]="prompt.organizationId ? 'View organization profile' : 'View ' + (getAuthorProfile(prompt.authorId)?.firstName || 'author') + '\'s profile'"
-                        [title]="prompt.organizationId ? 'View organization profile' : 'View author profile'">
-                        <span class="author-name-text">
-                          <ng-container *ngIf="prompt.organizationId; else userProfile">
-                            {{ organization()?.name }}
-                          </ng-container>
-                          <ng-template #userProfile>
-                            <ng-container *ngIf="getAuthorProfile(prompt.authorId); else loadingName">
-                              {{ getAuthorProfile(prompt.authorId)?.firstName }} {{ getAuthorProfile(prompt.authorId)?.lastName }}
-                            </ng-container>
-                            <ng-template #loadingName>
-                              <span class="text-slate-400">Author</span>
-                            </ng-template>
-                          </ng-template>
-                        </span>
-                      </button>
-                    </div>
-
-                    <!-- Minimal fork indicator -->
-                    <div *ngIf="prompt.forkedFromPromptId" class="flex items-center gap-1.5 text-xs text-purple-600">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 text-purple-500" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      <span class="text-purple-600 font-medium">Fork</span>
-                      <button *ngIf="getOriginalPromptUrl(prompt)" type="button"
-                        (click)="navigateToOriginalPrompt(prompt, $event)"
-                        class="text-purple-700 hover:text-purple-900 underline decoration-purple-300 underline-offset-2 hover:decoration-purple-500 transition-colors">
-                        {{ prompt.forkedFromTitle || 'original' }}
-                      </button>
-                      <span *ngIf="!getOriginalPromptUrl(prompt)" class="text-purple-500 italic">
-                        {{ prompt.forkedFromTitle || 'original' }}
-                      </span>
-                    </div>
-                    <!-- Private indicator -->
-                    <div *ngIf="prompt.isPrivate"
-                      class="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/60 px-2.5 py-1 text-xs">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-amber-600" fill="currentColor"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      <span class="text-amber-700 font-semibold">Private</span>
-                    </div>
-                  </div>
-
-                  <!-- Stats row (likes, launches, forks) -->
-                  <div *ngIf="(prompt.likes || 0) > 0 || (prompt.totalLaunch || 0) > 0 || (prompt.forkCount || 0) > 0"
-                    class="mt-2.5 flex items-center gap-2.5 text-xs text-slate-600">
-                    <span *ngIf="(prompt.likes || 0) > 0" class="inline-flex items-center gap-1">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-[#DC2626]" fill="currentColor"
-                        stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                      <span class="font-medium">{{ prompt.likes }}</span>
-                    </span>
-                    <span *ngIf="(prompt.totalLaunch || 0) > 0" class="inline-flex items-center gap-1">
-                      <span class="text-sm">🚀</span>
-                      <span class="font-medium">{{ prompt.totalLaunch }}</span>
-                    </span>
-                    <span *ngIf="(prompt.forkCount || 0) > 0" class="inline-flex items-center gap-1 text-purple-600">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      <span class="font-medium">{{ prompt.forkCount }}</span>
-                    </span>
-                  </div>
-
-                  <h3 class="mt-4 text-xl font-black tracking-tight text-black group-hover:text-[#DC2626] transition-colors duration-200 break-words overflow-wrap-anywhere leading-tight">
-                    {{ prompt.title }}
-                  </h3>
-
-                  <div *ngIf="prompt.customUrl || prompt.id" class="mt-1.5 prompt-link-wrapper-home min-w-0">
-                    <a [href]="getPromptUrl(prompt)" target="_blank" class="prompt-link-home min-w-0"
-                      title="Open prompt link">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="prompt-link-icon-home flex-shrink-0" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                      </svg>
-                      <span class="prompt-link-text-home truncate">{{ getPromptDisplayUrl(prompt) }}</span>
-                    </a>
-                    <button type="button" class="btn-copy-link-home flex-shrink-0"
-                      (click)="copyPromptUrl(prompt); $event.stopPropagation()" title="Copy prompt link">
-                      <ng-container *ngIf="recentlyCopiedUrl().has(prompt.id); else copyIconUrl">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-home" fill="none" stroke="currentColor"
-                          stroke-width="2.2">
-                          <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </ng-container>
-                      <ng-template #copyIconUrl>
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="copy-icon-home" fill="none" stroke="currentColor"
-                          stroke-width="1.8">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        </svg>
-                      </ng-template>
-                    </button>
-                  </div>
-
-                  <div class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed break-words overflow-wrap-anywhere">
-                    {{ buildPreview(prompt.content) }}
-                  </div>
-
-                  <div class="mt-6 mt-auto flex items-center gap-2.5 text-sm">
-                    <button type="button" class="icon-button icon-button--launch mr-auto" aria-label="Launch prompt"
-                      data-tooltip="Launch prompt" [title]="'Launch with ' + getDefaultChatbotLabel()"
-                      (click)="launchPrompt(prompt); $event.stopPropagation()">
-                      <span class="text-base sm:text-lg" aria-hidden="true">🚀</span>
-                    </button>
-                    <button type="button" class="icon-button icon-button--share" aria-label="Share prompt"
-                      data-tooltip="Share prompt" title="Share prompt" (click)="openShareModal(prompt); $event.stopPropagation()">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-                        stroke-width="1.6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-                      </svg>
-                    </button>
-                    <button *ngIf="currentUser$ | async" type="button" class="icon-button icon-button--fork"
-                      aria-label="Fork prompt" data-tooltip="Fork prompt" title="Fork prompt"
-                      (click)="openForkPromptModal(prompt); $event.stopPropagation()">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-                        stroke-width="1.6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                    </button>
-                    <button type="button" class="icon-button" aria-label="Open prompt" data-tooltip="Open prompt"
-                      title="Open prompt" (click)="openPrompt(prompt)">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                        <path d="M21 3l-9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                        <path d="M19 13v5a3 3 0 01-3 3H7a3 3 0 01-3-3V8a3 3 0 013-3h5" fill="none" stroke="currentColor"
-                          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </button>
-                    <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--primary"
-                      aria-label="Modify prompt" data-tooltip="Modify prompt" title="Modify prompt"
-                      (click)="openEditPromptModal(prompt); $event.stopPropagation()" [disabled]="isSavingPrompt()">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                        <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
-                          stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                          stroke-linejoin="round" />
-                      </svg>
-                    </button>
-                    <button *ngIf="canEditPrompt(prompt)" type="button" class="icon-button icon-button--danger"
-                      aria-label="Delete prompt" data-tooltip="Delete prompt" title="Delete prompt"
-                      (click)="onDeletePrompt(prompt); $event.stopPropagation()" [disabled]="deletingPromptId() === prompt.id">
-                      <ng-container *ngIf="deletingPromptId() === prompt.id; else deleteIcon">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
-                          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
-                          </circle>
-                          <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
-                            stroke-linecap="round"></path>
-                        </svg>
-                      </ng-container>
-                      <ng-template #deleteIcon>
-                        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                          <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                          <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
-                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                          <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </ng-template>
-                    </button>
-                  </div>
-                </article>
+                <app-prompt-card
+                  *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+                  [prompt]="promptToCard(prompt)"
+                  [authorProfile]="getAuthorProfile(prompt.authorId)"
+                  [organizationProfile]="prompt.organizationId ? organization() || undefined : undefined"
+                  [isUrlCopied]="recentlyCopiedUrl().has(prompt.id)"
+                  [showEditActions]="true"
+                  [isDeleting]="deletingPromptId() === prompt.id"
+                  [isSaving]="isSavingPrompt()"
+                  [currentUserExists]="(currentUser$ | async) !== null"
+                  [defaultChatbotLabel]="getDefaultChatbotLabel()"
+                  [promptUrl]="getPromptUrl(prompt)"
+                  [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
+                  [originalPromptUrl]="getOriginalPromptUrl(prompt)"
+                  [canEdit]="canEditPrompt(prompt)"
+                  (launchPrompt)="launchPrompt($any($event))"
+                  (sharePrompt)="openShareModal($any($event))"
+                  (forkPrompt)="openForkPromptModal($any($event))"
+                  (openPrompt)="openPrompt($any($event))"
+                  (editPrompt)="openEditPromptModal($any($event))"
+                  (deletePrompt)="onDeletePrompt($any($event))"
+                  (copyPromptUrl)="copyPromptUrl($any($event))"
+                  (navigateToAuthor)="navigateToAuthorProfile($event.authorId, $event.event, prompt)"
+                  (navigateToOrganization)="navigateToOrganization($event.organizationId, $event.event)"
+                  (navigateToOriginalPrompt)="navigateToOriginalPrompt($any($event.prompt), $event.event)">
+                </app-prompt-card>
               </div>
             </ng-container>
 
