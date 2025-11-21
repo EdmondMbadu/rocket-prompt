@@ -94,6 +94,8 @@ export class CollectionDetailComponent {
   readonly editBrandLink = signal('');
   readonly editBrandSubtext = signal('');
   readonly brandingSectionExpanded = signal(false);
+  readonly sharePrompt = signal<PromptCard | null>(null);
+  readonly shareModalOpen = signal(false);
   
   readonly brandSubtextWordCount = computed(() => {
     const text = this.editBrandSubtext().trim();
@@ -442,6 +444,10 @@ export class CollectionDetailComponent {
   handleEscape() {
     if (this.editModalOpen()) {
       this.closeEditModal();
+      return;
+    }
+    if (this.shareModalOpen()) {
+      this.closeShareModal();
       return;
     }
     if (this.menuOpen()) {
@@ -1679,6 +1685,54 @@ export class CollectionDetailComponent {
     } else {
       await this.router.navigate(['/']);
     }
+  }
+
+  openShareModal(prompt: PromptCard) {
+    this.sharePrompt.set(prompt);
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+    this.sharePrompt.set(null);
+  }
+
+  copyOneClickLink(target: 'gpt' | 'grok') {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.buildOneShotLink(prompt, target);
+    if (!url) return;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
+    });
+  }
+
+  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok'): string | null {
+    const base = this.getPromptUrl(prompt);
+    if (!base) {
+      return null;
+    }
+    const suffix = target === 'gpt' ? 'GPT' : 'GROK';
+    return `${base}/${suffix}`;
+  }
+
+  copyPromptPageUrlFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.getPromptUrl(prompt);
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showCopyMessage('Prompt URL copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+      this.showCopyMessage('Prompt URL copied!');
+    });
   }
 }
 
