@@ -12,6 +12,7 @@ import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 
 interface LikedPromptCard {
   readonly id: string;
@@ -44,7 +45,7 @@ interface LikedPromptCard {
 @Component({
   selector: 'app-liked-prompts-page',
   standalone: true,
-  imports: [CommonModule, PromptCardComponent],
+  imports: [CommonModule, PromptCardComponent, ShareModalComponent],
   templateUrl: './liked-prompts-page.component.html',
   styleUrl: './liked-prompts-page.component.css'
 })
@@ -67,6 +68,8 @@ export class LikedPromptsPageComponent {
   readonly menuOpen = signal(false);
   readonly menuTop = signal<number | null>(null);
   readonly menuRight = signal<number | null>(null);
+  readonly shareModalOpen = signal(false);
+  readonly sharePrompt = signal<PromptCard | null>(null);
   @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
 
   readonly currentUser$ = this.authService.currentUser$;
@@ -647,6 +650,140 @@ export class LikedPromptsPageComponent {
     } else {
       await this.router.navigate(['/']);
     }
+  }
+
+  async launchPrompt(prompt: PromptCard) {
+    if (!prompt?.content) {
+      return;
+    }
+
+    const text = prompt.content;
+    const url = this.createChatGPTUrl(text);
+    await this.openChatbot(url, 'ChatGPT', text);
+  }
+
+  openShareModal(prompt: PromptCard) {
+    this.sharePrompt.set(prompt);
+    this.shareModalOpen.set(true);
+  }
+
+  closeShareModal() {
+    this.shareModalOpen.set(false);
+    this.sharePrompt.set(null);
+  }
+
+  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok'): void {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) return;
+
+    let url: string;
+    switch (chatbotName) {
+      case 'ChatGPT':
+        url = this.createChatGPTUrl(prompt.content);
+        break;
+      case 'Gemini':
+        url = this.createGeminiUrl(prompt.content);
+        break;
+      case 'Claude':
+        url = this.createClaudeUrl(prompt.content);
+        break;
+      case 'Grok':
+        url = this.createGrokUrl(prompt.content);
+        break;
+    }
+    void this.openChatbot(url, chatbotName, prompt.content);
+  }
+
+  createChatGPTUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  createGeminiUrl(prompt: string): string {
+    return 'https://gemini.google.com/app';
+  }
+
+  createClaudeUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    return `https://claude.ai/new?q=${encodedPrompt}`;
+  }
+
+  createGrokUrl(prompt: string): string {
+    const encodedPrompt = encodeURIComponent(prompt);
+    const timestamp = Date.now();
+    return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
+  }
+
+  async openChatbot(url: string, chatbotName: string, promptText?: string) {
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
+      window.open(url, '_blank');
+      return;
+    }
+
+    const textToCopy = promptText || '';
+
+    try {
+      if (textToCopy) {
+        await navigator.clipboard.writeText(textToCopy);
+      }
+    } catch (e) {
+      if (textToCopy) {
+        this.fallbackCopyTextToClipboard(textToCopy);
+      }
+    }
+
+    window.open(url, '_blank');
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  }
+
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.buildOneShotLink(prompt, target);
+    if (!url) return;
+
+    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
+    navigator.clipboard.writeText(url).then(() => {
+      // Could show a toast message here if needed
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+    });
+  }
+
+  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok' | 'claude'): string | null {
+    const base = this.getPromptUrl(prompt as LikedPromptCard);
+    if (!base) {
+      return null;
+    }
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
+    return `${base}/${suffix}`;
+  }
+
+  copyPromptPageUrlFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+
+    const url = this.getPromptUrl(prompt as LikedPromptCard);
+
+    navigator.clipboard.writeText(url).then(() => {
+      // Could show a toast message here if needed
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(url);
+    });
   }
 }
 

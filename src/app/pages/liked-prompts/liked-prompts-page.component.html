@@ -132,17 +132,18 @@
             [organizationProfile]="getOrganization(prompt.organizationId!)"
             [isUrlCopied]="false"
             [showEditActions]="false"
-            [showLikeButton]="true"
-            [isLiked]="true"
-            [isLiking]="isPromptLiking(prompt.id)"
+            [showLikeButton]="false"
+            [isLiked]="false"
+            [isLiking]="false"
             [currentUserExists]="false"
             [defaultChatbotLabel]="'ChatGPT'"
             [promptUrl]="getPromptUrl(prompt)"
             [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
             [originalPromptUrl]="getOriginalPromptUrl(prompt)"
             [canEdit]="false"
+            (launchPrompt)="launchPrompt($any($event))"
+            (sharePrompt)="openShareModal($any($event))"
             (openPrompt)="openPrompt($any($event))"
-            (removeLike)="removeLike($any($event))"
             (navigateToAuthor)="navigateToAuthorProfile($event.authorId, $event.event)"
             (navigateToOrganization)="navigateToOrganization($event.organizationId, $event.event)"
             (navigateToOriginalPrompt)="navigateToOriginalPrompt($any($event.prompt), $event.event)">
@@ -161,4 +162,14 @@
       </div>
     </ng-template>
   </main>
+
+  <!-- SHARE PROMPT MODAL -->
+  <app-share-modal 
+    [isOpen]="shareModalOpen()" 
+    [prompt]="sharePrompt() ? { id: sharePrompt()!.id, title: sharePrompt()!.title, content: sharePrompt()!.content, preview: sharePrompt()!.preview, customUrl: sharePrompt()!.customUrl } : null"
+    (close)="closeShareModal()"
+    (copyOneClickLink)="copyOneClickLink($event)"
+    (openChatbot)="handleOpenChatbot($event)"
+    (copyPromptUrl)="copyPromptPageUrlFromShare()">
+  </app-share-modal>
 </div>
