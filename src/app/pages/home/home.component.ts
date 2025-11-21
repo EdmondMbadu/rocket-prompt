@@ -68,6 +68,7 @@ interface ChatbotOption {
   readonly id: DirectLaunchTarget;
   readonly label: string;
   readonly description: string;
+  readonly icon: string;
 }
 
 @Component({
@@ -162,10 +163,10 @@ export class HomeComponent {
   readonly bulkUploadError = signal<string | null>(null);
   readonly bulkUploadSuccess = signal<string | null>(null);
   readonly chatbotOptions: readonly ChatbotOption[] = [
-    { id: 'chatgpt', label: 'ChatGPT', description: 'Best for most prompts' },
-    { id: 'gemini', label: 'Gemini', description: 'Google Bard successor' },
-    { id: 'claude', label: 'Claude', description: 'Anthropic assistant' },
-    { id: 'grok', label: 'Grok', description: 'xAI experimental model' }
+    { id: 'chatgpt', label: 'ChatGPT', description: 'Best for most prompts', icon: 'assets/gpt.png' },
+    { id: 'gemini', label: 'Gemini', description: 'Google Bard successor', icon: 'assets/gemini.png' },
+    { id: 'claude', label: 'Claude', description: 'Anthropic assistant', icon: 'assets/claude.jpeg' },
+    { id: 'grok', label: 'Grok', description: 'xAI experimental model', icon: 'assets/grok.jpg' }
   ];
   readonly defaultChatbot = signal<DirectLaunchTarget>('chatgpt');
 
