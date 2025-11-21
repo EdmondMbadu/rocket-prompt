@@ -338,7 +338,7 @@ export class HomeComponent {
 
   createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://claude.ai/?prompt=${encodedPrompt}`;
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 
   createGrokUrl(prompt: string): string {
@@ -348,10 +348,9 @@ export class HomeComponent {
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // ChatGPT supports URL parameters for pre-filling prompts
-    // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
-    if (chatbotName === 'ChatGPT') {
-      // ChatGPT: open directly (it accepts query param)
+    // ChatGPT and Claude support URL parameters for pre-filling prompts
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
+      // Open directly (they accept query params)
       window.open(url, '_blank');
       return;
     }

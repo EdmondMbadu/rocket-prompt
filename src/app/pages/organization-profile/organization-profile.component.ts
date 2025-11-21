@@ -1178,7 +1178,7 @@ export class OrganizationProfileComponent {
 
   createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://claude.ai/?prompt=${encodedPrompt}`;
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 
   createGrokUrl(prompt: string): string {
@@ -1190,7 +1190,7 @@ export class OrganizationProfileComponent {
   async openChatbot(url: string, chatbotName: string) {
     const promptText = this.sharePrompt()?.content || '';
     
-    if (chatbotName === 'ChatGPT') {
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       window.open(url, '_blank');
       return;
     }

@@ -127,7 +127,7 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   openChatbot(url: string, chatbotName: string) {
     window.open(url, '_blank');
 
-    if (chatbotName !== 'ChatGPT') {
+    if (chatbotName === 'Gemini' || chatbotName === 'Grok') {
       const promptText = this.extractPromptFromUrl(url);
       navigator.clipboard.writeText(promptText).then(() => {
         this.showCopyMessage(`${chatbotName} prompt copied!`);
@@ -314,7 +314,7 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   private createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://claude.ai/?prompt=${encodedPrompt}`;
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 
   private createGrokUrl(prompt: string): string {

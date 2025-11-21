@@ -148,7 +148,7 @@ export class PromptPageComponent {
 
   createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://claude.ai/?prompt=${encodedPrompt}`;
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 
   createGrokUrl(prompt: string): string {
@@ -161,18 +161,19 @@ export class PromptPageComponent {
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // ChatGPT supports query param. For Grok we try query param but still copy so the user can paste if ignored.
-    // Gemini/Claude rely on copy to clipboard before opening.
+    // ChatGPT/Claude support query params. Grok tries query param but still copies for safety.
+    // Gemini relies on copy to clipboard before opening.
     const text = promptText ?? this.prompt()?.content ?? '';
     const p = this.prompt();
 
-    if (chatbotName === 'ChatGPT') {
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
       // Track launch
       if (p) {
         try {
-          const result = await this.promptService.trackLaunch(p.id, 'gpt');
+          const launchType = chatbotName === 'ChatGPT' ? 'gpt' : 'claude';
+          const result = await this.promptService.trackLaunch(p.id, launchType);
           this.prompt.set({ ...p, ...result } as Prompt);
         } catch (e) {
           console.error('Failed to track launch', e);
@@ -209,7 +210,7 @@ export class PromptPageComponent {
       return;
     }
 
-    // Gemini/Claude: copy to clipboard first
+    // Gemini: copy to clipboard first
     try {
       if (text) {
         await navigator.clipboard.writeText(text);
@@ -227,12 +228,7 @@ export class PromptPageComponent {
     // Track launch
     if (p) {
       try {
-        let launchType: 'gemini' | 'claude';
-        if (chatbotName === 'Gemini') {
-          launchType = 'gemini';
-        } else {
-          launchType = 'claude';
-        }
+        const launchType: 'gemini' = 'gemini';
         const result = await this.promptService.trackLaunch(p.id, launchType);
         this.prompt.set({ ...p, ...result } as Prompt);
       } catch (e) {

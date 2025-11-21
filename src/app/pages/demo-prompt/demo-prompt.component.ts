@@ -48,7 +48,7 @@ Remember: Great prompts are specific, clear, and reusable. They save time and en
 
   createClaudeUrl(prompt: string): string {
     const encodedPrompt = encodeURIComponent(prompt);
-    return `https://claude.ai/?prompt=${encodedPrompt}`;
+    return `https://claude.ai/new?q=${encodedPrompt}`;
   }
 
   createGrokUrl(prompt: string): string {
@@ -60,12 +60,12 @@ Remember: Great prompts are specific, clear, and reusable. They save time and en
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
     const text = promptText ?? this.demoPrompt.content;
 
-    if (chatbotName === 'ChatGPT') {
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       window.open(url, '_blank');
       return;
     }
 
-    // Gemini and Claude: copy to clipboard first
+    // Gemini/Grok: copy to clipboard first
     try {
       if (text) {
         await navigator.clipboard.writeText(text);
@@ -145,4 +145,3 @@ Remember: Great prompts are specific, clear, and reusable. They save time and en
     this.router.navigate(['/']);
   }
 }
-
