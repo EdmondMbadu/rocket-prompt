@@ -62,6 +62,14 @@ interface PromptCard {
   readonly isPrivate?: boolean;
 }
 
+type DirectLaunchTarget = 'chatgpt' | 'gemini' | 'claude' | 'grok';
+
+interface ChatbotOption {
+  readonly id: DirectLaunchTarget;
+  readonly label: string;
+  readonly description: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -153,6 +161,13 @@ export class HomeComponent {
   readonly bulkUploadProgress = signal<BulkUploadProgressState>(createEmptyBulkProgress());
   readonly bulkUploadError = signal<string | null>(null);
   readonly bulkUploadSuccess = signal<string | null>(null);
+  readonly chatbotOptions: readonly ChatbotOption[] = [
+    { id: 'chatgpt', label: 'ChatGPT', description: 'Best for most prompts' },
+    { id: 'gemini', label: 'Gemini', description: 'Google Bard successor' },
+    { id: 'claude', label: 'Claude', description: 'Anthropic assistant' },
+    { id: 'grok', label: 'Grok', description: 'xAI experimental model' }
+  ];
+  readonly defaultChatbot = signal<DirectLaunchTarget>('chatgpt');
 
   // Home content (daily tip and most launched prompt)
   readonly dailyTip = signal<DailyTip | null>(null);
@@ -177,8 +192,10 @@ export class HomeComponent {
   // Map of timers for each copied prompt so we can clear them if the user copies again
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly copyUrlTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly defaultChatbotStorageKey = 'rocketPromptDefaultChatbot';
 
   constructor() {
+    this.restoreDefaultChatbotPreference();
     this.observeCheckoutStatus();
     this.observePrompts();
     this.observeHomeContent();
@@ -329,7 +346,7 @@ export class HomeComponent {
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  async openChatbot(url: string, chatbotName: string) {
+  async openChatbot(url: string, chatbotName: string, promptText?: string) {
     // ChatGPT supports URL parameters for pre-filling prompts
     // For other providers (Gemini, Claude), copy the prompt text first so paste inserts the prompt
     if (chatbotName === 'ChatGPT') {
@@ -339,17 +356,17 @@ export class HomeComponent {
     }
 
     // Gemini and other providers: copy to clipboard first
-    const promptText = this.extractPromptFromUrl(url);
+    const textToCopy = promptText || this.extractPromptFromUrl(url);
 
     try {
-      if (promptText) {
-        await navigator.clipboard.writeText(promptText);
+      if (textToCopy) {
+        await navigator.clipboard.writeText(textToCopy);
         this.showCopyMessage(`${chatbotName} prompt copied!`);
       }
     } catch (e) {
       // Fallback to older copy method if clipboard API fails
-      if (promptText) {
-        this.fallbackCopyTextToClipboard(promptText);
+      if (textToCopy) {
+        this.fallbackCopyTextToClipboard(textToCopy);
         this.showCopyMessage(`${chatbotName} prompt copied!`);
       }
     }
@@ -372,6 +389,47 @@ export class HomeComponent {
       this.fallbackCopyTextToClipboard(url);
       this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
     });
+  }
+
+  async launchPrompt(prompt: PromptCard) {
+    if (!prompt?.content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+
+    const target = this.defaultChatbot();
+    const text = prompt.content;
+
+    let url = '';
+    let chatbotName: string;
+    let launchType: 'gpt' | 'gemini' | 'claude' | 'grok';
+
+    switch (target) {
+      case 'gemini':
+        url = this.createGeminiUrl(text);
+        chatbotName = 'Gemini';
+        launchType = 'gemini';
+        break;
+      case 'claude':
+        url = this.createClaudeUrl(text);
+        chatbotName = 'Claude';
+        launchType = 'claude';
+        break;
+      case 'grok':
+        url = this.createGrokUrl(text);
+        chatbotName = 'Grok';
+        launchType = 'grok';
+        break;
+      case 'chatgpt':
+      default:
+        url = this.createChatGPTUrl(text);
+        chatbotName = 'ChatGPT';
+        launchType = 'gpt';
+        break;
+    }
+
+    await this.openChatbot(url, chatbotName, text);
+    await this.trackPromptLaunch(prompt, launchType);
   }
 
   copyPromptPageUrl() {
@@ -401,6 +459,42 @@ export class HomeComponent {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'rocketprompt.io';
     const short = prompt.id ? prompt.id.slice(0, 8) : '';
     return prompt.customUrl ? `${hostname}/${prompt.customUrl}` : `${hostname}/prompt/${short}`;
+  }
+
+  setDefaultChatbot(option: DirectLaunchTarget) {
+    if (!this.isValidChatbot(option)) {
+      return;
+    }
+    this.defaultChatbot.set(option);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(this.defaultChatbotStorageKey, option);
+      } catch (e) {
+        console.warn('Could not persist chatbot preference', e);
+      }
+    }
+  }
+
+  getDefaultChatbotLabel(): string {
+    return this.chatbotOptions.find(option => option.id === this.defaultChatbot())?.label ?? 'ChatGPT';
+  }
+
+  private restoreDefaultChatbotPreference() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      const stored = window.localStorage.getItem(this.defaultChatbotStorageKey);
+      if (stored && this.isValidChatbot(stored as DirectLaunchTarget)) {
+        this.defaultChatbot.set(stored as DirectLaunchTarget);
+      }
+    } catch (e) {
+      console.warn('Failed to read chatbot preference', e);
+    }
+  }
+
+  private isValidChatbot(option: string): option is DirectLaunchTarget {
+    return this.chatbotOptions.some(bot => bot.id === option);
   }
 
   async copyPromptUrl(prompt: PromptCard) {
@@ -520,6 +614,32 @@ export class HomeComponent {
     setTimeout(() => {
       message.remove();
     }, 3000);
+  }
+
+  private async trackPromptLaunch(prompt: PromptCard, launchType: 'gpt' | 'gemini' | 'claude' | 'grok') {
+    if (!prompt?.id) {
+      return;
+    }
+
+    try {
+      const result = await this.promptService.trackLaunch(prompt.id, launchType);
+      this.prompts.update(prev => prev.map(card => {
+        if (card.id !== prompt.id) {
+          return card;
+        }
+        return {
+          ...card,
+          launchGpt: result.launchGpt,
+          launchGemini: result.launchGemini,
+          launchClaude: result.launchClaude,
+          launchGrok: result.launchGrok,
+          copied: result.copied,
+          totalLaunch: result.totalLaunch
+        };
+      }));
+    } catch (error) {
+      console.error('Failed to record launch', error);
+    }
   }
 
   private fallbackCopyTextToClipboard(text: string) {
