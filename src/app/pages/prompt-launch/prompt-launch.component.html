@@ -1,0 +1,25 @@
+<div class="prompt-launch-root">
+  <div class="prompt-launch-card">
+    <p class="prompt-launch-eyebrow">⚡ One Shot {{ launchTargetLabel() }}</p>
+    <h1>Launching "{{ promptTitle() }}"</h1>
+
+    <p *ngIf="status() === 'loading'" class="prompt-launch-status">
+      Preparing your prompt…
+    </p>
+    <p *ngIf="status() === 'launching'" class="prompt-launch-status">
+      Redirecting you to {{ launchTargetLabel() }}.
+    </p>
+    <p *ngIf="status() === 'error'" class="prompt-launch-error">
+      {{ errorMessage() }}
+    </p>
+
+    <div class="prompt-launch-actions">
+      <a *ngIf="promptUrl()" class="prompt-launch-link" [href]="promptUrl()">
+        View on RocketPrompt
+      </a>
+      <button *ngIf="status() === 'error'" type="button" class="prompt-launch-button" (click)="retryLaunch()">
+        Try again
+      </button>
+    </div>
+  </div>
+</div>

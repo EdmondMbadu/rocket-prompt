@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard, requireAuthGuard, verifiedUserGuard } from './guards/auth.guard';
+import { promptLaunchMatcher } from './routes/prompt-launch.matcher';
 
 export const routes: Routes = [
   {
@@ -80,6 +81,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
   },
   {
+    path: 'prompt/:id/:target',
+    loadComponent: () =>
+      import('./pages/prompt-launch/prompt-launch.component').then(m => m.PromptLaunchComponent)
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () =>
@@ -110,6 +116,11 @@ export const routes: Routes = [
     // Catch-all for custom URLs (e.g., /my-custom-url)
     // This route must come after all specific routes but before the final ** catch-all
     loadComponent: () => import('./pages/prompt/prompt-page.component').then(m => m.PromptPageComponent)
+  },
+  {
+    matcher: promptLaunchMatcher,
+    loadComponent: () =>
+      import('./pages/prompt-launch/prompt-launch.component').then(m => m.PromptLaunchComponent)
   },
   {
     path: '**',

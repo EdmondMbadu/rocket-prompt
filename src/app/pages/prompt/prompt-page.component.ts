@@ -238,18 +238,14 @@ export class PromptPageComponent {
   }
 
   copyOneClickLink(target: 'gpt' | 'grok') {
-    const text = this.prompt()?.content ?? '';
-    if (!text) return;
-
-    const url = target === 'gpt'
-      ? this.createChatGPTUrl(text)
-      : this.createGrokUrl(text);
+    const url = this.buildOneShotLink(target);
+    if (!url) return;
 
     navigator.clipboard.writeText(url).then(() => {
-      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
     }).catch(() => {
       this.fallbackCopyTextToClipboard(url);
-      this.showCopyMessage(`${target === 'gpt' ? '⚡ GPT' : '⚡ Grok'} link copied!`);
+      this.showCopyMessage(`${target === 'gpt' ? 'One Shot GPT' : 'One Shot Grok'} link copied!`);
     });
   }
 
@@ -479,6 +475,13 @@ export class PromptPageComponent {
     const short = p.id ? p.id.slice(0, 8) : '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return p.customUrl ? `${origin}/${p.customUrl}` : `${origin}/prompt/${short}`;
+  }
+
+  private buildOneShotLink(target: 'gpt' | 'grok'): string | null {
+    const base = this.getPromptUrl();
+    if (!base) return null;
+    const suffix = target === 'gpt' ? 'GPT' : 'GROK';
+    return `${base}/${suffix}`;
   }
 
   shareToFacebook() {
