@@ -404,6 +404,33 @@
           {{ loadPromptsError() }}
         </div>
 
+        <!-- DEFAULT CHATBOT SELECTION -->
+        <section class="mb-6">
+          <div
+            class="rounded-2xl border-2 border-[#DC2626]/20 bg-white/90 backdrop-blur-sm p-4 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="space-y-1">
+              <p class="text-[10px] font-black uppercase tracking-widest text-[#DC2626]/80 sm:text-xs">Direct Launch</p>
+              <p class="text-sm font-extrabold text-slate-900 sm:text-base">
+                Default chatbot: <span class="text-[#DC2626]">{{ getDefaultChatbotLabel() }}</span>
+              </p>
+              <p class="text-xs text-slate-500 sm:text-sm">Choose where the rocket button launches prompts.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" *ngFor="let bot of chatbotOptions"
+                class="chatbot-option inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm"
+                [ngClass]="defaultChatbot() === bot.id
+                    ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
+                    : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
+                (click)="setDefaultChatbot(bot.id)" [attr.title]="bot.label" [attr.aria-label]="bot.label">
+                <span class="chatbot-option__icon-wrapper">
+                  <img [src]="bot.icon" [alt]="bot.label + ' logo'" class="chatbot-option__icon" />
+                </span>
+                <span class="chatbot-option__label">{{ bot.label }}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
         <ng-container *ngIf="isLoadingCollection() || isLoadingPrompts(); else promptList">
           <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
             <div *ngFor="let skeleton of [1, 2, 3]"
