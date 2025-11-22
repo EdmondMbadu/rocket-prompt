@@ -176,30 +176,81 @@
     </div>
   </ng-template>
 
-  <div class="mt-6 mt-auto flex items-center gap-2.5 text-sm">
-    <button type="button" class="icon-button icon-button--launch mr-auto" aria-label="Launch prompt"
+  <div class="mt-6 mt-auto flex items-center justify-between text-sm prompt-actions-container">
+    <!-- Always visible: Launch button (left side) -->
+    <button type="button" class="icon-button icon-button--launch" aria-label="Launch prompt"
       data-tooltip="Launch prompt" [title]="'Launch with ' + defaultChatbotLabel()"
       (click)="onLaunchPrompt($event)">
       <span class="text-base sm:text-lg" aria-hidden="true">🚀</span>
     </button>
-    <button type="button" class="icon-button icon-button--share" aria-label="Share prompt"
-      data-tooltip="Share prompt" title="Share prompt" (click)="onSharePrompt($event)">
-      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-        stroke-width="1.6">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-      </svg>
-    </button>
-    <button *ngIf="currentUserExists()" type="button" class="icon-button icon-button--fork"
-      aria-label="Fork prompt" data-tooltip="Fork prompt" title="Fork prompt"
-      (click)="onForkPrompt($event)">
-      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-        stroke-width="1.6">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-      </svg>
-    </button>
-    <button type="button" class="icon-button" aria-label="Open prompt" data-tooltip="Open prompt"
+    
+    <!-- Hidden by default, shown on hover: Additional actions (center) -->
+    <div class="prompt-actions-hover flex items-center gap-2.5">
+      <button type="button" class="icon-button icon-button--share" aria-label="Share prompt"
+        data-tooltip="Share prompt" title="Share prompt" (click)="onSharePrompt($event)">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+          stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+        </svg>
+      </button>
+      <button *ngIf="currentUserExists()" type="button" class="icon-button icon-button--fork"
+        aria-label="Fork prompt" data-tooltip="Fork prompt" title="Fork prompt"
+        (click)="onForkPrompt($event)">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+          stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      </button>
+      <button *ngIf="showLikeButton()" type="button" class="icon-button icon-button--like"
+        [attr.aria-pressed]="isLiked()" [title]="isLiked() ? 'Remove like' : 'Like prompt'"
+        (click)="isLiked() ? onRemoveLike($event) : onLikePrompt($event)"
+        [disabled]="isLiking()">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" stroke="currentColor"
+          stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+      </button>
+      <button *ngIf="showEditActions() && canEditPrompt()" type="button" class="icon-button icon-button--primary"
+        aria-label="Modify prompt" data-tooltip="Modify prompt" title="Modify prompt"
+        (click)="onEditPrompt($event)" [disabled]="isSaving()">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+          <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button *ngIf="showEditActions() && canEditPrompt()" type="button" class="icon-button icon-button--danger"
+        aria-label="Delete prompt" data-tooltip="Delete prompt" title="Delete prompt"
+        (click)="onDeletePrompt($event)" [disabled]="isDeleting()">
+        <ng-container *ngIf="isDeleting(); else deleteIcon">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+            </circle>
+            <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round"></path>
+          </svg>
+        </ng-container>
+        <ng-template #deleteIcon>
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+            <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" />
+            <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
+              stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </ng-template>
+      </button>
+    </div>
+    
+    <!-- Always visible: Open button (right side) -->
+    <button type="button" class="icon-button icon-button--open" aria-label="Open prompt" data-tooltip="Open prompt"
       title="Open prompt" (click)="onOpenPrompt($event)">
       <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
         <path d="M14 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
@@ -209,50 +260,6 @@
         <path d="M19 13v5a3 3 0 01-3 3H7a3 3 0 01-3-3V8a3 3 0 013-3h5" fill="none" stroke="currentColor"
           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-    </button>
-    <button *ngIf="showLikeButton()" type="button" class="icon-button icon-button--like"
-      [attr.aria-pressed]="isLiked()" [title]="isLiked() ? 'Remove like' : 'Like prompt'"
-      (click)="isLiked() ? onRemoveLike($event) : onLikePrompt($event)"
-      [disabled]="isLiking()">
-      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" stroke="currentColor"
-        stroke-width="1.6">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    </button>
-    <button *ngIf="showEditActions() && canEditPrompt()" type="button" class="icon-button icon-button--primary"
-      aria-label="Modify prompt" data-tooltip="Modify prompt" title="Modify prompt"
-      (click)="onEditPrompt($event)" [disabled]="isSaving()">
-      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-        <path d="M4 21h4l11-11-4-4L4 17v4z" fill="none" stroke="currentColor" stroke-width="1.6"
-          stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M15 6l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-          stroke-linejoin="round" />
-      </svg>
-    </button>
-    <button *ngIf="showEditActions() && canEditPrompt()" type="button" class="icon-button icon-button--danger"
-      aria-label="Delete prompt" data-tooltip="Delete prompt" title="Delete prompt"
-      (click)="onDeletePrompt($event)" [disabled]="isDeleting()">
-      <ng-container *ngIf="isDeleting(); else deleteIcon">
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
-          </circle>
-          <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
-            stroke-linecap="round"></path>
-        </svg>
-      </ng-container>
-      <ng-template #deleteIcon>
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-          <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-            stroke-linejoin="round" />
-          <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" stroke-width="1.6"
-            stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" fill="none" stroke="currentColor"
-            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M10 11v6m4-6v6" fill="none" stroke="currentColor" stroke-width="1.6"
-            stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </ng-template>
     </button>
   </div>
 </article>

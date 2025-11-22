@@ -440,3 +440,84 @@
   color: #dc2626;
 }
 
+/* Prompt Actions Container - Hover Effect */
+.prompt-actions-container {
+  position: relative;
+}
+
+/* Hidden actions that appear on hover */
+.prompt-actions-hover {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 0.5rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Show hover actions when card (group) is hovered */
+.group:hover .prompt-actions-hover {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  pointer-events: auto;
+}
+
+/* Stagger animation for each button in hover group */
+.prompt-actions-hover .icon-button {
+  animation: fadeInSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.prompt-actions-hover .icon-button:nth-child(1) {
+  animation-delay: 0.03s;
+}
+
+.prompt-actions-hover .icon-button:nth-child(2) {
+  animation-delay: 0.06s;
+}
+
+.prompt-actions-hover .icon-button:nth-child(3) {
+  animation-delay: 0.09s;
+}
+
+.prompt-actions-hover .icon-button:nth-child(4) {
+  animation-delay: 0.12s;
+}
+
+.prompt-actions-hover .icon-button:nth-child(5) {
+  animation-delay: 0.15s;
+}
+
+.prompt-actions-hover .icon-button:nth-child(6) {
+  animation-delay: 0.18s;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Open button styling - clean and minimal */
+.icon-button--open {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.icon-button--open:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(15, 23, 42, .08);
+}
+
