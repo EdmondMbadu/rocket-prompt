@@ -581,21 +581,25 @@
                 </div>
 
                 <div class="flex flex-col gap-3">
+                    <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">⚡ One Shot</div>
                     <div class="grid grid-cols-3 gap-2">
                         <button type="button"
-                            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+                            class="group relative flex flex-col items-center justify-center gap-1 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 px-2 py-2.5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                             (click)="copyOneClickLink('gpt')" title="Copy One Shot GPT link">
-                            One Shot GPT
+                            <img src="/assets/gpt.png" alt="GPT" class="h-5 w-5 object-contain sm:h-6 sm:w-6" />
+                            <span class="text-[10px] font-semibold text-slate-700 sm:text-xs">GPT</span>
                         </button>
                         <button type="button"
-                            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700"
+                            class="group relative flex flex-col items-center justify-center gap-1 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 px-2 py-2.5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                             (click)="copyOneClickLink('grok')" title="Copy One Shot Grok link">
-                            One Shot Grok
+                            <img src="/assets/grok.jpg" alt="Grok" class="h-5 w-5 rounded object-contain sm:h-6 sm:w-6" />
+                            <span class="text-[10px] font-semibold text-slate-700 sm:text-xs">Grok</span>
                         </button>
                         <button type="button"
-                            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+                            class="group relative flex flex-col items-center justify-center gap-1 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 px-2 py-2.5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                             (click)="copyOneClickLink('claude')" title="Copy One Shot Claude link">
-                            One Shot Claude
+                            <img src="/assets/claude.jpeg" alt="Claude" class="h-5 w-5 rounded object-contain sm:h-6 sm:w-6" />
+                            <span class="text-[10px] font-semibold text-slate-700 sm:text-xs">Claude</span>
                         </button>
                     </div>
 
