@@ -17,6 +17,7 @@ import type { PromptCollection } from '../../models/collection.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { PromptFormComponent, type PromptFormData } from '../../components/prompt-form/prompt-form.component';
 
 interface ChatbotOption {
   readonly id: DirectLaunchTarget;
@@ -28,7 +29,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-organization-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent, PromptFormComponent],
   templateUrl: './organization-profile.component.html',
   styleUrl: './organization-profile.component.css'
 })
@@ -141,13 +142,11 @@ export class OrganizationProfileComponent {
   readonly isCheckingCustomUrl = signal(false);
   private customUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
-  readonly createPromptForm = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.minLength(3)]],
-    tag: ['', [Validators.required]],
-    customUrl: [''],
-    content: ['', [Validators.required, Validators.minLength(10)]],
-    isPrivate: [false]
-  });
+  readonly promptImageFile = signal<File | null>(null);
+  readonly promptImagePreview = signal<string | null>(null);
+  readonly uploadingImage = signal(false);
+  readonly imageError = signal<string | null>(null);
+  readonly promptFormInitialData = signal<PromptFormData | null>(null);
 
   readonly isViewingOwnOrganization = computed(() => {
     const currentUser = this.authService.currentUser;
@@ -739,28 +738,20 @@ export class OrganizationProfileComponent {
   }
 
   private resetCreatePromptForm() {
-    this.createPromptForm.reset({
-      title: '',
-      tag: '',
-      customUrl: '',
-      content: '',
-      isPrivate: false
-    });
+    this.promptFormInitialData.set(null);
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
-    this.createPromptForm.markAsPristine();
-    this.createPromptForm.markAsUntouched();
+    this.promptImageFile.set(null);
+    this.promptImagePreview.set(null);
+    this.imageError.set(null);
   }
 
-  async submitPromptForm() {
-    if (this.createPromptForm.invalid) {
-      this.createPromptForm.markAllAsTouched();
-      return;
-    }
-
-    const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
+  async onPromptFormSubmit(event: { data: PromptFormData; imageFile: File | null }) {
+    const { data, imageFile } = event;
+    const { title, tag, customUrl, content, isPrivate } = data;
     const trimmedCustomUrl = (customUrl ?? '').trim();
+    const trimmedContent = (content ?? '').trim();
 
     // Validate custom URL if provided
     if (trimmedCustomUrl) {
@@ -780,7 +771,37 @@ export class OrganizationProfileComponent {
 
       // Final uniqueness check before submitting
       try {
-        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, null);
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, this.editingPromptId());
+        if (isTaken) {
+          this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to verify custom URL', error);
+        this.promptFormError.set('Unable to verify custom URL availability. Please try again.');
+        return;
+      }
+    }
+
+    // Validate custom URL if provided
+    if (trimmedCustomUrl) {
+      // Check format
+      const urlPattern = /^[a-z0-9-]+$/i;
+      if (!urlPattern.test(trimmedCustomUrl)) {
+        this.customUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+        return;
+      }
+
+      // Check reserved paths
+      const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'admin', 'verify-email', 'community-guidelines', 'organizations', 'organization'];
+      if (reservedPaths.includes(trimmedCustomUrl.toLowerCase())) {
+        this.customUrlError.set('This URL is reserved. Please choose a different one.');
+        return;
+      }
+
+      // Final uniqueness check before submitting
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, this.editingPromptId());
         if (isTaken) {
           this.customUrlError.set('This custom URL is already taken. Please choose a different one.');
           return;
@@ -811,12 +832,36 @@ export class OrganizationProfileComponent {
       const profile = await this.authService.fetchUserProfile(currentUser.uid);
       const isAdmin = profile && (profile.role === 'admin' || profile.admin);
 
+      let imageUrl: string | undefined = undefined;
+
+      // Upload image if provided
+      if (imageFile) {
+        this.uploadingImage.set(true);
+        try {
+          if (this.isEditingPrompt() && this.editingPromptId()) {
+            imageUrl = await this.promptService.uploadPromptImage(this.editingPromptId()!, imageFile, currentUser.uid);
+          } else {
+            // For new prompts, we'll create the prompt first, then upload the image
+            // We'll handle this after prompt creation
+          }
+        } catch (error) {
+          console.error('Failed to upload image', error);
+          this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          this.isSavingPrompt.set(false);
+          this.uploadingImage.set(false);
+          return;
+        } finally {
+          this.uploadingImage.set(false);
+        }
+      }
+
       if (this.isEditingPrompt() && this.editingPromptId()) {
         const updateInput: UpdatePromptInput = {
           title,
-          content,
+          content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl,
+          ...(imageUrl ? { imageUrl } : {}),
           ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
@@ -824,10 +869,11 @@ export class OrganizationProfileComponent {
         // Forking a prompt
         const originalPrompt = this.organizationPrompts().find(p => p.id === this.forkingPromptId());
         if (originalPrompt) {
+          // Create prompt first
           const createInput: CreatePromptInput = {
             authorId: currentUser.uid,
             title,
-            content,
+            content: trimmedContent,
             tag,
             customUrl: trimmedCustomUrl || undefined,
             forkedFromPromptId: originalPrompt.id,
@@ -836,22 +882,52 @@ export class OrganizationProfileComponent {
             forkedFromCustomUrl: originalPrompt.customUrl,
             ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
           };
-          await this.promptService.createPrompt(createInput);
+          const promptId = await this.promptService.createPrompt(createInput);
+
+          // Upload image if provided
+          if (imageFile) {
+            this.uploadingImage.set(true);
+            try {
+              imageUrl = await this.promptService.uploadPromptImage(promptId, imageFile, currentUser.uid);
+              // Update prompt with imageUrl
+              await this.promptService.updatePrompt(promptId, { ...createInput, imageUrl }, currentUser.uid);
+            } catch (error) {
+              console.error('Failed to upload image', error);
+              this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+            } finally {
+              this.uploadingImage.set(false);
+            }
+          }
         } else {
           throw new Error('Original prompt not found.');
         }
       } else {
+        // Create prompt first
         const createInput: CreatePromptInput = {
           authorId: currentUser.uid,
           title,
-          content,
+          content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl || undefined,
           organizationId: org.id, // Associate prompt with organization
           ...(isAdmin && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
-        
-        await this.promptService.createPrompt(createInput);
+        const promptId = await this.promptService.createPrompt(createInput);
+
+        // Upload image if provided
+        if (imageFile) {
+          this.uploadingImage.set(true);
+          try {
+            imageUrl = await this.promptService.uploadPromptImage(promptId, imageFile, currentUser.uid);
+            // Update prompt with imageUrl
+            await this.promptService.updatePrompt(promptId, { ...createInput, imageUrl }, currentUser.uid);
+          } catch (error) {
+            console.error('Failed to upload image', error);
+            this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          } finally {
+            this.uploadingImage.set(false);
+          }
+        }
       }
 
       this.resetCreatePromptForm();
@@ -859,6 +935,9 @@ export class OrganizationProfileComponent {
       this.editingPromptId.set(null);
       this.forkingPromptId.set(null);
       this.newPromptModalOpen.set(false);
+      this.promptFormInitialData.set(null);
+      this.promptImageFile.set(null);
+      this.promptImagePreview.set(null);
       // Reload prompts to show the new one
       if (org) {
         this.loadOrganizationPrompts(org.id);
@@ -873,7 +952,6 @@ export class OrganizationProfileComponent {
 
   onCustomUrlInput(value: string) {
     const trimmed = String(value ?? '').trim();
-    this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
     
     // Clear any existing timer
     if (this.customUrlTimer) {
@@ -1069,6 +1147,7 @@ export class OrganizationProfileComponent {
       authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
+      imageUrl: prompt.imageUrl,
       preview: this.buildPreview(prompt.content),
       tag: prompt.tag,
       tagLabel: this.formatTagLabel(prompt.tag),
@@ -1436,16 +1515,29 @@ export class OrganizationProfileComponent {
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
     
-    this.createPromptForm.setValue({
+    this.promptFormInitialData.set({
       title: prompt.title,
       tag: prompt.tag,
       customUrl: '',
       content: prompt.content,
       isPrivate: false
     });
-    this.createPromptForm.markAsPristine();
-    this.createPromptForm.markAsUntouched();
+    // Don't copy image when forking
+    this.promptImagePreview.set(null);
+    this.promptImageFile.set(null);
     this.newPromptModalOpen.set(true);
+  }
+
+  onPromptFormTagInput(value: string) {
+    // Handle tag input if needed for suggestions
+  }
+
+  onPromptFormCustomUrlInput(value: string) {
+    this.onCustomUrlInput(value);
+  }
+
+  onPromptFormCancel() {
+    this.closeCreatePromptModal();
   }
 
   // Edit prompt functionality
@@ -1468,15 +1560,21 @@ export class OrganizationProfileComponent {
     this.isEditingPrompt.set(true);
     this.editingPromptId.set(prompt.id);
     this.forkingPromptId.set(null);
-    this.createPromptForm.setValue({
+    this.promptFormInitialData.set({
       title: prompt.title,
       tag: prompt.tag,
       customUrl: prompt.customUrl ?? '',
       content: prompt.content,
-      isPrivate: prompt.isPrivate ?? false
+      isPrivate: prompt.isPrivate ?? false,
+      imageUrl: prompt.imageUrl
     });
-    this.createPromptForm.markAsPristine();
-    this.createPromptForm.markAsUntouched();
+    if (prompt.imageUrl) {
+      this.promptImagePreview.set(prompt.imageUrl);
+      this.promptImageFile.set(null);
+    } else {
+      this.promptImagePreview.set(null);
+      this.promptImageFile.set(null);
+    }
     this.newPromptModalOpen.set(true);
   }
 

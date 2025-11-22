@@ -1,0 +1,177 @@
+<form class="space-y-4 sm:space-y-5" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
+    <div>
+      <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-title">Title</label>
+      <input id="prompt-title" type="text" formControlName="title"
+        class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+        placeholder="e.g. Growth Marketing Sprint" />
+      <p *ngIf="form.controls.title.invalid && form.controls.title.touched"
+        class="mt-1 text-[10px] text-red-600 sm:text-xs">
+        A title with at least 3 characters is required.
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-tag">Tag</label>
+      <input id="prompt-tag" type="text" formControlName="tag" (input)="onTagInput(($any($event.target)).value)"
+        class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+        placeholder="e.g. marketing" />
+      <p *ngIf="form.controls.tag.invalid && form.controls.tag.touched"
+        class="mt-1 text-[10px] text-red-600 sm:text-xs">
+        Add a tag so the prompt can be grouped.
+      </p>
+
+      <div
+        class="mt-2 rounded-md bg-white border border-slate-300 shadow-sm transition-opacity duration-150 ease-in-out overflow-hidden"
+        [class.opacity-0]="tagSuggestions().length === 0" [class.opacity-100]="tagSuggestions().length > 0"
+        [attr.aria-hidden]="tagSuggestions().length === 0">
+        <ul class="max-h-40 overflow-auto">
+          <li *ngFor="let s of tagSuggestions()" (click)="onTagSuggestionSelect(s.value)"
+            class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            {{ s.label }}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-custom-url">Custom Short URL
+      (optional)</label>
+    <div class="mt-1 flex items-center gap-1.5 sm:gap-2">
+      <span class="text-xs text-slate-500 sm:text-sm">rocketprompt.io/</span>
+      <div class="flex-1 relative">
+        <input id="prompt-custom-url" type="text" formControlName="customUrl"
+          (input)="onCustomUrlInput(($any($event.target)).value)"
+          class="w-full rounded-xl border px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm"
+          [ngClass]="{
+            'border-red-300': customUrlError(),
+            'border-slate-300': !customUrlError()
+          }" placeholder="my-custom-url" />
+        <div *ngIf="isCheckingCustomUrl()" class="absolute right-2 top-1/2 -translate-y-1/2 sm:right-3">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 animate-spin text-slate-400 sm:h-4 sm:w-4">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+            </circle>
+            <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <p *ngIf="customUrlError()" class="mt-1 text-[10px] text-red-600 sm:text-xs">
+      {{ customUrlError() }}
+    </p>
+    <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && form.controls.customUrl.value"
+      class="mt-1 text-[10px] text-slate-500 sm:text-xs">
+      Your prompt will be available at: rocketprompt.io/{{ form.controls.customUrl.value }}
+    </p>
+    <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-[10px] text-slate-500 sm:text-xs">
+      Checking availability...
+    </p>
+  </div>
+
+  <div>
+    <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-content">Prompt
+      content (optional if image is provided)</label>
+    <textarea id="prompt-content" rows="5" formControlName="content"
+      class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm sm:rows-6"
+      placeholder="Write the full prompt here, including instructions or variables."></textarea>
+    <p *ngIf="form.controls.content.invalid && form.controls.content.touched"
+      class="mt-1 text-[10px] text-red-600 sm:text-xs">
+      If provided, content must be at least 10 characters.
+    </p>
+  </div>
+
+  <div>
+    <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-image">Prompt
+      image (optional if content is provided)</label>
+    <div class="mt-1">
+      <input id="prompt-image" type="file" accept="image/*" (change)="onPromptImageSelected($event)"
+        class="hidden" />
+      <div *ngIf="!promptImagePreview()" class="flex items-center gap-2">
+        <label for="prompt-image"
+          class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-sm transition hover:border-[#DC2626] hover:bg-slate-50 sm:text-sm">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Choose Image
+        </label>
+      </div>
+      <div *ngIf="promptImagePreview()" class="relative">
+        <img [src]="promptImagePreview()" alt="Prompt image preview"
+          class="h-48 w-full rounded-xl border border-slate-300 object-cover" />
+        <button type="button" (click)="removePromptImage()"
+          class="absolute right-2 top-2 rounded-full bg-red-600 p-1.5 text-white shadow-lg transition hover:bg-red-700"
+          title="Remove image">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <label for="prompt-image"
+          class="absolute bottom-2 left-2 flex cursor-pointer items-center gap-2 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-white">
+          Change Image
+        </label>
+      </div>
+      <p *ngIf="imageError()" class="mt-1 text-[10px] text-red-600 sm:text-xs">
+        {{ imageError() }}
+      </p>
+      <p *ngIf="uploadingImage()" class="mt-1 text-[10px] text-slate-500 sm:text-xs">
+        Uploading image...
+      </p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="canManagePrivate(); else privateFirewall">
+    <div class="flex items-center gap-2">
+      <input id="prompt-is-private" type="checkbox" formControlName="isPrivate"
+        class="h-4 w-4 rounded border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/40" />
+      <label for="prompt-is-private" class="text-xs font-medium text-slate-600 sm:text-sm cursor-pointer">
+        Make this prompt private
+      </label>
+    </div>
+  </ng-container>
+  <ng-template #privateFirewall>
+    <button type="button"
+      class="flex w-full items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-left text-xs text-slate-600 transition hover:border-[#DC2626]/40 hover:bg-white sm:text-sm">
+      <span class="flex h-7 w-7 items-center justify-center rounded-full bg-white text-base">🔒</span>
+      <span class="flex-1 text-left">
+        <span class="block font-semibold text-slate-700">Private prompts are a Plus feature.</span>
+        <span class="block text-[10px] text-slate-500">Tap to view pricing.</span>
+      </span>
+      <span class="text-[#DC2626] text-xs font-semibold">Upgrade →</span>
+    </button>
+  </ng-template>
+
+  <div *ngIf="promptFormError()"
+    class="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 sm:px-4 sm:py-3 sm:text-sm">
+    {{ promptFormError() }}
+  </div>
+
+  <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end sm:gap-3">
+    <button type="button"
+      class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5 sm:text-sm"
+      (click)="onCancel()" [disabled]="isSaving()">
+      Cancel
+    </button>
+    <button type="submit"
+      class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 sm:px-6 sm:py-3 sm:text-sm"
+      [disabled]="isSaving()">
+      <ng-container *ngIf="isSaving(); else saveLabel">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-1.5 h-3 w-3 animate-spin sm:mr-2 sm:h-4 sm:w-4">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25">
+          </circle>
+          <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round"></path>
+        </svg>
+        Saving…
+      </ng-container>
+      <ng-template #saveLabel>
+        {{ isEditing() ? 'Update Prompt' : 'Save Prompt' }}
+      </ng-template>
+    </button>
+  </div>
+</form>
+
