@@ -27,6 +27,7 @@ import {
   parseCsvBoolean,
   parseCsvNumber
 } from '../../utils/bulk-upload.util';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 interface PromptCategory {
   readonly label: string;
@@ -157,6 +158,10 @@ export class HomeComponent {
   readonly loadPromptsError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
+  // Pagination state for infinite scroll
+  readonly isLoadingMore = signal(false);
+  readonly hasMorePrompts = signal(true);
+  private lastPromptDoc: QueryDocumentSnapshot | null = null;
   // Track prompt ids that were recently copied so we can show a check icon on the card
   readonly recentlyCopied = signal<Set<string>>(new Set());
   // Track prompt ids that were recently copied (for URL copying)
@@ -210,6 +215,7 @@ export class HomeComponent {
     this.observePrompts();
     this.observeHomeContent();
     this.subscribeToDefaultChatbotPreference();
+    this.setupScrollListener();
   }
 
   readonly createPromptForm = this.fb.nonNullable.group({
@@ -1451,10 +1457,10 @@ export class HomeComponent {
 
   private observePrompts() {
     this.promptService
-      .prompts$()
+      .promptsWithPagination$()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: prompts => {
+        next: ({ prompts, lastDoc }) => {
           const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
 
           const hidden = this.hiddenCategories();
@@ -1481,6 +1487,13 @@ export class HomeComponent {
           this.loadOrganizations(prompts);
           this.isLoadingPrompts.set(false);
           this.loadPromptsError.set(null);
+          
+          // Store the last document for pagination (from snapshot, before filtering)
+          this.lastPromptDoc = lastDoc;
+          // If we got a lastDoc, there might be more prompts (even if filtered count is less than 50)
+          // We check if lastDoc exists and if we got close to 50 documents from the query
+          this.hasMorePrompts.set(lastDoc !== null);
+          
           if (this.promptFormError()) {
             this.promptFormError.set(null);
           }
@@ -1494,6 +1507,89 @@ export class HomeComponent {
           this.loadPromptsError.set('We could not load your prompts. Please try again.');
         }
       });
+  }
+
+  private setupScrollListener() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+    let isLoading = false;
+
+    const handleScroll = () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      scrollTimeout = setTimeout(() => {
+        // Check if we're near the bottom of the page
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const pageHeight = document.documentElement.scrollHeight;
+        const threshold = 300; // Load more when 300px from bottom
+
+        const isNearBottom = scrollPosition >= pageHeight - threshold;
+        const canLoadMore = !isLoading && 
+                           !this.isLoadingMore() && 
+                           !this.isLoadingPrompts() && 
+                           this.hasMorePrompts() &&
+                           this.lastPromptDoc !== null;
+
+        if (isNearBottom && canLoadMore) {
+          isLoading = true;
+          this.loadMorePrompts().finally(() => {
+            isLoading = false;
+          });
+        }
+      }, 150); // Debounce scroll events
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Cleanup on destroy
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    });
+  }
+
+  async loadMorePrompts() {
+    if (this.isLoadingMore() || !this.hasMorePrompts() || !this.lastPromptDoc) {
+      return;
+    }
+
+    this.isLoadingMore.set(true);
+
+    try {
+      const result = await this.promptService.loadMorePrompts(this.lastPromptDoc, 50);
+      
+      if (result.prompts.length > 0) {
+        const newCards = result.prompts.map(prompt => this.mapPromptToCard(prompt));
+        const currentCards = this.prompts();
+        
+        // Append new prompts to existing ones, avoiding duplicates
+        const existingIds = new Set(currentCards.map(card => card.id));
+        const uniqueNewCards = newCards.filter(card => !existingIds.has(card.id));
+        
+        if (uniqueNewCards.length > 0) {
+          this.prompts.set([...currentCards, ...uniqueNewCards]);
+          this.syncCategories(result.prompts);
+          this.loadAuthorProfiles(result.prompts);
+          this.loadOrganizations(result.prompts);
+        }
+      }
+
+      this.lastPromptDoc = result.lastDoc;
+      this.hasMorePrompts.set(result.hasMore && result.lastDoc !== null);
+    } catch (error) {
+      console.error('Failed to load more prompts', error);
+      // Don't show error to user, just stop trying to load more
+      this.hasMorePrompts.set(false);
+    } finally {
+      this.isLoadingMore.set(false);
+    }
   }
 
   private loadAuthorProfiles(prompts: readonly Prompt[]) {

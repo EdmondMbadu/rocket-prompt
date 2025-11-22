@@ -14,7 +14,8 @@
         </h2>
         <p class="text-slate-600">
           <ng-container *ngIf="notice.type === 'success'; else checkoutErrorText">
-            {{ getPlanLabel(notice.plan) ? getPlanLabel(notice.plan) + ' is now active.' : 'Your account has been updated.' }}
+            {{ getPlanLabel(notice.plan) ? getPlanLabel(notice.plan) + ' is now active.' : 'Your account has been
+            updated.' }}
           </ng-container>
           <ng-template #checkoutErrorText>
             We could not confirm your payment. Please try again or contact support.
@@ -233,12 +234,12 @@
     </section>
 
     <!-- PROMPT COUNT -->
-    <section class="mx-auto max-w-6xl px-2 pt-3 sm:px-3 sm:pt-4 md:px-4 md:pt-6 lg:px-8">
+    <!-- <section class="mx-auto max-w-6xl px-2 pt-3 sm:px-3 sm:pt-4 md:px-4 md:pt-6 lg:px-8">
       <div class="mb-1.5 text-[10px] text-black/70 sm:mb-2 sm:text-xs md:text-sm">
         <span class="font-bold">Total prompts: <span class="text-[#DC2626] font-black">{{ userPromptCount()
             }}</span></span>
       </div>
-    </section>
+    </section> -->
 
     <!-- DEFAULT CHATBOT SELECTION -->
     <section class="mx-auto max-w-6xl px-2 sm:px-3 md:px-4 lg:px-8">
@@ -366,32 +367,30 @@
         <ng-container *ngIf="filteredPrompts().length > 0; else showEmptyState">
           <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
 
-            <app-prompt-card
-              *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-              [prompt]="prompt"
+            <app-prompt-card *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById" [prompt]="prompt"
               [authorProfile]="getAuthorProfile(prompt.authorId)"
               [organizationProfile]="getOrganization(prompt.organizationId!)"
-              [isUrlCopied]="recentlyCopiedUrl().has(prompt.id)"
-              [showEditActions]="true"
-              [isDeleting]="deletingPromptId() === prompt.id"
-              [isSaving]="isSavingPrompt()"
-              [currentUserExists]="(currentUser$ | async) !== null"
-              [defaultChatbotLabel]="getDefaultChatbotLabel()"
-              [promptUrl]="getPromptUrl(prompt)"
-              [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
-              [originalPromptUrl]="getOriginalPromptUrl(prompt)"
-              [canEdit]="canEditPrompt(prompt)"
-              (launchPrompt)="launchPrompt($event)"
-              (sharePrompt)="openShareModal($event)"
-              (forkPrompt)="openForkPromptModal($event)"
-              (openPrompt)="openPrompt($event)"
-              (editPrompt)="openEditPromptModal($event)"
-              (deletePrompt)="onDeletePrompt($event)"
+              [isUrlCopied]="recentlyCopiedUrl().has(prompt.id)" [showEditActions]="true"
+              [isDeleting]="deletingPromptId() === prompt.id" [isSaving]="isSavingPrompt()"
+              [currentUserExists]="(currentUser$ | async) !== null" [defaultChatbotLabel]="getDefaultChatbotLabel()"
+              [promptUrl]="getPromptUrl(prompt)" [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
+              [originalPromptUrl]="getOriginalPromptUrl(prompt)" [canEdit]="canEditPrompt(prompt)"
+              (launchPrompt)="launchPrompt($event)" (sharePrompt)="openShareModal($event)"
+              (forkPrompt)="openForkPromptModal($event)" (openPrompt)="openPrompt($event)"
+              (editPrompt)="openEditPromptModal($event)" (deletePrompt)="onDeletePrompt($event)"
               (copyPromptUrl)="copyPromptUrl($event)"
               (navigateToAuthor)="navigateToAuthorProfile($event.authorId, $event.event)"
               (navigateToOrganization)="navigateToOrganization($event.organizationId, $event.event)"
               (navigateToOriginalPrompt)="navigateToOriginalPrompt($event.prompt, $event.event)">
             </app-prompt-card>
+          </div>
+
+          <!-- Loading indicator for infinite scroll -->
+          <div *ngIf="isLoadingMore()" class="mt-8 flex justify-center">
+            <div class="flex flex-col items-center gap-3">
+              <div class="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#DC2626]"></div>
+              <p class="text-sm text-slate-600">Loading more prompts...</p>
+            </div>
           </div>
         </ng-container>
       </ng-template>
@@ -441,23 +440,19 @@
                 [class.text-slate-900]="createPromptMode() === 'single'"
                 [class.shadow-lg]="createPromptMode() === 'single'"
                 [class.text-slate-500]="createPromptMode() !== 'single'">
-                <span class="h-2 w-2 rounded-full"
-                  [class.bg-[#DC2626]]="createPromptMode() === 'single'"
+                <span class="h-2 w-2 rounded-full" [class.bg-[#DC2626]]="createPromptMode() === 'single'"
                   [class.bg-slate-300]="createPromptMode() !== 'single'"></span>
                 Single Prompt
               </button>
               <button type="button" (click)="switchCreatePromptMode('bulk')"
                 class="flex items-center gap-2 rounded-2xl px-4 py-2 text-[11px] font-semibold uppercase tracking-wide transition-all duration-200 sm:text-xs"
-                [class.bg-white]="createPromptMode() === 'bulk'"
-                [class.text-slate-900]="createPromptMode() === 'bulk'"
+                [class.bg-white]="createPromptMode() === 'bulk'" [class.text-slate-900]="createPromptMode() === 'bulk'"
                 [class.shadow-lg]="createPromptMode() === 'bulk'"
                 [class.text-slate-500]="createPromptMode() !== 'bulk'">
-                <svg class="h-3.5 w-3.5"
-                  [class.text-[#DC2626]]="createPromptMode() === 'bulk'"
-                  [class.text-slate-400]="createPromptMode() !== 'bulk'"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M3 6h18M7 12h10M10 18h4" />
+                <svg class="h-3.5 w-3.5" [class.text-[#DC2626]]="createPromptMode() === 'bulk'"
+                  [class.text-slate-400]="createPromptMode() !== 'bulk'" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M7 12h10M10 18h4" />
                 </svg>
                 Bulk Upload
               </button>
@@ -465,8 +460,8 @@
           </div>
         </div>
 
-        <form *ngIf="createPromptMode() === 'single' || !showBulkUploadTab()" class="mt-5 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createPromptForm"
-          (ngSubmit)="submitPromptForm()">
+        <form *ngIf="createPromptMode() === 'single' || !showBulkUploadTab()"
+          class="mt-5 space-y-4 sm:mt-6 sm:space-y-5" [formGroup]="createPromptForm" (ngSubmit)="submitPromptForm()">
           <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
             <div>
               <label class="block text-xs font-medium text-slate-600 sm:text-sm" for="prompt-title">Title</label>
@@ -649,7 +644,8 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p class="text-sm text-slate-700 sm:text-base">
                 Import your prompts in one go. Follow the
-                <a class="font-semibold text-[#DC2626]" [href]="bulkUploadInstructionsUrl" target="_blank" rel="noopener noreferrer">
+                <a class="font-semibold text-[#DC2626]" [href]="bulkUploadInstructionsUrl" target="_blank"
+                  rel="noopener noreferrer">
                   bulk upload guide
                 </a>
                 before selecting a CSV.
@@ -665,8 +661,7 @@
           </div>
 
           <ng-container *ngIf="canUseBulkUpload(profile); else bulkLocked">
-            <div
-              class="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-2xl shadow-slate-200/80 sm:p-6">
+            <div class="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-2xl shadow-slate-200/80 sm:p-6">
               <div
                 class="flex flex-col items-center justify-between gap-4 rounded-3xl border-2 border-dashed border-slate-300/80 bg-slate-50/70 px-6 py-8 text-center">
                 <div
@@ -683,8 +678,7 @@
                 </div>
                 <label for="bulk-csv-upload"
                   class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:shadow-red-500/40 cursor-pointer disabled:opacity-60"
-                  [class.opacity-60]="isProcessingBulkUpload()"
-                  [class.cursor-not-allowed]="isProcessingBulkUpload()">
+                  [class.opacity-60]="isProcessingBulkUpload()" [class.cursor-not-allowed]="isProcessingBulkUpload()">
                   {{ isProcessingBulkUpload() ? 'Uploading…' : 'Select CSV' }}
                 </label>
                 <input id="bulk-csv-upload" class="hidden" type="file" accept=".csv" (change)="onBulkUploadCSV($event)"
@@ -704,7 +698,8 @@
                 </div>
                 <div class="mt-3 h-2.5 w-full rounded-full bg-blue-200/80">
                   <div class="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
-                    [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0"></div>
+                    [style.width.%]="bulkUploadProgress().total > 0 ? (bulkUploadProgress().processed / bulkUploadProgress().total) * 100 : 0">
+                  </div>
                 </div>
                 <p class="mt-2 text-xs text-blue-700">
                   Success: {{ bulkUploadProgress().success }} • Failed: {{ bulkUploadProgress().failed }}
@@ -800,12 +795,8 @@
 </ng-template>
 
 <!-- SHARE PROMPT MODAL -->
-<app-share-modal 
-  [isOpen]="shareModalOpen()" 
+<app-share-modal [isOpen]="shareModalOpen()"
   [prompt]="sharePrompt() ? { id: sharePrompt()!.id, title: sharePrompt()!.title, content: sharePrompt()!.content, preview: sharePrompt()!.preview, customUrl: sharePrompt()!.customUrl } : null"
-  (close)="closeShareModal()"
-  (copyOneClickLink)="copyOneClickLink($event)"
-  (openChatbot)="handleOpenChatbot($event)"
-  (copyPromptUrl)="copyPromptPageUrl()"
-  (copyPrompt)="copyPromptFromShare()">
+  (close)="closeShareModal()" (copyOneClickLink)="copyOneClickLink($event)" (openChatbot)="handleOpenChatbot($event)"
+  (copyPromptUrl)="copyPromptPageUrl()" (copyPrompt)="copyPromptFromShare()">
 </app-share-modal>

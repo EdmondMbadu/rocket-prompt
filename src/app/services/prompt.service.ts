@@ -41,6 +41,119 @@ export class PromptService {
   }
 
   /**
+   * Get prompts with pagination support (for infinite scroll on home page)
+   * Returns the first 50 prompts and the last document snapshot for pagination
+   */
+  promptsWithPagination$(): Observable<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }> {
+    return new Observable<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.orderBy('createdAt', 'desc'),
+            firestoreModule.limit(50)
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const prompts = snapshot.docs
+                .map((doc) => this.mapPrompt(doc, firestoreModule))
+                .filter((prompt) => !prompt.isInvisible && !prompt.isPrivate); // Filter out invisible and private prompts
+              
+              // Get the last document from the snapshot (before filtering) for pagination
+              const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+              
+              subscriber.next({ prompts, lastDoc: lastDoc as QueryDocumentSnapshot | null });
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
+   * Get the document snapshot for a prompt ID (for pagination)
+   * @param promptId The prompt ID
+   * @returns The document snapshot if found, null otherwise
+   */
+  async getPromptDocumentSnapshot(promptId: string): Promise<QueryDocumentSnapshot | null> {
+    const trimmedId = promptId?.trim();
+    if (!trimmedId) {
+      return null;
+    }
+
+    try {
+      const { firestore, firestoreModule } = await this.getFirestoreContext();
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+      const docSnap = await firestoreModule.getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return docSnap as QueryDocumentSnapshot;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get prompt document snapshot', error);
+      return null;
+    }
+  }
+
+  /**
+   * Load more prompts with pagination (for infinite scroll)
+   * @param lastDoc The last document snapshot from the previous page
+   * @param limit Number of prompts to load (default: 50)
+   * @returns Promise with the prompts and the last document snapshot for next page
+   */
+  async loadMorePrompts(
+    lastDoc?: QueryDocumentSnapshot | null,
+    limit: number = 50
+  ): Promise<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean }> {
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const collectionRef = firestoreModule.collection(firestore, 'prompts');
+    
+    let queryRef = firestoreModule.query(
+      collectionRef,
+      firestoreModule.orderBy('createdAt', 'desc'),
+      firestoreModule.limit(limit + 1) // Load one extra to check if there are more
+    );
+
+    // If we have a last document, start after it
+    if (lastDoc) {
+      queryRef = firestoreModule.query(
+        collectionRef,
+        firestoreModule.orderBy('createdAt', 'desc'),
+        firestoreModule.startAfter(lastDoc),
+        firestoreModule.limit(limit + 1)
+      );
+    }
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+    const docs = snapshot.docs;
+    
+    // Check if there are more documents
+    const hasMore = docs.length > limit;
+    const promptsToReturn = hasMore ? docs.slice(0, limit) : docs;
+    
+    const prompts = promptsToReturn
+      .map((doc) => this.mapPrompt(doc, firestoreModule))
+      .filter((prompt) => !prompt.isInvisible && !prompt.isPrivate);
+    
+    const newLastDoc = promptsToReturn.length > 0 ? promptsToReturn[promptsToReturn.length - 1] : null;
+
+    return {
+      prompts,
+      lastDoc: newLastDoc as QueryDocumentSnapshot | null,
+      hasMore
+    };
+  }
+
+  /**
    * Get all prompts including invisible ones (for admin use)
    */
   allPrompts$(): Observable<Prompt[]> {
