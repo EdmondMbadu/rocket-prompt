@@ -505,7 +505,7 @@
                 [showEditActions]="true"
                 [isDeleting]="deletingPromptId() === prompt.id"
                 [isSaving]="isSavingPrompt()"
-                [currentUserExists]="false"
+                [currentUserExists]="(currentUser$ | async) !== null"
                 [defaultChatbotLabel]="getDefaultChatbotLabel()"
                 [promptUrl]="getPromptUrl(prompt)"
                 [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
@@ -513,6 +513,7 @@
                 [canEdit]="canEditPrompt(prompt)"
                 (launchPrompt)="launchPrompt($event)"
                 (sharePrompt)="openShareModal($event)"
+                (forkPrompt)="openForkPromptModal($event)"
                 (openPrompt)="openPrompt($event)"
                 (editPrompt)="openEditPromptModal($event)"
                 (deletePrompt)="onDeletePrompt($event)"
@@ -643,15 +644,27 @@
 
         <header class="pr-8">
           <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#DC2626]">
-            {{ isEditingPrompt() ? 'Update' : 'Create' }}
+            {{ isEditingPrompt() ? 'Update' : forkingPromptId() ? 'Fork' : 'Create' }}
           </p>
           <h2 class="mt-2 text-2xl font-semibold text-slate-900">
-            {{ isEditingPrompt() ? 'Edit Prompt' : 'New Prompt' }}
+            {{ isEditingPrompt() ? 'Edit Prompt' : forkingPromptId() ? 'Fork Prompt' : 'New Prompt' }}
           </h2>
           <p class="mt-1 text-sm text-slate-500">
-            {{ isEditingPrompt() ? 'Make adjustments and keep your library fresh.' : 'Capture your best prompt ideas and
-            keep them ready to launch.' }}
+            <ng-container *ngIf="isEditingPrompt()">
+              Make adjustments and keep your library fresh.
+            </ng-container>
+            <ng-container *ngIf="forkingPromptId()">
+              Start with this prompt and make it your own. You can edit the title, content, and tag.
+            </ng-container>
+            <ng-container *ngIf="!isEditingPrompt() && !forkingPromptId()">
+              Capture your best prompt ideas and keep them ready to launch.
+            </ng-container>
           </p>
+          <div *ngIf="forkingPromptId()"
+            class="mt-3 rounded-lg bg-purple-50 border border-purple-200/50 px-3 py-2 text-xs text-purple-800">
+            <span class="font-semibold">Forking:</span>
+            <span class="ml-1">{{ getForkingPromptTitle() }}</span>
+          </div>
         </header>
 
         <div *ngIf="showBulkUploadTab()" class="mt-5">

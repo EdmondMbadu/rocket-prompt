@@ -93,12 +93,13 @@ export class ProfilePageComponent {
   readonly sharePrompt = signal<PromptCard | null>(null);
   readonly isEditingPrompt = signal(false);
   readonly editingPromptId = signal<string | null>(null);
+  readonly forkingPromptId = signal<string | null>(null);
   readonly isSavingPrompt = signal(false);
   readonly promptFormError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
   readonly createPromptMode = signal<'single' | 'bulk'>('single');
-  readonly showBulkUploadTab = computed(() => !this.isEditingPrompt());
+  readonly showBulkUploadTab = computed(() => !this.isEditingPrompt() && !this.forkingPromptId());
   readonly bulkUploadInstructionsUrl = BULK_UPLOAD_INSTRUCTIONS_URL;
   readonly isProcessingBulkUpload = signal(false);
   readonly bulkUploadProgress = signal<BulkUploadProgressState>(createEmptyBulkProgress());
@@ -1316,6 +1317,7 @@ export class ProfilePageComponent {
   openCreatePromptModal() {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.createPromptMode.set('single');
     this.resetBulkUploadState();
     this.promptFormError.set(null);
@@ -1365,6 +1367,38 @@ export class ProfilePageComponent {
     this.newPromptModalOpen.set(true);
   }
 
+  openForkPromptModal(prompt: PromptCard) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to fork a prompt.');
+      return;
+    }
+
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.forkingPromptId.set(prompt.id);
+    this.createPromptMode.set('single');
+    this.resetBulkUploadState();
+    this.promptFormError.set(null);
+    this.customUrlError.set(null);
+    this.clearCustomUrlDebounce();
+    
+    // Pre-fill form with prompt data (but clear customUrl - forks need unique URLs)
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: '',
+      content: prompt.content,
+      isPrivate: false // Forks are not private by default
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.tagQuery.set('');
+    // Don't copy image when forking - user can add their own
+    this.removePromptImage();
+    this.newPromptModalOpen.set(true);
+  }
+
   async onDeletePrompt(prompt: PromptCard) {
     if (this.deletingPromptId() === prompt.id) {
       return;
@@ -1410,6 +1444,7 @@ export class ProfilePageComponent {
     this.newPromptModalOpen.set(false);
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.forkingPromptId.set(null);
     this.createPromptMode.set('single');
     this.resetBulkUploadState();
     this.promptFormError.set(null);
@@ -1701,6 +1736,41 @@ export class ProfilePageComponent {
           ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
+      } else if (this.forkingPromptId()) {
+        // Forking a prompt
+        const originalPrompt = this.prompts().find(p => p.id === this.forkingPromptId());
+        if (!originalPrompt) {
+          throw new Error('Original prompt not found.');
+        }
+
+        const createInput: CreatePromptInput = {
+          authorId: currentUser.uid,
+          title,
+          content: trimmedContent,
+          tag,
+          customUrl: trimmedCustomUrl || undefined,
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {}),
+          forkedFromPromptId: originalPrompt.id,
+          forkedFromAuthorId: originalPrompt.authorId,
+          forkedFromTitle: originalPrompt.title,
+          forkedFromCustomUrl: originalPrompt.customUrl
+        };
+        const promptId = await this.promptService.createPrompt(createInput);
+
+        // Upload image if provided
+        if (imageFile) {
+          this.uploadingImage.set(true);
+          try {
+            imageUrl = await this.promptService.uploadPromptImage(promptId, imageFile, currentUser.uid);
+            // Update prompt with imageUrl
+            await this.promptService.updatePrompt(promptId, { ...createInput, imageUrl }, currentUser.uid);
+          } catch (error) {
+            console.error('Failed to upload image', error);
+            this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          } finally {
+            this.uploadingImage.set(false);
+          }
+        }
       } else {
         // Creating a new prompt
         const createInput: CreatePromptInput = {
@@ -1740,6 +1810,7 @@ export class ProfilePageComponent {
       this.resetCreatePromptForm();
       this.isEditingPrompt.set(false);
       this.editingPromptId.set(null);
+      this.forkingPromptId.set(null);
       this.newPromptModalOpen.set(false);
       this.removePromptImage();
     } catch (error) {
@@ -2262,6 +2333,15 @@ export class ProfilePageComponent {
     if (url) {
       void this.router.navigateByUrl(url.replace(window.location.origin, ''));
     }
+  }
+
+  getForkingPromptTitle(): string {
+    const forkingId = this.forkingPromptId();
+    if (!forkingId) {
+      return '';
+    }
+    const prompt = this.prompts().find(p => p.id === forkingId);
+    return prompt?.title || '';
   }
 
   subscriptionDetails(status?: string | null) {
