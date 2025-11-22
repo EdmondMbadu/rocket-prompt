@@ -394,7 +394,9 @@
             </div>
 
             <div class="content" [class.content--blurred]="isPrivateAndNotAuthor()">
-                <pre>{{ prompt()?.content }}</pre>
+                <img *ngIf="prompt()?.imageUrl" [src]="prompt()?.imageUrl" [alt]="prompt()?.title"
+                    class="w-full h-auto rounded-lg object-cover mb-4" />
+                <pre *ngIf="prompt()?.content">{{ prompt()?.content }}</pre>
             </div>
 
             <!-- ACTIONS: Launch this prompt (Bottom) - only show if prompt is longer than 100 words -->

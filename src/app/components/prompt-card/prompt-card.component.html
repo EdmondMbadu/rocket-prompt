@@ -164,10 +164,17 @@
     </button>
   </div>
 
-  <div
-    class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed break-words overflow-wrap-anywhere">
-    {{ prompt().preview }}
+  <div *ngIf="prompt().imageUrl; else textContent"
+    class="prompt-snippet mt-4 rounded-2xl border-2 border-black/5 overflow-hidden">
+    <img [src]="prompt().imageUrl" [alt]="prompt().title"
+      class="h-auto w-full object-cover" />
   </div>
+  <ng-template #textContent>
+    <div
+      class="prompt-snippet mt-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border-2 border-black/5 p-5 text-sm text-slate-800 min-h-[10rem] leading-relaxed break-words overflow-wrap-anywhere">
+      {{ prompt().preview }}
+    </div>
+  </ng-template>
 
   <div class="mt-6 mt-auto flex items-center gap-2.5 text-sm">
     <button type="button" class="icon-button icon-button--launch mr-auto" aria-label="Launch prompt"

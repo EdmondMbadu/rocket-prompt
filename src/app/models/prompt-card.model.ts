@@ -6,6 +6,7 @@ export interface PromptCard {
   readonly authorId: string;
   readonly title: string;
   readonly content: string;
+  readonly imageUrl?: string;
   readonly preview: string;
   readonly tag: string;
   readonly tagLabel: string;

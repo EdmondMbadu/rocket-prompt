@@ -760,14 +760,55 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content</label>
+            <label class="block text-sm font-medium text-slate-600" for="prompt-content">Prompt content (optional if image is provided)</label>
             <textarea id="prompt-content" rows="6" formControlName="content"
               class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40"
               placeholder="Write the full prompt here, including instructions or variables."></textarea>
             <p *ngIf="createPromptForm.controls.content.invalid && createPromptForm.controls.content.touched"
               class="mt-1 text-xs text-red-600">
-              Please provide at least 10 characters of content.
+              If provided, content must be at least 10 characters.
             </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-600" for="prompt-image">Prompt image (optional if content is provided)</label>
+            <div class="mt-1">
+              <input id="prompt-image" type="file" accept="image/*" (change)="onPromptImageSelected($event)"
+                class="hidden" />
+              <div *ngIf="!promptImagePreview()" class="flex items-center gap-2">
+                <label for="prompt-image"
+                  class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-[#DC2626] hover:bg-slate-50">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Choose Image
+                </label>
+              </div>
+              <div *ngIf="promptImagePreview()" class="relative">
+                <img [src]="promptImagePreview()" alt="Prompt image preview"
+                  class="h-48 w-full rounded-xl border border-slate-300 object-cover" />
+                <button type="button" (click)="removePromptImage()"
+                  class="absolute right-2 top-2 rounded-full bg-red-600 p-1.5 text-white shadow-lg transition hover:bg-red-700"
+                  title="Remove image">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <label for="prompt-image"
+                  class="absolute bottom-2 left-2 flex cursor-pointer items-center gap-2 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-white">
+                  Change Image
+                </label>
+              </div>
+              <p *ngIf="imageError()" class="mt-1 text-xs text-red-600">
+                {{ imageError() }}
+              </p>
+              <p *ngIf="uploadingImage()" class="mt-1 text-xs text-slate-500">
+                Uploading image...
+              </p>
+            </div>
           </div>
 
           <ng-container *ngIf="canManagePrivatePrompts(currentUserProfile()); else profilePrivateFirewall">

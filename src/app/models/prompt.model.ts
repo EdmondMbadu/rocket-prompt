@@ -3,6 +3,7 @@ export interface Prompt {
   readonly authorId: string;
   readonly title: string;
   readonly content: string;
+  readonly imageUrl?: string;
   readonly tag: string;
   readonly customUrl?: string;
   readonly views: number;
@@ -31,6 +32,7 @@ export interface CreatePromptInput {
   readonly authorId: string;
   readonly title: string;
   readonly content: string;
+  readonly imageUrl?: string;
   readonly tag: string;
   readonly customUrl?: string;
   readonly views?: number;
@@ -53,6 +55,7 @@ export interface CreatePromptInput {
 export interface UpdatePromptInput {
   readonly title: string;
   readonly content: string;
+  readonly imageUrl?: string;
   readonly tag: string;
   readonly customUrl?: string;
   readonly isPrivate?: boolean;

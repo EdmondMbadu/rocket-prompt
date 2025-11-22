@@ -65,6 +65,46 @@ export class HomeComponent {
     isPrivate: false
   } as const;
 
+  onPromptImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.imageError.set('Only image files are allowed.');
+      input.value = '';
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      this.imageError.set('Image size must be less than 10MB.');
+      input.value = '';
+      return;
+    }
+
+    this.imageError.set(null);
+    this.promptImageFile.set(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.promptImagePreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removePromptImage() {
+    this.promptImageFile.set(null);
+    this.promptImagePreview.set(null);
+    this.imageError.set(null);
+  }
+
   readonly currentUser$ = this.authService.currentUser$;
   readonly profile$ = this.currentUser$.pipe(
     switchMap(user => {
@@ -176,9 +216,14 @@ export class HomeComponent {
     title: ['', [Validators.required, Validators.minLength(3)]],
     tag: ['', [Validators.required]],
     customUrl: [''],
-    content: ['', [Validators.required, Validators.minLength(10)]],
+    content: [''],
     isPrivate: [false]
   });
+
+  readonly promptImageFile = signal<File | null>(null);
+  readonly promptImagePreview = signal<string | null>(null);
+  readonly uploadingImage = signal(false);
+  readonly imageError = signal<string | null>(null);
 
   // Current tag input text mirrored as a signal so suggestions recompute on every keystroke.
   readonly tagQuery = signal('');
@@ -845,6 +890,8 @@ export class HomeComponent {
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
     this.tagQuery.set('');
+    // Don't copy image when forking - user can add their own
+    this.removePromptImage();
     this.newPromptModalOpen.set(true);
   }
 
@@ -879,6 +926,13 @@ export class HomeComponent {
     this.createPromptForm.markAsUntouched();
     // Do not enable suggestions immediately when editing a prompt; wait for the user to type
     this.tagQuery.set('');
+    // Set image preview if prompt has image
+    if (prompt.imageUrl) {
+      this.promptImagePreview.set(prompt.imageUrl);
+      this.promptImageFile.set(null); // We don't have the file, just the URL
+    } else {
+      this.removePromptImage();
+    }
     this.newPromptModalOpen.set(true);
   }
 
@@ -955,6 +1009,7 @@ export class HomeComponent {
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
+    this.removePromptImage();
   }
 
   switchCreatePromptMode(mode: 'single' | 'bulk') {
@@ -992,7 +1047,23 @@ export class HomeComponent {
     }
 
     const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
+    const trimmedContent = (content ?? '').trim();
     const trimmedCustomUrl = (customUrl ?? '').trim();
+    const imageFile = this.promptImageFile();
+
+    // Validate that either content or image is provided
+    if (!trimmedContent && !imageFile) {
+      this.promptFormError.set('Either prompt content or an image is required.');
+      this.createPromptForm.controls.content.markAsTouched();
+      return;
+    }
+
+    // Validate content length if provided
+    if (trimmedContent && trimmedContent.length < 10) {
+      this.promptFormError.set('Content must be at least 10 characters if provided.');
+      this.createPromptForm.controls.content.markAsTouched();
+      return;
+    }
 
     // Validate custom URL if provided
     if (trimmedCustomUrl) {
@@ -1038,12 +1109,36 @@ export class HomeComponent {
       const profile = await this.authService.fetchUserProfile(currentUser.uid);
       const canSetPrivate = this.canManagePrivatePrompts(profile);
 
+      let imageUrl: string | undefined = undefined;
+
+      // Upload image if provided
+      if (imageFile) {
+        this.uploadingImage.set(true);
+        try {
+          if (this.isEditingPrompt() && this.editingPromptId()) {
+            imageUrl = await this.promptService.uploadPromptImage(this.editingPromptId()!, imageFile, currentUser.uid);
+          } else {
+            // For new prompts, we'll create the prompt first, then upload the image
+            // We'll handle this after prompt creation
+          }
+        } catch (error) {
+          console.error('Failed to upload image', error);
+          this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          this.isSavingPrompt.set(false);
+          this.uploadingImage.set(false);
+          return;
+        } finally {
+          this.uploadingImage.set(false);
+        }
+      }
+
       if (this.isEditingPrompt() && this.editingPromptId()) {
         const updateInput: UpdatePromptInput = {
           title,
-          content,
+          content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl,
+          ...(imageUrl ? { imageUrl } : {}),
           ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
@@ -1051,10 +1146,11 @@ export class HomeComponent {
         // Forking a prompt
         const originalPrompt = this.prompts().find(p => p.id === this.forkingPromptId());
         if (originalPrompt) {
+          // Create prompt first
           const createInput: CreatePromptInput = {
             authorId: currentUser.uid,
             title,
-            content,
+            content: trimmedContent,
             tag,
             customUrl: trimmedCustomUrl || undefined,
             forkedFromPromptId: originalPrompt.id,
@@ -1063,20 +1159,51 @@ export class HomeComponent {
             forkedFromCustomUrl: originalPrompt.customUrl,
             ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
           };
-          await this.promptService.createPrompt(createInput);
+          const promptId = await this.promptService.createPrompt(createInput);
+
+          // Upload image if provided
+          if (imageFile) {
+            this.uploadingImage.set(true);
+            try {
+              imageUrl = await this.promptService.uploadPromptImage(promptId, imageFile, currentUser.uid);
+              // Update prompt with imageUrl
+              await this.promptService.updatePrompt(promptId, { ...createInput, imageUrl }, currentUser.uid);
+            } catch (error) {
+              console.error('Failed to upload image', error);
+              this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+            } finally {
+              this.uploadingImage.set(false);
+            }
+          }
         } else {
           throw new Error('Original prompt not found.');
         }
       } else {
+        // Create prompt first
         const createInput: CreatePromptInput = {
           authorId: currentUser.uid,
           title,
-          content,
+          content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl || undefined,
           ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
-        await this.promptService.createPrompt(createInput);
+        const promptId = await this.promptService.createPrompt(createInput);
+
+        // Upload image if provided
+        if (imageFile) {
+          this.uploadingImage.set(true);
+          try {
+            imageUrl = await this.promptService.uploadPromptImage(promptId, imageFile, currentUser.uid);
+            // Update prompt with imageUrl
+            await this.promptService.updatePrompt(promptId, { ...createInput, imageUrl }, currentUser.uid);
+          } catch (error) {
+            console.error('Failed to upload image', error);
+            this.imageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          } finally {
+            this.uploadingImage.set(false);
+          }
+        }
       }
 
       // If the user entered a new tag that isn't already in categories, add it locally
@@ -1092,6 +1219,7 @@ export class HomeComponent {
       this.editingPromptId.set(null);
       this.forkingPromptId.set(null);
       this.newPromptModalOpen.set(false);
+      this.removePromptImage();
     } catch (error) {
       console.error('Failed to save prompt', error);
       this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
@@ -1464,6 +1592,7 @@ export class HomeComponent {
       authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
+      imageUrl: prompt.imageUrl,
       preview: this.buildPreview(prompt.content),
       tag,
       tagLabel: this.formatTagLabel(tag),
@@ -1545,6 +1674,7 @@ export class HomeComponent {
     this.clearCustomUrlDebounce();
     this.createPromptForm.markAsPristine();
     this.createPromptForm.markAsUntouched();
+    this.removePromptImage();
   }
 
   selectTagSuggestion(value: string) {

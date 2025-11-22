@@ -167,6 +167,7 @@ export class PromptService {
   async createPrompt(input: CreatePromptInput): Promise<string> {
     const title = input.title?.trim();
     const content = input.content?.trim();
+    const imageUrl = input.imageUrl?.trim();
     const tag = input.tag?.trim();
     const authorId = input.authorId?.trim();
 
@@ -174,8 +175,9 @@ export class PromptService {
       throw new Error('A title is required to create a prompt.');
     }
 
-    if (!content) {
-      throw new Error('Content is required to create a prompt.');
+    // Either content or imageUrl must be provided
+    if (!content && !imageUrl) {
+      throw new Error('Either content or an image is required to create a prompt.');
     }
 
     if (!tag) {
@@ -203,7 +205,7 @@ export class PromptService {
     const payload: Record<string, unknown> = {
       authorId,
       title,
-      content,
+      content: content || '',
       tag: normalizedTag,
       views,
       likes,
@@ -215,6 +217,10 @@ export class PromptService {
       createdAt: timestamp,
       updatedAt: timestamp
     };
+
+    if (imageUrl) {
+      payload['imageUrl'] = imageUrl;
+    }
 
     if (customUrl) {
       payload['customUrl'] = customUrl;
@@ -277,14 +283,16 @@ export class PromptService {
 
     const title = input.title?.trim();
     const content = input.content?.trim();
+    const imageUrl = input.imageUrl?.trim();
     const tag = input.tag?.trim();
 
     if (!title) {
       throw new Error('A title is required to update a prompt.');
     }
 
-    if (!content) {
-      throw new Error('Content is required to update a prompt.');
+    // Either content or imageUrl must be provided
+    if (!content && !imageUrl) {
+      throw new Error('Either content or an image is required to update a prompt.');
     }
 
     if (!tag) {
@@ -315,7 +323,7 @@ export class PromptService {
 
     const updatePayload: Record<string, unknown> = {
       title,
-      content,
+      content: content || '',
       tag: normalizedTag,
       updatedAt: firestoreModule.serverTimestamp()
     };
@@ -323,6 +331,13 @@ export class PromptService {
     // If authorId wasn't set before, add it now
     if (!existingAuthorId) {
       updatePayload['authorId'] = trimmedAuthorId;
+    }
+
+    if (imageUrl) {
+      updatePayload['imageUrl'] = imageUrl;
+    } else {
+      // If imageUrl is being removed, delete it
+      updatePayload['imageUrl'] = firestoreModule.deleteField();
     }
 
     if (customUrl) {
@@ -339,6 +354,80 @@ export class PromptService {
     await firestoreModule.updateDoc(docRef, updatePayload);
   }
 
+  async uploadPromptImage(promptId: string, file: File, userId: string): Promise<string> {
+    const trimmedId = promptId?.trim();
+
+    if (!trimmedId) {
+      throw new Error('A prompt id is required to upload an image.');
+    }
+
+    if (!file) {
+      throw new Error('A file is required to upload.');
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed.');
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new Error('Image size must be less than 10MB.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+    const docSnap = await firestoreModule.getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Prompt not found.');
+    }
+
+    const existingData = docSnap.data() as Record<string, unknown>;
+    const existingAuthorId = typeof existingData['authorId'] === 'string' ? existingData['authorId'] : '';
+
+    // Check if user is the author
+    if (existingAuthorId && existingAuthorId !== userId) {
+      throw new Error('You can only upload images for prompts you created.');
+    }
+
+    // Import Firebase Storage
+    const storageModule = await import('firebase/storage');
+    const storage = storageModule.getStorage(this.app);
+
+    // Delete old image if it exists
+    const existingImageUrl = typeof existingData['imageUrl'] === 'string' ? existingData['imageUrl'] : undefined;
+    if (existingImageUrl) {
+      try {
+        const oldImageRef = storageModule.ref(storage, existingImageUrl);
+        await storageModule.deleteObject(oldImageRef);
+      } catch (error) {
+        // Ignore errors when deleting old image (might not exist)
+        console.warn('Failed to delete old image', error);
+      }
+    }
+
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileName = `prompts/${trimmedId}/image-${Date.now()}.${fileExtension}`;
+    const storageRef = storageModule.ref(storage, fileName);
+
+    // Upload the file
+    await storageModule.uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await storageModule.getDownloadURL(storageRef);
+
+    // Update the prompt with the new image URL
+    await firestoreModule.updateDoc(docRef, {
+      imageUrl: downloadURL,
+      updatedAt: firestoreModule.serverTimestamp()
+    });
+
+    return downloadURL;
+  }
+
   private mapPrompt(
     doc: QueryDocumentSnapshot,
     firestoreModule: typeof import('firebase/firestore')
@@ -348,6 +437,7 @@ export class PromptService {
     const authorIdValue = data['authorId'];
     const titleValue = data['title'];
     const contentValue = data['content'];
+    const imageUrlValue = data['imageUrl'];
     const tagValue = data['tag'];
     const customUrlValue = data['customUrl'];
     const viewsValue = data['views'];
@@ -384,6 +474,7 @@ export class PromptService {
       authorId: typeof authorIdValue === 'string' ? authorIdValue : '',
       title: typeof titleValue === 'string' ? titleValue : '',
       content: typeof contentValue === 'string' ? contentValue : '',
+      imageUrl: typeof imageUrlValue === 'string' ? imageUrlValue : undefined,
       tag: typeof tagValue === 'string' ? tagValue : 'general',
       customUrl: typeof customUrlValue === 'string' ? customUrlValue : undefined,
       views: typeof viewsValue === 'number' ? viewsValue : 0,
