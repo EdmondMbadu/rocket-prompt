@@ -126,16 +126,22 @@ export class NavbarComponent {
     const rect = button.getBoundingClientRect();
     const isMobile = window.innerWidth < 640;
 
-    if (isMobile) {
-      // On mobile, position at bottom of screen with some padding
+    requestAnimationFrame(() => {
+      const panel = document.querySelector('[data-user-menu] .menu-panel') as HTMLElement | null;
+      const panelHeight = panel?.offsetHeight ?? 0;
       const padding = 16;
-      this.menuTop.set(window.innerHeight - padding);
-      this.menuRight.set(padding);
-    } else {
-      // On desktop, position below the button
-      this.menuTop.set(rect.bottom + 12);
-      this.menuRight.set(window.innerWidth - rect.right);
-    }
+
+      if (isMobile) {
+        const desiredTop = rect.bottom + 12;
+        const maxTop = Math.max(padding, window.innerHeight - padding - panelHeight);
+        const clampedTop = Math.min(desiredTop, maxTop);
+        this.menuTop.set(clampedTop);
+        this.menuRight.set(padding);
+      } else {
+        this.menuTop.set(rect.bottom + 12);
+        this.menuRight.set(window.innerWidth - rect.right);
+      }
+    });
   }
 
   navigateToOrganization(org: Organization) {

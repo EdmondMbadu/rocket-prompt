@@ -15,27 +15,33 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center justify-end gap-3 self-end sm:gap-5">
-            <a *ngIf="isViewingOwnProfile() && currentUserProfile() && shouldShowUpgradeBanner(currentUserProfile())"
-              routerLink="/pricing" [queryParams]="getUpgradeBannerQueryParams(currentUserProfile())"
-              class="home-upgrade-banner">
-              <span class="home-upgrade-banner-icon">✨</span>
-              <span class="home-upgrade-banner-text">{{ getUpgradeBannerText(currentUserProfile()) }}</span>
-            </a>
-            <button type="button" (click)="openCreatePromptModal()"
-              class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
-              <span class="text-sm sm:text-base">＋</span>
-              <span class="hidden min-[375px]:inline">New Prompt</span>
-              <span class="min-[375px]:hidden">New</span>
-            </button>
-            <button *ngIf="isViewingOwnProfile()" type="button" (click)="openCreateCollectionModal()"
-              class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm"
-              [disabled]="availablePromptsForCollection().length === 0">
-              <span class="text-sm sm:text-base">＋</span>
-              <span class="hidden min-[375px]:inline">New Collection</span>
-              <span class="min-[375px]:hidden">Collection</span>
-            </button>
-            <app-navbar [profile]="currentUserProfile()" />
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5 w-full sm:w-auto">
+            <div
+              class="flex flex-wrap items-center justify-between gap-2 w-full sm:w-auto sm:justify-end">
+              <a *ngIf="isViewingOwnProfile() && currentUserProfile() && shouldShowUpgradeBanner(currentUserProfile())"
+                routerLink="/pricing" [queryParams]="getUpgradeBannerQueryParams(currentUserProfile())"
+                class="home-upgrade-banner flex-1 sm:flex-none">
+                <span class="home-upgrade-banner-icon">✨</span>
+                <span class="home-upgrade-banner-text">{{ getUpgradeBannerText(currentUserProfile()) }}</span>
+              </a>
+              <button type="button" (click)="openCreatePromptModal()"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm">
+                <span class="text-sm sm:text-base">＋</span>
+                <span class="hidden min-[375px]:inline">New Prompt</span>
+                <span class="min-[375px]:hidden">New</span>
+              </button>
+              <button *ngIf="isViewingOwnProfile()" type="button" (click)="openCreateCollectionModal()"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-white border-2 border-[#DC2626]/30 px-3 py-2 text-xs font-bold text-[#DC2626] shadow-sm transition-all duration-200 hover:bg-[#DC2626] hover:text-white hover:border-[#DC2626] hover:shadow-md sm:gap-2 sm:px-6 sm:py-2.5 sm:text-sm"
+                [disabled]="availablePromptsForCollection().length === 0">
+                <span class="text-sm sm:text-base">＋</span>
+                <span class="hidden min-[375px]:inline">New Collection</span>
+                <span class="min-[375px]:hidden">Collection</span>
+              </button>
+            </div>
+            <div class="flex justify-end sm:justify-start w-full sm:w-auto">
+              <app-navbar [profile]="currentUserProfile()" />
+            </div>
           </div>
         </div>
       </div>
