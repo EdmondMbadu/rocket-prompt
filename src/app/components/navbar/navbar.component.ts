@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, ViewChild, ElementRef, inject, input, signal, computed, effect } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { ApplicationRef, Component, DestroyRef, HostListener, ViewChild, ElementRef, TemplateRef, EmbeddedViewRef, inject, input, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
@@ -9,6 +9,10 @@ import { OrganizationService } from '../../services/organization.service';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import { getSubscriptionDetails } from '../../utils/subscription.util';
+
+interface MenuTemplateContext {
+  profile: UserProfile | null | undefined;
+}
 
 @Component({
   selector: 'app-navbar',
@@ -22,6 +26,8 @@ export class NavbarComponent {
   private readonly organizationService = inject(OrganizationService);
   readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly appRef = inject(ApplicationRef);
+  private readonly document = inject(DOCUMENT);
 
   // Input: user profile (can be signal or observable)
   readonly profile = input<UserProfile | null | undefined>(null);
@@ -31,6 +37,10 @@ export class NavbarComponent {
   readonly menuTop = signal<number | null>(null);
   readonly menuRight = signal<number | null>(null);
   @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('menuTemplate') menuTemplate?: TemplateRef<MenuTemplateContext>;
+  readonly isMobileMenuPortaled = signal(false);
+  readonly menuInstanceId = `user-menu-${Math.random().toString(36).slice(2, 9)}`;
+  private mobileMenuViewRef?: EmbeddedViewRef<MenuTemplateContext>;
   
   // Organizations
   readonly userOrganizations = signal<Organization[]>([]);
@@ -49,6 +59,17 @@ export class NavbarComponent {
       } else {
         this.userOrganizations.set([]);
       }
+    });
+
+    effect(() => {
+      if (this.mobileMenuViewRef) {
+        this.mobileMenuViewRef.context.profile = this.profile();
+        this.mobileMenuViewRef.detectChanges();
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.detachMobileMenuPortal();
     });
   }
 
@@ -90,23 +111,34 @@ export class NavbarComponent {
   toggleMenu() {
     this.menuOpen.update(open => !open);
     if (!this.menuOpen()) {
+      this.detachMobileMenuPortal();
       return;
     }
     this.updateMenuPosition();
+    this.syncMobileMenuPortal();
   }
 
   closeMenu() {
     this.menuOpen.set(false);
+    this.detachMobileMenuPortal();
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    if (this.menuOpen() && this.avatarButtonRef?.nativeElement) {
-      const target = event.target as Node;
-      const menuElement = document.querySelector('[data-user-menu]');
-      if (menuElement && !menuElement.contains(target)) {
-        this.closeMenu();
-      }
+    if (!this.menuOpen()) {
+      return;
+    }
+
+    const target = event.target as Node;
+    const container = this.document?.querySelector(`[data-user-menu-instance="${this.menuInstanceId}"]`);
+    const panel = this.document?.querySelector(`[data-menu-panel-id="${this.menuInstanceId}"]`);
+    const backdrop = this.document?.querySelector(`[data-menu-backdrop-id="${this.menuInstanceId}"]`);
+    const clickedInsideContainer = !!container && container.contains(target);
+    const clickedInsidePanel = !!panel && panel.contains(target);
+    const clickedBackdrop = !!backdrop && backdrop.contains(target);
+
+    if (!clickedInsideContainer && !clickedInsidePanel && !clickedBackdrop) {
+      this.closeMenu();
     }
   }
 
@@ -115,6 +147,7 @@ export class NavbarComponent {
     if (this.menuOpen()) {
       this.updateMenuPosition();
     }
+    this.syncMobileMenuPortal();
   }
 
   private updateMenuPosition() {
@@ -127,7 +160,7 @@ export class NavbarComponent {
     const isMobile = window.innerWidth < 640;
 
     requestAnimationFrame(() => {
-      const panel = document.querySelector('[data-user-menu] .menu-panel') as HTMLElement | null;
+      const panel = this.document?.querySelector(`[data-menu-panel-id="${this.menuInstanceId}"]`) as HTMLElement | null;
       const panelHeight = panel?.offsetHeight ?? 0;
       const padding = 16;
 
@@ -141,7 +174,55 @@ export class NavbarComponent {
         this.menuTop.set(rect.bottom + 12);
         this.menuRight.set(window.innerWidth - rect.right);
       }
+
+      this.syncMobileMenuPortal();
     });
+  }
+
+  private shouldUseMobilePortal(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  }
+
+  private syncMobileMenuPortal() {
+    if (this.menuOpen() && this.shouldUseMobilePortal()) {
+      this.attachMobileMenuPortal();
+    } else {
+      this.detachMobileMenuPortal();
+    }
+  }
+
+  private attachMobileMenuPortal() {
+    if (!this.menuTemplate || this.mobileMenuViewRef || !this.document?.body) {
+      return;
+    }
+
+    const viewRef = this.menuTemplate.createEmbeddedView({
+      profile: this.profile()
+    });
+    this.appRef.attachView(viewRef);
+    const fragment = this.document.createDocumentFragment();
+    viewRef.rootNodes.forEach(node => fragment.appendChild(node));
+    this.document.body.appendChild(fragment);
+    this.mobileMenuViewRef = viewRef;
+    this.isMobileMenuPortaled.set(true);
+    viewRef.detectChanges();
+  }
+
+  private detachMobileMenuPortal() {
+    if (!this.mobileMenuViewRef) {
+      this.isMobileMenuPortaled.set(false);
+      return;
+    }
+
+    this.mobileMenuViewRef.rootNodes.forEach(node => {
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    });
+    this.appRef.detachView(this.mobileMenuViewRef);
+    this.mobileMenuViewRef.destroy();
+    this.mobileMenuViewRef = undefined;
+    this.isMobileMenuPortaled.set(false);
   }
 
   navigateToOrganization(org: Organization) {

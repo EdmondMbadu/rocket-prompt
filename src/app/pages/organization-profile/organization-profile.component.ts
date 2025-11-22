@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, ViewChild, ElementRef, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, HostListener, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,6 +18,7 @@ import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { PromptFormComponent, type PromptFormData } from '../../components/prompt-form/prompt-form.component';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 interface ChatbotOption {
   readonly id: DirectLaunchTarget;
@@ -29,7 +30,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-organization-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent, PromptFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent, PromptFormComponent, NavbarComponent],
   templateUrl: './organization-profile.component.html',
   styleUrl: './organization-profile.component.css'
 })
@@ -111,12 +112,6 @@ export class OrganizationProfileComponent {
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly showFullDescription = signal(false);
-  
-  // Menu state
-  readonly menuOpen = signal(false);
-  readonly menuTop = signal<number | null>(null);
-  readonly menuRight = signal<number | null>(null);
-  @ViewChild('avatarButton') avatarButtonRef?: ElementRef<HTMLButtonElement>;
   
   // Image upload state
   readonly uploadingLogo = signal(false);
@@ -523,66 +518,6 @@ export class OrganizationProfileComponent {
     document.body.removeChild(textArea);
   }
 
-  // Menu methods
-  toggleMenu() {
-    const isOpening = !this.menuOpen();
-    this.menuOpen.update(open => !open);
-
-    if (isOpening) {
-      setTimeout(() => {
-        this.updateMenuPosition();
-      }, 0);
-    }
-  }
-
-  private updateMenuPosition() {
-    if (!this.avatarButtonRef?.nativeElement) {
-      return;
-    }
-
-    const button = this.avatarButtonRef.nativeElement;
-    const rect = button.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth < 640;
-
-    if (isMobile) {
-      const menuHeight = 250;
-      const spacing = 12;
-      let topPosition = rect.bottom + spacing;
-
-      if (topPosition + menuHeight > viewportHeight - 16) {
-        topPosition = rect.top - menuHeight - spacing;
-        if (topPosition < 16) {
-          topPosition = 16;
-        }
-      }
-
-      this.menuTop.set(Math.max(16, Math.min(topPosition, viewportHeight - menuHeight - 16)));
-      this.menuRight.set(16);
-    } else {
-      this.menuTop.set(rect.bottom + 12);
-      this.menuRight.set(Math.max(16, viewportWidth - rect.right));
-    }
-  }
-
-  closeMenu() {
-    this.menuOpen.set(false);
-  }
-
-  @HostListener('document:click', ['$event'])
-  handleDocumentClick(event: Event) {
-    if (!this.menuOpen()) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-
-    if (!target?.closest('[data-user-menu]')) {
-      this.closeMenu();
-    }
-  }
-
   @HostListener('document:keydown.escape')
   handleEscape() {
     if (this.newPromptModalOpen()) {
@@ -594,35 +529,11 @@ export class OrganizationProfileComponent {
       this.closeCreateCollectionModal();
       return;
     }
-
-    if (this.menuOpen()) {
-      this.closeMenu();
-    }
   }
 
-  async signOut() {
-    if (!this.currentUserProfile()) {
-      await this.router.navigate(['/auth'], {
-        queryParams: { redirectTo: this.router.url }
-      });
-      return;
-    }
-
-    this.closeMenu();
-    await this.authService.signOut();
-    await this.router.navigate(['/']);
-  }
-
-  profileInitials(profile: UserProfile | null | undefined) {
-    if (!profile) {
-      return 'RP';
-    }
-
-    const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() ?? '';
-    const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() ?? '';
-    const initials = `${firstInitial}${lastInitial}`.trim();
-
-    return initials || (profile.email?.charAt(0)?.toUpperCase() ?? 'R');
+  // Legacy no-op to maintain compatibility with layouts that referenced closeMenu()
+  private closeMenu(): void {
+    // Intentionally left blank
   }
 
   // Image upload methods
@@ -712,7 +623,6 @@ export class OrganizationProfileComponent {
 
   // Prompt creation methods
   openCreatePromptModal() {
-    this.closeMenu();
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(null);
@@ -1507,7 +1417,6 @@ export class OrganizationProfileComponent {
       return;
     }
 
-    this.closeMenu();
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
     this.forkingPromptId.set(prompt.id);
@@ -1553,7 +1462,6 @@ export class OrganizationProfileComponent {
       return;
     }
 
-    this.closeMenu();
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
@@ -2335,7 +2243,6 @@ export class OrganizationProfileComponent {
 
   // Collection creation methods
   openCreateCollectionModal() {
-    this.closeMenu();
     this.collectionFormError.set(null);
     this.collectionCustomUrlError.set(null);
     this.clearCollectionCustomUrlDebounce();

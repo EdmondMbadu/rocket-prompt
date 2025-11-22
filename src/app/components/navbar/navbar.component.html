@@ -1,5 +1,5 @@
 <ng-container *ngIf="profile() as userProfile">
-  <div class="relative z-50" data-user-menu>
+  <div class="relative z-50" data-user-menu [attr.data-user-menu-instance]="menuInstanceId">
     <button #avatarButton type="button" class="avatar-button" (click)="toggleMenu()"
       [attr.aria-expanded]="menuOpen()" aria-haspopup="true">
       <span class="sr-only">Open user menu</span>
@@ -19,89 +19,93 @@
       </svg>
     </button>
 
-    <!-- Mobile backdrop overlay -->
-    <div *ngIf="menuOpen()" class="menu-backdrop sm:hidden" (click)="closeMenu()"></div>
-
-    <div *ngIf="menuOpen()" class="menu-panel" role="menu" [style.top.px]="menuTop() ?? undefined"
-      [style.right.px]="menuRight() ?? undefined">
-      <div class="menu-header">
-        <p class="menu-name">{{ userProfile.firstName }} {{ userProfile.lastName }}</p>
-        <p class="menu-email">{{ userProfile.email }}</p>
-        <div *ngIf="subscriptionDetails(userProfile.subscriptionStatus) as tier"
-          class="menu-subscription-badge"
-          [ngClass]="tier.key === 'team'
-            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-            : 'bg-amber-50 text-amber-700 border-amber-200'">
-          {{ tier.label }}
-        </div>
-      </div>
-
-      <!-- Admin Dashboard -->
-      <button *ngIf="userProfile.role === 'admin' || userProfile.admin" type="button"
-        class="menu-item menu-item--admin" role="menuitem" (click)="navigateToAdmin()">
-        <span>Admin Dashboard</span>
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-          <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="none"
-            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </button>
-
-      <!-- Organizations Section -->
-      <ng-container *ngIf="hasOrganizations()">
-        <div class="menu-divider"></div>
-        <div class="menu-section-label">Organizations</div>
-        <ng-container *ngFor="let org of userOrganizations()">
-          <button type="button" class="menu-item menu-item--organization" role="menuitem"
-            (click)="navigateToOrganization(org)">
-            <div class="flex items-center gap-2 flex-1 min-w-0">
-              <div class="flex-shrink-0">
-                <img *ngIf="org.logoUrl" [src]="org.logoUrl" [alt]="org.name"
-                  class="h-6 w-6 rounded-full object-cover" />
-                <div *ngIf="!org.logoUrl"
-                  class="h-6 w-6 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-xs font-bold">
-                  {{ getOrganizationInitials(org) }}
-                </div>
-              </div>
-              <span class="truncate">{{ org.name }}</span>
-            </div>
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 flex-shrink-0" fill="none"
-              stroke="currentColor" stroke-width="1.6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </ng-container>
-        <div class="menu-divider"></div>
-      </ng-container>
-
-      <!-- Profile -->
-      <button type="button" class="menu-item menu-item--profile" role="menuitem"
-        (click)="navigateToProfile()">
-        <span>Profile</span>
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
-          stroke-width="1.6">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      </button>
-
-      <!-- Log out -->
-      <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
-        <span>Log out</span>
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-          <path d="M9 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-2" fill="none"
-            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-            stroke-linejoin="round" />
-          <path d="M6 9l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </button>
-    </div>
+    <ng-container *ngIf="menuOpen() && !isMobileMenuPortaled()">
+      <ng-container *ngTemplateOutlet="menuTemplate; context: { profile: userProfile }"></ng-container>
+    </ng-container>
   </div>
 </ng-container>
 
+<ng-template #menuTemplate let-profile="profile">
+  <!-- Mobile backdrop overlay -->
+  <div class="menu-backdrop sm:hidden" (click)="closeMenu()"
+    [attr.data-menu-backdrop-id]="menuInstanceId"></div>
 
+  <div class="menu-panel" role="menu" [style.top.px]="menuTop() ?? undefined"
+    [style.right.px]="menuRight() ?? undefined" [attr.data-menu-panel-id]="menuInstanceId">
+    <div class="menu-header">
+      <p class="menu-name">{{ profile?.firstName }} {{ profile?.lastName }}</p>
+      <p class="menu-email">{{ profile?.email }}</p>
+      <div *ngIf="subscriptionDetails(profile?.subscriptionStatus) as tier"
+        class="menu-subscription-badge"
+        [ngClass]="tier.key === 'team'
+          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+          : 'bg-amber-50 text-amber-700 border-amber-200'">
+        {{ tier.label }}
+      </div>
+    </div>
 
+    <!-- Admin Dashboard -->
+    <button *ngIf="profile?.role === 'admin' || profile?.admin" type="button"
+      class="menu-item menu-item--admin" role="menuitem" (click)="navigateToAdmin()">
+      <span>Admin Dashboard</span>
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="none"
+          stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <!-- Organizations Section -->
+    <ng-container *ngIf="hasOrganizations()">
+      <div class="menu-divider"></div>
+      <div class="menu-section-label">Organizations</div>
+      <ng-container *ngFor="let org of userOrganizations()">
+        <button type="button" class="menu-item menu-item--organization" role="menuitem"
+          (click)="navigateToOrganization(org)">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div class="flex-shrink-0">
+              <img *ngIf="org.logoUrl" [src]="org.logoUrl" [alt]="org.name"
+                class="h-6 w-6 rounded-full object-cover" />
+              <div *ngIf="!org.logoUrl"
+                class="h-6 w-6 rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] flex items-center justify-center text-white text-xs font-bold">
+                {{ getOrganizationInitials(org) }}
+              </div>
+            </div>
+            <span class="truncate">{{ org.name }}</span>
+          </div>
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 flex-shrink-0" fill="none"
+            stroke="currentColor" stroke-width="1.6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </ng-container>
+      <div class="menu-divider"></div>
+    </ng-container>
+
+    <!-- Profile -->
+    <button type="button" class="menu-item menu-item--profile" role="menuitem"
+      (click)="navigateToProfile()">
+      <span>Profile</span>
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor"
+        stroke-width="1.6">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </button>
+
+    <!-- Log out -->
+    <button type="button" class="menu-item" role="menuitem" (click)="signOut()">
+      <span>Log out</span>
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+        <path d="M9 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-2" fill="none"
+          stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+          stroke-linejoin="round" />
+        <path d="M6 9l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+    </button>
+  </div>
+</ng-template>
 
 
 
