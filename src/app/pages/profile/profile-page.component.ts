@@ -750,6 +750,12 @@ export class ProfilePageComponent {
     });
   }
 
+  copyPromptFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+    this.copyPrompt(prompt);
+  }
+
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       window.open(url, '_blank');

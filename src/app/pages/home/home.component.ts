@@ -486,6 +486,12 @@ export class HomeComponent {
     });
   }
 
+  copyPromptFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+    this.copyPrompt(prompt);
+  }
+
   getPromptUrl(prompt: PromptCard): string {
     const short = prompt.id ? prompt.id.slice(0, 8) : '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';

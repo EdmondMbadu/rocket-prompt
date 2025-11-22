@@ -785,6 +785,19 @@ export class LikedPromptsPageComponent {
       this.fallbackCopyTextToClipboard(url);
     });
   }
+
+  copyPromptFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) return;
+
+    const text = prompt.content;
+
+    navigator.clipboard.writeText(text).then(() => {
+      // Could show a toast message here if needed
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(text);
+    });
+  }
 }
 
 

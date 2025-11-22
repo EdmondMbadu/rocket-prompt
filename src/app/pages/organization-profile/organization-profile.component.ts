@@ -1393,6 +1393,20 @@ export class OrganizationProfileComponent {
     });
   }
 
+  copyPromptFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) return;
+
+    const text = prompt.content;
+
+    navigator.clipboard.writeText(text).then(() => {
+      this.showCopyMessage('Prompt copied!');
+    }).catch(() => {
+      this.fallbackCopyTextToClipboard(text);
+      this.showCopyMessage('Prompt copied!');
+    });
+  }
+
   copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
     const prompt = this.sharePrompt();
     if (!prompt) return;

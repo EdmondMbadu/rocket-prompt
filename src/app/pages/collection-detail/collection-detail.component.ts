@@ -1758,5 +1758,11 @@ export class CollectionDetailComponent {
       this.showCopyMessage('Prompt URL copied!');
     });
   }
+
+  copyPromptFromShare() {
+    const prompt = this.sharePrompt();
+    if (!prompt) return;
+    this.copyPrompt(prompt);
+  }
 }
 
