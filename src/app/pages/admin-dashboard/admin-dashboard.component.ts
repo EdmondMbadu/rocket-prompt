@@ -99,6 +99,7 @@ export class AdminDashboardComponent {
     });
     readonly bulkUploadResults = signal<BulkUploadResult[]>([]);
     readonly isProcessingBulkUploadWithThumbnail = signal(false);
+    readonly bulkUploadCompleted = signal(false);
 
     // Metrics for all prompts
     readonly totalLaunches = computed(() => {
@@ -910,6 +911,7 @@ export class AdminDashboardComponent {
             currentTitle: '' 
         });
         this.promptsError.set(null);
+        this.bulkUploadCompleted.set(false);
     }
 
     closeBulkUploadModal() {
@@ -935,6 +937,11 @@ export class AdminDashboardComponent {
     }
 
     async startBulkUploadWithModal(): Promise<void> {
+        // Prevent double upload
+        if (this.bulkUploadCompleted()) {
+            return;
+        }
+
         const file = this.selectedCsvFile();
         const autoThumbnail = this.bulkUploadAutoThumbnail();
 
@@ -988,6 +995,9 @@ export class AdminDashboardComponent {
                 // Use the existing local processing for non-thumbnail uploads
                 await this.processBulkUploadLocally(headers, dataRows, user.uid);
             }
+            // Mark as completed and clear file to prevent double upload
+            this.bulkUploadCompleted.set(true);
+            this.selectedCsvFile.set(null);
         } catch (error) {
             console.error('Failed to process CSV', error);
             this.promptsError.set(error instanceof Error ? error.message : 'Failed to process CSV file.');
