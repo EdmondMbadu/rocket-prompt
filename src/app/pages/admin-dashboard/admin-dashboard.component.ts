@@ -1214,5 +1214,9 @@ export class AdminDashboardComponent {
                 `Errors: ${errors.slice(0, 5).join('; ')}${errors.length > 5 ? ` (and ${errors.length - 5} more)` : ''}`
             );
         }
+
+        // Mark as completed for local upload too
+        this.bulkUploadCompleted.set(true);
+        this.selectedCsvFile.set(null);
     }
 }

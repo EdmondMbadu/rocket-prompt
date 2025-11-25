@@ -820,13 +820,13 @@
 
   <!-- Bulk Upload Modal -->
   <div *ngIf="isBulkUploadModalOpen()"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
     (click)="closeBulkUploadModal()">
-    <div class="relative w-full max-w-2xl mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+    <div class="relative w-full max-w-2xl my-auto bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]"
       (click)="$event.stopPropagation()">
       
       <!-- Modal Header -->
-      <div class="px-8 py-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+      <div class="px-8 py-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-2xl font-bold text-slate-900">Bulk Upload Prompts</h2>
@@ -842,8 +842,8 @@
         </div>
       </div>
 
-      <!-- Modal Body -->
-      <div class="px-8 py-6 space-y-6">
+      <!-- Modal Body (scrollable) -->
+      <div class="px-8 py-6 space-y-6 overflow-y-auto flex-1">
         
         <!-- Auto Thumbnail Toggle -->
         <div class="rounded-2xl border-2 border-dashed p-6 transition-all"
@@ -993,7 +993,7 @@
 
       <!-- Success Message -->
       <div *ngIf="bulkUploadCompleted() && !isProcessingBulkUploadWithThumbnail()" 
-        class="px-8 py-6 bg-green-50 border-t border-green-200">
+        class="px-8 py-6 bg-green-50 border-t border-green-200 flex-shrink-0">
         <div class="flex items-center gap-3">
           <div class="flex-shrink-0">
             <svg viewBox="0 0 24 24" class="h-10 w-10 text-green-500" fill="none" stroke="currentColor" stroke-width="2">
@@ -1011,7 +1011,7 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+      <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
         <button type="button" (click)="closeBulkUploadModal()"
           [disabled]="isProcessingBulkUploadWithThumbnail()"
           class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
