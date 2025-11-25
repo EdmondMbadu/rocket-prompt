@@ -97,6 +97,8 @@ export class CollectionDetailComponent {
   readonly brandingSectionExpanded = signal(false);
   readonly sharePrompt = signal<PromptCard | null>(null);
   readonly shareModalOpen = signal(false);
+  readonly editCollectionDefaultAi = signal<DirectLaunchTarget | null>(null);
+  private collectionDefaultAiApplied = false;
   
   readonly brandSubtextWordCount = computed(() => {
     const text = this.editBrandSubtext().trim();
@@ -522,6 +524,12 @@ export class CollectionDetailComponent {
             this.collection.set(collection);
             this.collectionTagLabel.set(this.formatTagLabel(collection.tag ?? 'general'));
             void this.updateBookmarkedState(collection.id);
+            
+            // Apply collection's default AI if set (only on first load or collection change)
+            if (collection.defaultAi && !this.collectionDefaultAiApplied) {
+              this.defaultChatbot.set(collection.defaultAi);
+              this.collectionDefaultAiApplied = true;
+            }
             
             // Check organization membership if collection belongs to an organization
             if (collection.organizationId) {
@@ -1205,6 +1213,7 @@ export class CollectionDetailComponent {
     this.editCollectionBlurb.set(collection?.blurb ?? '');
     this.editBrandLink.set(collection?.brandLink ?? '');
     this.editBrandSubtext.set(collection?.brandSubtext ?? '');
+    this.editCollectionDefaultAi.set(collection?.defaultAi ?? null);
     this.brandingSectionExpanded.set(false);
     this.editCustomUrlError.set(null);
     this.brandLogoUploadError.set(null);
@@ -1227,6 +1236,7 @@ export class CollectionDetailComponent {
     this.editCollectionBlurb.set('');
     this.editBrandLink.set('');
     this.editBrandSubtext.set('');
+    this.editCollectionDefaultAi.set(null);
     this.editCustomUrlError.set(null);
     this.brandLogoUploadError.set(null);
     this.clearCustomUrlDebounce();
@@ -1568,13 +1578,15 @@ export class CollectionDetailComponent {
     this.updateCollectionError.set(null);
 
     try {
+      const defaultAi = this.editCollectionDefaultAi();
       const updateData: any = {
         name,
         tag,
         customUrl: customUrl || undefined,
         blurb: blurb || undefined,
         brandLink: brandLink || '',
-        brandSubtext: brandSubtext || ''
+        brandSubtext: brandSubtext || '',
+        defaultAi: defaultAi || null
       };
 
       await this.collectionService.updateCollection(
@@ -1591,8 +1603,14 @@ export class CollectionDetailComponent {
         customUrl: customUrl || undefined,
         blurb: blurb || undefined,
         brandLink: brandLink || undefined,
-        brandSubtext: brandSubtext || undefined
+        brandSubtext: brandSubtext || undefined,
+        defaultAi: defaultAi || undefined
       });
+      
+      // Also update the current default chatbot if it was changed
+      if (defaultAi) {
+        this.defaultChatbot.set(defaultAi);
+      }
       
       // Reload collection to get updated data
       // The observable will automatically update

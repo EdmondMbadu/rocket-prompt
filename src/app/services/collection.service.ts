@@ -8,6 +8,7 @@ import type {
   PromptCollection,
   UpdateCollectionInput
 } from '../models/collection.model';
+import type { DirectLaunchTarget } from '../models/user-profile.model';
 import { OrganizationService } from './organization.service';
 
 @Injectable({
@@ -230,6 +231,10 @@ export class CollectionService {
       payload['brandSubtext'] = brandSubtext;
     }
 
+    if (input.defaultAi) {
+      payload['defaultAi'] = input.defaultAi;
+    }
+
     const docRef = await firestoreModule.addDoc(
       firestoreModule.collection(firestore, 'collections'),
       payload
@@ -381,6 +386,17 @@ export class CollectionService {
       }
     }
 
+    // Handle defaultAi - can be a valid target, null to clear, or undefined to skip
+    if (input.defaultAi !== undefined) {
+      if (input.defaultAi === null) {
+        // Clear the defaultAi
+        updatePayload['defaultAi'] = firestoreModule.deleteField();
+      } else {
+        // Set the defaultAi
+        updatePayload['defaultAi'] = input.defaultAi;
+      }
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -478,6 +494,13 @@ export class CollectionService {
     const brandLogoUrlValue = data['brandLogoUrl'];
     const brandLinkValue = data['brandLink'];
     const brandSubtextValue = data['brandSubtext'];
+    const defaultAiValue = data['defaultAi'];
+
+    // Validate defaultAi value
+    const validAiOptions: DirectLaunchTarget[] = ['chatgpt', 'gemini', 'claude', 'grok'];
+    const defaultAi = typeof defaultAiValue === 'string' && validAiOptions.includes(defaultAiValue as DirectLaunchTarget)
+      ? (defaultAiValue as DirectLaunchTarget)
+      : undefined;
 
     return {
       id,
@@ -497,7 +520,8 @@ export class CollectionService {
       blurb: typeof blurbValue === 'string' ? blurbValue : undefined,
       brandLogoUrl: typeof brandLogoUrlValue === 'string' ? brandLogoUrlValue : undefined,
       brandLink: typeof brandLinkValue === 'string' ? brandLinkValue : undefined,
-      brandSubtext: typeof brandSubtextValue === 'string' ? brandSubtextValue : undefined
+      brandSubtext: typeof brandSubtextValue === 'string' ? brandSubtextValue : undefined,
+      defaultAi
     };
   }
 

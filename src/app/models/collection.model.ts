@@ -1,3 +1,5 @@
+import type { DirectLaunchTarget } from './user-profile.model';
+
 export interface PromptCollection {
   readonly id: string;
   readonly name: string;
@@ -15,6 +17,7 @@ export interface PromptCollection {
   readonly brandLogoUrl?: string;
   readonly brandLink?: string;
   readonly brandSubtext?: string;
+  readonly defaultAi?: DirectLaunchTarget;
 }
 
 export interface CreateCollectionInput {
@@ -27,6 +30,7 @@ export interface CreateCollectionInput {
   readonly brandLink?: string;
   readonly brandSubtext?: string;
   readonly organizationId?: string;
+  readonly defaultAi?: DirectLaunchTarget;
 }
 
 export interface UpdateCollectionInput {
@@ -39,5 +43,6 @@ export interface UpdateCollectionInput {
   readonly brandLogoUrl?: string;
   readonly brandLink?: string;
   readonly brandSubtext?: string;
+  readonly defaultAi?: DirectLaunchTarget | null;
 }
 

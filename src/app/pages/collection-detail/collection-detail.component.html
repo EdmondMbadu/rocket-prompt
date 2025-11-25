@@ -413,7 +413,13 @@
               <p class="text-sm font-extrabold text-slate-900 sm:text-base">
                 Default chatbot: <span class="text-[#DC2626]">{{ getDefaultChatbotLabel() }}</span>
               </p>
-              <p class="text-xs text-slate-500 sm:text-sm">Choose where the rocket button launches prompts.</p>
+              <p *ngIf="collection()?.defaultAi" class="text-xs text-purple-600 font-semibold sm:text-sm">
+                <svg class="inline h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Set by collection author
+              </p>
+              <p *ngIf="!collection()?.defaultAi" class="text-xs text-slate-500 sm:text-sm">Choose where the rocket button launches prompts.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" *ngFor="let bot of chatbotOptions"
@@ -918,6 +924,35 @@
               <p class="mt-1 text-xs text-slate-500">
                 Help others understand what this collection contains.
               </p>
+            </div>
+
+            <!-- Default AI Selection -->
+            <div class="border-t-2 border-[#DC2626]/20 pt-5 mt-5">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Default AI for this Collection</label>
+              <p class="text-xs text-slate-500 mb-3">
+                Set the default AI that will be used when visitors launch prompts from this collection. This overrides their personal default setting.
+              </p>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button"
+                  class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm"
+                  [ngClass]="editCollectionDefaultAi() === null
+                      ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
+                      : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
+                  (click)="editCollectionDefaultAi.set(null)" [disabled]="isUpdatingCollection()">
+                  <span>No default (use visitor's preference)</span>
+                </button>
+                <button type="button" *ngFor="let bot of chatbotOptions"
+                  class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm"
+                  [ngClass]="editCollectionDefaultAi() === bot.id
+                      ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
+                      : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
+                  (click)="editCollectionDefaultAi.set(bot.id)" [disabled]="isUpdatingCollection()">
+                  <span class="chatbot-option__icon-wrapper">
+                    <img [src]="bot.icon" [alt]="bot.label + ' logo'" class="chatbot-option__icon" />
+                  </span>
+                  <span>{{ bot.label }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </ng-container>
