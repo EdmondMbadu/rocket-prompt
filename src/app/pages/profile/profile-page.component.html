@@ -342,36 +342,61 @@
     <section class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 w-full">
       <!-- Prompts Search -->
       <div *ngIf="activeTab() === 'prompts'">
-        <!-- Desktop search -->
-        <div class="hidden sm:block">
-          <label
-            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-            <svg aria-hidden="true" viewBox="0 0 24 24"
-              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
-              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        <!-- Search and Bulk Delete row -->
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+          <!-- Desktop search -->
+          <div class="hidden sm:block flex-1">
+            <label
+              class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+              <svg aria-hidden="true" viewBox="0 0 24 24"
+                class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <input type="search"
+                class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+                placeholder="Search your prompts..." [value]="searchTerm()"
+                (input)="onSearch(($any($event.target)).value)" />
+            </label>
+          </div>
+
+          <!-- Mobile search -->
+          <div class="block sm:hidden flex-1">
+            <label
+              class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
+              <svg aria-hidden="true" viewBox="0 0 24 24"
+                class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
+                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <input type="search"
+                class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+                placeholder="Search your prompts..." [value]="searchTerm()"
+                (input)="onSearch(($any($event.target)).value)" />
+            </label>
+          </div>
+
+          <!-- Bulk Delete Button (only for own profile when there are prompts) -->
+          <button *ngIf="isViewingOwnProfile() && filteredPrompts().length > 0" 
+            type="button" 
+            (click)="toggleBulkDeleteMode()"
+            class="bulk-delete-toggle-btn"
+            [class.bulk-delete-toggle-btn--active]="bulkDeleteMode()">
+            <svg *ngIf="!bulkDeleteMode()" aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            <input type="search"
-              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
-              placeholder="Search your prompts..." [value]="searchTerm()"
-              (input)="onSearch(($any($event.target)).value)" />
-          </label>
+            <svg *ngIf="bulkDeleteMode()" aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span class="hidden sm:inline">{{ bulkDeleteMode() ? 'Cancel' : 'Bulk Delete' }}</span>
+            <span class="sm:hidden">{{ bulkDeleteMode() ? '✕' : 'Bulk' }}</span>
+          </button>
         </div>
 
-        <!-- Mobile search -->
-        <div class="block sm:hidden">
-          <label
-            class="group relative flex w-full items-center rounded-2xl bg-white border-2 border-black/10 shadow-md hover:border-[#DC2626]/30 transition-all duration-200">
-            <svg aria-hidden="true" viewBox="0 0 24 24"
-              class="mx-4 h-5 w-5 text-slate-400 group-focus-within:text-[#DC2626] transition-colors">
-              <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <input type="search"
-              class="w-full rounded-2xl bg-white py-3.5 pr-4 text-[15px] font-medium text-black placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
-              placeholder="Search your prompts..." [value]="searchTerm()"
-              (input)="onSearch(($any($event.target)).value)" />
-          </label>
+        <!-- Bulk Delete Error -->
+        <div *ngIf="bulkDeleteError()"
+          class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+          {{ bulkDeleteError() }}
         </div>
       </div>
 
@@ -502,32 +527,122 @@
           <ng-container *ngIf="filteredPrompts().length > 0; else showEmptyState">
             <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 w-full">
 
-              <app-prompt-card
-                *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
-                [prompt]="prompt"
-                [authorProfile]="getAuthorProfile(prompt.authorId)"
-                [organizationProfile]="getOrganization(prompt.organizationId!)"
-                [isUrlCopied]="recentlyCopiedUrl().has(prompt.id)"
-                [showEditActions]="true"
-                [isDeleting]="deletingPromptId() === prompt.id"
-                [isSaving]="isSavingPrompt()"
-                [currentUserExists]="(currentUser$ | async) !== null"
-                [defaultChatbotLabel]="getDefaultChatbotLabel()"
-                [promptUrl]="getPromptUrl(prompt)"
-                [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
-                [originalPromptUrl]="getOriginalPromptUrl(prompt)"
-                [canEdit]="canEditPrompt(prompt)"
-                (launchPrompt)="launchPrompt($event)"
-                (sharePrompt)="openShareModal($event)"
-                (forkPrompt)="openForkPromptModal($event)"
-                (openPrompt)="openPrompt($event)"
-                (editPrompt)="openEditPromptModal($event)"
-                (deletePrompt)="onDeletePrompt($event)"
-                (copyPromptUrl)="copyPromptUrl($event)"
-                (navigateToAuthor)="navigateToAuthorProfile($event.authorId, $event.event)"
-                (navigateToOrganization)="navigateToOrganization($event.organizationId, $event.event)"
-                (navigateToOriginalPrompt)="navigateToOriginalPrompt($event.prompt, $event.event)">
-              </app-prompt-card>
+              <!-- Normal mode: just render prompt cards -->
+              <ng-container *ngIf="!bulkDeleteMode()">
+                <app-prompt-card
+                  *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+                  [prompt]="prompt"
+                  [authorProfile]="getAuthorProfile(prompt.authorId)"
+                  [organizationProfile]="getOrganization(prompt.organizationId!)"
+                  [isUrlCopied]="recentlyCopiedUrl().has(prompt.id)"
+                  [showEditActions]="true"
+                  [isDeleting]="deletingPromptId() === prompt.id"
+                  [isSaving]="isSavingPrompt()"
+                  [currentUserExists]="(currentUser$ | async) !== null"
+                  [defaultChatbotLabel]="getDefaultChatbotLabel()"
+                  [promptUrl]="getPromptUrl(prompt)"
+                  [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
+                  [originalPromptUrl]="getOriginalPromptUrl(prompt)"
+                  [canEdit]="canEditPrompt(prompt)"
+                  (launchPrompt)="launchPrompt($event)"
+                  (sharePrompt)="openShareModal($event)"
+                  (forkPrompt)="openForkPromptModal($event)"
+                  (openPrompt)="openPrompt($event)"
+                  (editPrompt)="openEditPromptModal($event)"
+                  (deletePrompt)="onDeletePrompt($event)"
+                  (copyPromptUrl)="copyPromptUrl($event)"
+                  (navigateToAuthor)="navigateToAuthorProfile($event.authorId, $event.event)"
+                  (navigateToOrganization)="navigateToOrganization($event.organizationId, $event.event)"
+                  (navigateToOriginalPrompt)="navigateToOriginalPrompt($event.prompt, $event.event)">
+                </app-prompt-card>
+              </ng-container>
+
+              <!-- Bulk delete mode: wrap cards with selection overlay -->
+              <ng-container *ngIf="bulkDeleteMode()">
+                <div 
+                  *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptById"
+                  class="bulk-delete-card-wrapper"
+                  [class.bulk-delete-card-wrapper--selected]="isPromptSelectedForDeletion(prompt.id)"
+                  (click)="togglePromptSelection(prompt.id)">
+                  
+                  <!-- Selection checkbox overlay -->
+                  <div class="bulk-delete-checkbox-overlay">
+                    <div class="bulk-delete-checkbox" [class.bulk-delete-checkbox--checked]="isPromptSelectedForDeletion(prompt.id)">
+                      <svg *ngIf="isPromptSelectedForDeletion(prompt.id)" aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white" fill="none" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Prompt card (non-interactive in bulk delete mode) -->
+                  <div class="pointer-events-none">
+                    <app-prompt-card
+                      [prompt]="prompt"
+                      [authorProfile]="getAuthorProfile(prompt.authorId)"
+                      [organizationProfile]="getOrganization(prompt.organizationId!)"
+                      [isUrlCopied]="false"
+                      [showEditActions]="false"
+                      [isDeleting]="false"
+                      [isSaving]="false"
+                      [currentUserExists]="(currentUser$ | async) !== null"
+                      [defaultChatbotLabel]="getDefaultChatbotLabel()"
+                      [promptUrl]="getPromptUrl(prompt)"
+                      [promptDisplayUrl]="getPromptDisplayUrl(prompt)"
+                      [originalPromptUrl]="getOriginalPromptUrl(prompt)"
+                      [canEdit]="false">
+                    </app-prompt-card>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+
+            <!-- Bulk Delete Floating Action Bar -->
+            <div *ngIf="bulkDeleteMode()" class="bulk-delete-action-bar">
+              <div class="bulk-delete-action-bar-inner">
+                <div class="bulk-delete-action-bar-info">
+                  <span class="bulk-delete-count">{{ selectedPromptCount() }}</span>
+                  <span class="bulk-delete-label">{{ selectedPromptCount() === 1 ? 'prompt selected' : 'prompts selected' }}</span>
+                </div>
+                
+                <div class="bulk-delete-action-buttons">
+                  <button type="button" 
+                    class="bulk-delete-action-btn bulk-delete-action-btn--select-all"
+                    (click)="selectAllVisiblePrompts()"
+                    [disabled]="isBulkDeleting()">
+                    Select All
+                  </button>
+                  <button type="button" 
+                    class="bulk-delete-action-btn bulk-delete-action-btn--deselect"
+                    (click)="deselectAllPrompts()"
+                    [disabled]="isBulkDeleting() || selectedPromptCount() === 0">
+                    Deselect All
+                  </button>
+                  <button type="button" 
+                    class="bulk-delete-action-btn bulk-delete-action-btn--delete"
+                    (click)="bulkDeleteSelectedPrompts()"
+                    [disabled]="isBulkDeleting() || selectedPromptCount() === 0">
+                    <ng-container *ngIf="isBulkDeleting(); else deleteLabel">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin mr-2">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+                        <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                      </svg>
+                      Deleting...
+                    </ng-container>
+                    <ng-template #deleteLabel>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Selected
+                    </ng-template>
+                  </button>
+                  <button type="button" 
+                    class="bulk-delete-action-btn bulk-delete-action-btn--cancel"
+                    (click)="cancelBulkDelete()"
+                    [disabled]="isBulkDeleting()">
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </ng-container>
         </ng-template>

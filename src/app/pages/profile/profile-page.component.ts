@@ -98,6 +98,13 @@ export class ProfilePageComponent {
   readonly promptFormError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
+  
+  // Bulk delete state
+  readonly bulkDeleteMode = signal(false);
+  readonly selectedForDeletion = signal<Set<string>>(new Set());
+  readonly isBulkDeleting = signal(false);
+  readonly bulkDeleteError = signal<string | null>(null);
+  
   readonly createPromptMode = signal<'single' | 'bulk'>('single');
   readonly showBulkUploadTab = computed(() => !this.isEditingPrompt() && !this.forkingPromptId());
   readonly bulkUploadInstructionsUrl = BULK_UPLOAD_INSTRUCTIONS_URL;
@@ -1457,6 +1464,129 @@ export class ProfilePageComponent {
     } finally {
       this.deletingPromptId.set(null);
     }
+  }
+
+  // Bulk Delete Methods
+  toggleBulkDeleteMode() {
+    if (this.bulkDeleteMode()) {
+      // Exiting bulk delete mode - clear selections
+      this.bulkDeleteMode.set(false);
+      this.selectedForDeletion.set(new Set());
+      this.bulkDeleteError.set(null);
+    } else {
+      // Entering bulk delete mode
+      this.bulkDeleteMode.set(true);
+      this.bulkDeleteError.set(null);
+    }
+  }
+
+  togglePromptSelection(promptId: string) {
+    if (!this.bulkDeleteMode()) return;
+
+    this.selectedForDeletion.update(prev => {
+      const next = new Set(prev);
+      if (next.has(promptId)) {
+        next.delete(promptId);
+      } else {
+        next.add(promptId);
+      }
+      return next;
+    });
+  }
+
+  isPromptSelectedForDeletion(promptId: string): boolean {
+    return this.selectedForDeletion().has(promptId);
+  }
+
+  selectAllVisiblePrompts() {
+    const visiblePromptIds = this.filteredPrompts().map(p => p.id);
+    this.selectedForDeletion.set(new Set(visiblePromptIds));
+  }
+
+  deselectAllPrompts() {
+    this.selectedForDeletion.set(new Set());
+  }
+
+  selectedPromptCount(): number {
+    return this.selectedForDeletion().size;
+  }
+
+  async bulkDeleteSelectedPrompts() {
+    const selectedIds = Array.from(this.selectedForDeletion());
+    
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.bulkDeleteError.set('You must be signed in to delete prompts.');
+      return;
+    }
+
+    // Verify all selected prompts belong to the current user
+    const userPrompts = this.prompts().filter(p => p.authorId === currentUser.uid);
+    const userPromptIds = new Set(userPrompts.map(p => p.id));
+    const invalidIds = selectedIds.filter(id => !userPromptIds.has(id));
+
+    if (invalidIds.length > 0) {
+      this.bulkDeleteError.set('You can only delete prompts you have created.');
+      return;
+    }
+
+    const confirmMessage = selectedIds.length === 1
+      ? 'Delete 1 prompt? This action cannot be undone.'
+      : `Delete ${selectedIds.length} prompts? This action cannot be undone.`;
+
+    const confirmed = window.confirm(confirmMessage);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.isBulkDeleting.set(true);
+    this.bulkDeleteError.set(null);
+
+    try {
+      // Delete prompts one by one to check ownership (the service method already validates)
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
+
+      for (const promptId of selectedIds) {
+        try {
+          await this.promptService.deletePrompt(promptId, currentUser.uid);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(message);
+        }
+      }
+
+      if (failCount > 0) {
+        this.bulkDeleteError.set(
+          `Deleted ${successCount} prompt(s). Failed to delete ${failCount} prompt(s): ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`
+        );
+      }
+
+      // Clear selections and exit bulk delete mode
+      this.selectedForDeletion.set(new Set());
+      this.bulkDeleteMode.set(false);
+    } catch (error) {
+      console.error('Failed to bulk delete prompts', error);
+      this.bulkDeleteError.set(
+        error instanceof Error ? error.message : 'Could not delete the prompts. Please try again.'
+      );
+    } finally {
+      this.isBulkDeleting.set(false);
+    }
+  }
+
+  cancelBulkDelete() {
+    this.bulkDeleteMode.set(false);
+    this.selectedForDeletion.set(new Set());
+    this.bulkDeleteError.set(null);
   }
 
   closeCreatePromptModal() {
