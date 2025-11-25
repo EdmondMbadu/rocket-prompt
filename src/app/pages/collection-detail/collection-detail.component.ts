@@ -802,6 +802,7 @@ export class CollectionDetailComponent {
       authorId: prompt.authorId,
       title: prompt.title,
       content: prompt.content,
+      imageUrl: prompt.imageUrl,
       preview: this.buildPreview(prompt.content),
       tag,
       tagLabel: this.formatTagLabel(tag),
