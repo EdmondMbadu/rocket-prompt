@@ -120,6 +120,7 @@ export class ProfilePageComponent {
   readonly collectionCustomUrlError = signal<string | null>(null);
   readonly isCheckingCollectionCustomUrl = signal(false);
   readonly promptSearchTermForCollection = signal('');
+  readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
   private collectionCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -1160,6 +1161,7 @@ export class ProfilePageComponent {
     this.collectionCustomUrlError.set(null);
     this.clearCollectionCustomUrlDebounce();
     this.promptSearchTermForCollection.set('');
+    this.collectionDefaultAi.set(null);
     this.newCollectionModalOpen.set(true);
   }
 
@@ -1174,6 +1176,7 @@ export class ProfilePageComponent {
     this.clearCollectionCustomUrlDebounce();
     this.collectionForm.markAsPristine();
     this.collectionForm.markAsUntouched();
+    this.collectionDefaultAi.set(null);
   }
 
   togglePromptSelectionForCollection(promptId: string) {
@@ -1193,6 +1196,18 @@ export class ProfilePageComponent {
 
   isPromptSelectedForCollection(promptId: string): boolean {
     return this.collectionForm.controls.promptIds.value.includes(promptId);
+  }
+
+  setCollectionDefaultAi(option: DirectLaunchTarget | null) {
+    this.collectionDefaultAi.set(option);
+  }
+
+  getCollectionDefaultAiLabel(): string {
+    const ai = this.collectionDefaultAi();
+    if (!ai) {
+      return 'None (use user preference)';
+    }
+    return this.chatbotOptions.find(option => option.id === ai)?.label ?? 'None';
   }
 
   onCollectionCustomUrlInput(value: string) {
@@ -1274,7 +1289,8 @@ export class ProfilePageComponent {
         tag,
         promptIds,
         customUrl: customUrl?.trim() || undefined,
-        blurb: blurb?.trim() || undefined
+        blurb: blurb?.trim() || undefined,
+        defaultAi: this.collectionDefaultAi() || undefined
       }, authorId);
 
       this.newCollectionModalOpen.set(false);
@@ -1289,6 +1305,7 @@ export class ProfilePageComponent {
       this.collectionForm.markAsUntouched();
       this.collectionCustomUrlError.set(null);
       this.clearCollectionCustomUrlDebounce();
+      this.collectionDefaultAi.set(null);
     } catch (error) {
       console.error('Failed to create collection', error);
       this.collectionFormError.set(

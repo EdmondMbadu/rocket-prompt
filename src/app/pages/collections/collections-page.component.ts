@@ -11,7 +11,7 @@ import { PromptService } from '../../services/prompt.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import type { PromptCollection } from '../../models/collection.model';
 import type { Prompt } from '../../models/prompt.model';
-import type { UserProfile } from '../../models/user-profile.model';
+import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
 
 interface CollectionCard {
     readonly id: string;
@@ -92,6 +92,13 @@ export class CollectionsPageComponent {
     readonly clientId = signal('');
     readonly bookmarkedCollections = signal<Set<string>>(new Set());
     readonly bookmarkingCollections = signal<Set<string>>(new Set());
+    readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
+    readonly chatbotOptions: readonly { id: DirectLaunchTarget; label: string; icon: string }[] = [
+        { id: 'chatgpt', label: 'ChatGPT', icon: 'assets/gpt.png' },
+        { id: 'gemini', label: 'Gemini', icon: 'assets/gemini.png' },
+        { id: 'claude', label: 'Claude', icon: 'assets/claude.jpeg' },
+        { id: 'grok', label: 'Grok', icon: 'assets/grok.jpg' }
+    ];
 
     readonly actorId = computed(() => {
         const user = this.authService.currentUser;
@@ -232,6 +239,7 @@ export class CollectionsPageComponent {
         this.brandLogoUploadError.set(null);
         this.brandLogoFile = null;
         this.promptSearchTerm.set(''); // Reset prompt search when opening modal
+        this.collectionDefaultAi.set(null);
         this.newCollectionModalOpen.set(true);
     }
 
@@ -246,6 +254,7 @@ export class CollectionsPageComponent {
         this.brandLogoUploadError.set(null);
         this.brandLogoFile = null;
         this.brandingSectionExpanded.set(false);
+        this.collectionDefaultAi.set(null);
         this.collectionForm.markAsPristine();
         this.collectionForm.markAsUntouched();
     }
@@ -267,6 +276,18 @@ export class CollectionsPageComponent {
 
     isPromptSelected(promptId: string) {
         return this.collectionForm.controls.promptIds.value.includes(promptId);
+    }
+
+    setCollectionDefaultAi(option: DirectLaunchTarget | null) {
+        this.collectionDefaultAi.set(option);
+    }
+
+    getCollectionDefaultAiLabel(): string {
+        const ai = this.collectionDefaultAi();
+        if (!ai) {
+            return 'None (use user preference)';
+        }
+        return this.chatbotOptions.find(option => option.id === ai)?.label ?? 'None';
     }
 
     readonly brandSubtextWordCount = computed(() => {
@@ -306,7 +327,8 @@ export class CollectionsPageComponent {
                 customUrl: customUrl?.trim() || undefined,
                 blurb: blurb?.trim() || undefined,
                 brandLink: brandLink?.trim() || undefined,
-                brandSubtext: brandSubtext?.trim() || undefined
+                brandSubtext: brandSubtext?.trim() || undefined,
+                defaultAi: this.collectionDefaultAi() || undefined
             }, authorId);
 
             // Upload brand logo if file was selected
@@ -337,6 +359,7 @@ export class CollectionsPageComponent {
             this.brandLogoUrl.set(null);
             this.brandLogoUploadError.set(null);
             this.brandLogoFile = null;
+            this.collectionDefaultAi.set(null);
             this.clearCustomUrlDebounce();
         } catch (error) {
             console.error('Failed to create collection', error);
