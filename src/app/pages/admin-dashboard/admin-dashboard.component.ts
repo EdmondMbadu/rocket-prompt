@@ -13,6 +13,25 @@ import type { UserProfile } from '../../models/user-profile.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { HomeContent } from '../../models/home-content.model';
 import type { User } from 'firebase/auth';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getApp } from 'firebase/app';
+
+interface BulkUploadResult {
+    promptId: string;
+    title: string;
+    imageUrl?: string;
+    error?: string;
+}
+
+interface BulkUploadResponse {
+    batchId: string;
+    results: BulkUploadResult[];
+    summary: {
+        total: number;
+        success: number;
+        failed: number;
+    };
+}
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -66,6 +85,20 @@ export class AdminDashboardComponent {
     readonly isSavingHomeContent = signal(false);
     readonly homeContentError = signal<string | null>(null);
     readonly homeContentSuccess = signal<string | null>(null);
+
+    // Bulk upload modal
+    readonly isBulkUploadModalOpen = signal(false);
+    readonly bulkUploadAutoThumbnail = signal(false);
+    readonly selectedCsvFile = signal<File | null>(null);
+    readonly bulkUploadWithThumbnailProgress = signal({ 
+        processed: 0, 
+        total: 0, 
+        success: 0, 
+        failed: 0,
+        currentTitle: '' 
+    });
+    readonly bulkUploadResults = signal<BulkUploadResult[]>([]);
+    readonly isProcessingBulkUploadWithThumbnail = signal(false);
 
     // Metrics for all prompts
     readonly totalLaunches = computed(() => {
@@ -860,6 +893,314 @@ export class AdminDashboardComponent {
             );
         } finally {
             this.isSavingHomeContent.set(false);
+        }
+    }
+
+    // Bulk upload modal methods
+    openBulkUploadModal() {
+        this.isBulkUploadModalOpen.set(true);
+        this.bulkUploadAutoThumbnail.set(false);
+        this.selectedCsvFile.set(null);
+        this.bulkUploadResults.set([]);
+        this.bulkUploadWithThumbnailProgress.set({ 
+            processed: 0, 
+            total: 0, 
+            success: 0, 
+            failed: 0,
+            currentTitle: '' 
+        });
+        this.promptsError.set(null);
+    }
+
+    closeBulkUploadModal() {
+        if (this.isProcessingBulkUploadWithThumbnail()) {
+            return; // Don't close while processing
+        }
+        this.isBulkUploadModalOpen.set(false);
+        this.selectedCsvFile.set(null);
+        this.bulkUploadResults.set([]);
+    }
+
+    onCsvFileSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        
+        if (file) {
+            this.selectedCsvFile.set(file);
+        }
+    }
+
+    toggleAutoThumbnail() {
+        this.bulkUploadAutoThumbnail.set(!this.bulkUploadAutoThumbnail());
+    }
+
+    async startBulkUploadWithModal(): Promise<void> {
+        const file = this.selectedCsvFile();
+        const autoThumbnail = this.bulkUploadAutoThumbnail();
+
+        if (!file) {
+            this.promptsError.set('Please select a CSV file.');
+            return;
+        }
+
+        // Get current user
+        const user = await new Promise<User | null>((resolve) => {
+            const sub = this.currentUser$.subscribe(u => {
+                resolve(u);
+                sub.unsubscribe();
+            });
+        });
+
+        if (!user) {
+            this.promptsError.set('You must be logged in to upload prompts.');
+            return;
+        }
+
+        this.isProcessingBulkUploadWithThumbnail.set(true);
+        this.promptsError.set(null);
+        this.bulkUploadResults.set([]);
+        this.bulkUploadWithThumbnailProgress.set({ processed: 0, total: 0, success: 0, failed: 0, currentTitle: '' });
+
+        try {
+            const text = await file.text();
+            const rows = this.parseCSV(text);
+
+            if (rows.length === 0) {
+                throw new Error('CSV file is empty or invalid.');
+            }
+
+            // Validate header row
+            const headers = rows[0];
+            const requiredHeaders = ['title', 'content', 'tag'];
+            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h.toLowerCase()));
+
+            if (missingHeaders.length > 0) {
+                throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`);
+            }
+
+            // Process data rows (skip header)
+            const dataRows = rows.slice(1);
+
+            if (autoThumbnail) {
+                // Use the Cloud Function for bulk upload with thumbnails
+                await this.processBulkUploadWithCloudFunction(headers, dataRows, user.uid);
+            } else {
+                // Use the existing local processing for non-thumbnail uploads
+                await this.processBulkUploadLocally(headers, dataRows, user.uid);
+            }
+        } catch (error) {
+            console.error('Failed to process CSV', error);
+            this.promptsError.set(error instanceof Error ? error.message : 'Failed to process CSV file.');
+        } finally {
+            this.isProcessingBulkUploadWithThumbnail.set(false);
+        }
+    }
+
+    private async processBulkUploadWithCloudFunction(
+        headers: string[], 
+        dataRows: string[][], 
+        _userId: string
+    ): Promise<void> {
+        const prompts: Array<{
+            title: string;
+            content: string;
+            tag: string;
+            customUrl?: string;
+            views?: number;
+            likes?: number;
+            launchGpt?: number;
+            launchGemini?: number;
+            launchClaude?: number;
+            copied?: number;
+            isInvisible?: boolean;
+        }> = [];
+
+        // Parse all rows into prompt objects
+        for (const row of dataRows) {
+            const rowData: Record<string, string> = {};
+            headers.forEach((header, index) => {
+                rowData[header.toLowerCase()] = row[index]?.trim() || '';
+            });
+
+            const title = rowData['title'];
+            const content = rowData['content'];
+            const tag = rowData['tag'];
+
+            if (!title || !content || !tag) {
+                continue; // Skip invalid rows
+            }
+
+            prompts.push({
+                title,
+                content,
+                tag,
+                customUrl: rowData['customurl'] || rowData['custom_url'] || undefined,
+                views: this.parseNumber(rowData['views'], 0),
+                likes: this.parseNumber(rowData['likes'], 0),
+                launchGpt: this.parseNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0),
+                launchGemini: this.parseNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0),
+                launchClaude: this.parseNumber(rowData['launchclaude'] || rowData['launch_claude'], 0),
+                copied: this.parseNumber(rowData['copied'], 0),
+                isInvisible: this.parseBoolean(rowData['isinvisible'] || rowData['is_invisible'], false)
+            });
+        }
+
+        if (prompts.length === 0) {
+            throw new Error('No valid prompts found in CSV file.');
+        }
+
+        this.bulkUploadWithThumbnailProgress.set({
+            processed: 0,
+            total: prompts.length,
+            success: 0,
+            failed: 0,
+            currentTitle: 'Starting upload...'
+        });
+
+        // Call the Cloud Function
+        const functions = getFunctions(getApp(), 'us-central1');
+        const bulkCreateFn = httpsCallable<
+            { prompts: typeof prompts; autoThumbnail: boolean },
+            BulkUploadResponse
+        >(functions, 'bulkCreatePromptsWithThumbnails');
+
+        try {
+            this.bulkUploadWithThumbnailProgress.set({
+                processed: 0,
+                total: prompts.length,
+                success: 0,
+                failed: 0,
+                currentTitle: 'Processing with AI image generation...'
+            });
+
+            const result = await bulkCreateFn({ 
+                prompts, 
+                autoThumbnail: this.bulkUploadAutoThumbnail() 
+            });
+
+            const response = result.data;
+
+            this.bulkUploadResults.set(response.results);
+            this.bulkUploadWithThumbnailProgress.set({
+                processed: response.summary.total,
+                total: response.summary.total,
+                success: response.summary.success,
+                failed: response.summary.failed,
+                currentTitle: 'Complete!'
+            });
+
+            if (response.summary.failed > 0) {
+                const errors = response.results.filter(r => r.error);
+                this.promptsError.set(
+                    `Upload completed with ${response.summary.failed} error(s). ` +
+                    `${response.summary.success} prompt(s) created successfully.`
+                );
+            }
+        } catch (error) {
+            console.error('Cloud function error:', error);
+            throw new Error(
+                error instanceof Error 
+                    ? error.message 
+                    : 'Failed to process bulk upload with thumbnails.'
+            );
+        }
+    }
+
+    private async processBulkUploadLocally(
+        headers: string[], 
+        dataRows: string[][], 
+        userId: string
+    ): Promise<void> {
+        this.bulkUploadWithThumbnailProgress.set({ 
+            processed: 0, 
+            total: dataRows.length, 
+            success: 0, 
+            failed: 0,
+            currentTitle: '' 
+        });
+
+        let successCount = 0;
+        let failedCount = 0;
+        const results: BulkUploadResult[] = [];
+        const errors: string[] = [];
+
+        for (let i = 0; i < dataRows.length; i++) {
+            const row = dataRows[i];
+            const rowData: Record<string, string> = {};
+
+            headers.forEach((header, index) => {
+                rowData[header.toLowerCase()] = row[index]?.trim() || '';
+            });
+
+            const title = rowData['title'];
+
+            try {
+                const content = rowData['content'];
+                const tag = rowData['tag'];
+                const customUrl = rowData['customurl'] || rowData['custom_url'] || '';
+                const views = this.parseNumber(rowData['views'], 0);
+                const likes = this.parseNumber(rowData['likes'], 0);
+                const launchGpt = this.parseNumber(rowData['launchgpt'] || rowData['launch_gpt'], 0);
+                const launchGemini = this.parseNumber(rowData['launchgemini'] || rowData['launch_gemini'], 0);
+                const launchClaude = this.parseNumber(rowData['launchclaude'] || rowData['launch_claude'], 0);
+                const copied = this.parseNumber(rowData['copied'], 0);
+                const isInvisible = this.parseBoolean(rowData['isinvisible'] || rowData['is_invisible'], false);
+
+                if (!title || !content || !tag) {
+                    throw new Error(`Row ${i + 2}: Missing required fields (title, content, or tag)`);
+                }
+
+                this.bulkUploadWithThumbnailProgress.set({
+                    processed: i,
+                    total: dataRows.length,
+                    success: successCount,
+                    failed: failedCount,
+                    currentTitle: title
+                });
+
+                const promptId = await this.promptService.createPrompt({
+                    authorId: userId,
+                    title,
+                    content,
+                    tag,
+                    customUrl: customUrl || undefined,
+                    views,
+                    likes,
+                    launchGpt,
+                    launchGemini,
+                    launchClaude,
+                    copied
+                });
+
+                if (isInvisible) {
+                    await this.promptService.bulkToggleVisibility([promptId], true);
+                }
+
+                results.push({ promptId, title });
+                successCount++;
+            } catch (error) {
+                failedCount++;
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                errors.push(`Row ${i + 2}: ${errorMsg}`);
+                results.push({ promptId: '', title: title || 'Unknown', error: errorMsg });
+            }
+
+            this.bulkUploadWithThumbnailProgress.set({
+                processed: i + 1,
+                total: dataRows.length,
+                success: successCount,
+                failed: failedCount,
+                currentTitle: i + 1 === dataRows.length ? 'Complete!' : title
+            });
+        }
+
+        this.bulkUploadResults.set(results);
+
+        if (failedCount > 0) {
+            this.promptsError.set(
+                `Upload completed with ${failedCount} error(s). ${successCount} prompt(s) created successfully. ` +
+                `Errors: ${errors.slice(0, 5).join('; ')}${errors.length > 5 ? ` (and ${errors.length - 5} more)` : ''}`
+            );
         }
     }
 }
