@@ -914,13 +914,16 @@ export class AdminDashboardComponent {
         this.bulkUploadCompleted.set(false);
     }
 
-    closeBulkUploadModal() {
-        if (this.isProcessingBulkUploadWithThumbnail()) {
-            return; // Don't close while processing
+    closeBulkUploadModal(force: boolean = false) {
+        // Allow closing during processing if force is true (background processing)
+        if (this.isProcessingBulkUploadWithThumbnail() && !force) {
+            return;
         }
         this.isBulkUploadModalOpen.set(false);
-        this.selectedCsvFile.set(null);
-        this.bulkUploadResults.set([]);
+        if (!this.isProcessingBulkUploadWithThumbnail()) {
+            this.selectedCsvFile.set(null);
+            this.bulkUploadResults.set([]);
+        }
     }
 
     onCsvFileSelected(event: Event) {
