@@ -305,15 +305,27 @@ interface BulkUploadResult {
 }
 
 /**
+ * Sleep utility for rate limiting
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
  * Generates an image using Google's Vertex AI Imagen API based on the prompt content
  * and uploads it to Firebase Storage.
  * Uses the Firebase service account for authentication (OAuth2).
+ * Includes retry logic with exponential backoff for rate limiting.
  */
 async function generateThumbnailImage(
   promptText: string,
   promptId: string,
-  batchId: string
+  batchId: string,
+  retryCount: number = 0
 ): Promise<string | null> {
+  const MAX_RETRIES = 3;
+  const BASE_DELAY_MS = 5000; // 5 seconds base delay for rate limit recovery
+
   try {
     // Initialize Vertex AI with project credentials (uses default service account)
     const vertexAI = new VertexAI({
@@ -400,10 +412,23 @@ Concept: "${promptText.substring(0, 400)}"`;
     functions.logger.info(`Generated thumbnail for prompt ${promptId}: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check if it's a rate limit error (429)
+    if (errorMessage.includes("429") && retryCount < MAX_RETRIES) {
+      const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
+      functions.logger.warn(`Rate limited, retrying in ${delayMs}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`, {
+        promptId,
+      });
+      await sleep(delayMs);
+      return generateThumbnailImage(promptText, promptId, batchId, retryCount + 1);
+    }
+
     functions.logger.error("Failed to generate thumbnail image", {
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
       promptId,
       batchId,
+      retryCount,
     });
     return null;
   }
@@ -521,6 +546,8 @@ export const bulkCreatePromptsWithThumbnails = functions
             // Update the prompt with the image URL
             await docRef.update({ imageUrl });
           }
+          // Add delay between image generations to avoid rate limiting
+          await sleep(5000); // 5 second delay between each generation
         }
 
         results.push({
