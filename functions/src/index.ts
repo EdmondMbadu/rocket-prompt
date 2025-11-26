@@ -10,7 +10,7 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleAuth } from "google-auth-library";
 
 admin.initializeApp();
 
@@ -312,9 +312,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Generates an image using Google's Vertex AI Imagen API based on the prompt content
+ * Generates an image using Google's Vertex AI Imagen 4 API based on the prompt content
  * and uploads it to Firebase Storage.
- * Uses the Firebase service account for authentication (OAuth2).
+ * Uses Imagen 4 - Google's best and most stable image generation model.
  * Includes retry logic with exponential backoff for rate limiting.
  */
 async function generateThumbnailImage(
@@ -324,63 +324,70 @@ async function generateThumbnailImage(
   retryCount: number = 0
 ): Promise<string | null> {
   const MAX_RETRIES = 3;
-  const BASE_DELAY_MS = 5000; // 5 seconds base delay for rate limit recovery
+  const BASE_DELAY_MS = 3000; // 3 seconds base delay - Imagen 4 has better rate limits
 
   try {
-    // Initialize Vertex AI with project credentials (uses default service account)
-    const vertexAI = new VertexAI({
-      project: PROJECT_ID,
-      location: LOCATION,
+    // Get access token using Google Auth
+    const auth = new GoogleAuth({
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
 
-    // Use Gemini 2.0 Flash with image generation capability
-    const generativeModel = vertexAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        maxOutputTokens: 8192,
-        temperature: 1,
-        topP: 0.95,
-        // @ts-expect-error - responseModalities is valid but not in types yet
-        responseModalities: ["TEXT", "IMAGE"],
-      },
-    });
-
-    // Create a simplified prompt for thumbnail generation
-    const imagePrompt = `Generate a visually appealing, artistic thumbnail image for the following AI prompt concept. 
-The image should be modern, vibrant, and represent the theme described. 
-Make it suitable as a card thumbnail - visually striking and memorable.
-Do NOT include any text in the image.
-Concept: "${promptText.substring(0, 400)}"`;
-
-    const result = await generativeModel.generateContent({
-      contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
-    });
-
-    const response = result.response;
-
-    // Extract the image from the response
-    let imageData: string | null = null;
-    let mimeType = "image/png";
-
-    if (response.candidates && response.candidates.length > 0) {
-      const candidate = response.candidates[0];
-      if (candidate.content && candidate.content.parts) {
-        for (const part of candidate.content.parts) {
-          // Check if this part contains inline image data
-          if (part.inlineData && part.inlineData.data) {
-            imageData = part.inlineData.data;
-            mimeType = part.inlineData.mimeType || "image/png";
-            break;
-          }
-        }
-      }
+    if (!accessToken.token) {
+      throw new Error("Failed to get access token");
     }
 
+    // Create a simplified prompt for thumbnail generation
+    const imagePrompt = `A visually appealing, artistic thumbnail image representing: ${promptText.substring(0, 400)}. Modern, vibrant, visually striking, no text in image.`;
+
+    // Call Imagen 4 API
+    const endpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-4.0-generate-001:predict`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        instances: [
+          {
+            prompt: imagePrompt,
+          },
+        ],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: "1:1",
+          outputOptions: {
+            mimeType: "image/png",
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Imagen API error ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json() as {
+      predictions?: Array<{
+        bytesBase64Encoded?: string;
+        mimeType?: string;
+      }>;
+    };
+
+    // Extract the image from the response
+    const prediction = result.predictions?.[0];
+    const imageData = prediction?.bytesBase64Encoded;
+    const mimeType = prediction?.mimeType || "image/png";
+
     if (!imageData) {
-      functions.logger.warn("No image data returned from Vertex AI", {
+      functions.logger.warn("No image data returned from Imagen 4", {
         promptId,
-        hasResponse: !!response,
-        candidateCount: response.candidates?.length || 0,
+        hasResponse: !!result,
+        predictionCount: result.predictions?.length || 0,
       });
       return null;
     }
@@ -413,9 +420,9 @@ Concept: "${promptText.substring(0, 400)}"`;
     return publicUrl;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    // Check if it's a rate limit error (429)
-    if (errorMessage.includes("429") && retryCount < MAX_RETRIES) {
+
+    // Check if it's a rate limit error (429) or quota error
+    if ((errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) && retryCount < MAX_RETRIES) {
       const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
       functions.logger.warn(`Rate limited, retrying in ${delayMs}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`, {
         promptId,
@@ -547,7 +554,8 @@ export const bulkCreatePromptsWithThumbnails = functions
             await docRef.update({ imageUrl });
           }
           // Add delay between image generations to avoid rate limiting
-          await sleep(5000); // 5 second delay between each generation
+          // Imagen 4 has better rate limits, 5 second delay should be sufficient
+          await sleep(5000);
         }
 
         results.push({
