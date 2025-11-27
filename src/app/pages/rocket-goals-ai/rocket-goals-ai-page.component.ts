@@ -20,6 +20,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   readonly messages = this.aiService.messages;
   readonly isLoading = this.aiService.isLoading;
   readonly error = this.aiService.error;
+  readonly copiedMessageId = signal<number | null>(null);
   
   private shouldScrollToBottom = false;
 
@@ -76,6 +77,101 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       .replace(/^- (.+)$/gm, '<li>$1</li>')
       // Line breaks
       .replace(/\n/g, '<br>');
+  }
+
+  async copyMessage(message: ChatMessage): Promise<void> {
+    try {
+      // Get plain text content (strip HTML tags for copying)
+      const textContent = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      
+      await navigator.clipboard.writeText(textContent);
+      
+      // Show feedback
+      const messageId = message.timestamp.getTime();
+      this.copiedMessageId.set(messageId);
+      
+      // Reset feedback after 2 seconds
+      setTimeout(() => {
+        this.copiedMessageId.set(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        const messageId = message.timestamp.getTime();
+        this.copiedMessageId.set(messageId);
+        setTimeout(() => {
+          this.copiedMessageId.set(null);
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+
+  async copyConversation(): Promise<void> {
+    const messages = this.messages();
+    if (messages.length === 0) return;
+
+    try {
+      // Format conversation as a readable text
+      const conversationText = messages.map(msg => {
+        const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
+        const content = msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        return `${role}: ${content}`;
+      }).join('\n\n');
+
+      await navigator.clipboard.writeText(conversationText);
+      
+      // Show feedback
+      this.copiedMessageId.set(-1); // Use -1 as special ID for conversation copy
+      
+      // Reset feedback after 2 seconds
+      setTimeout(() => {
+        this.copiedMessageId.set(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy conversation:', error);
+      // Fallback for older browsers
+      const conversationText = messages.map(msg => {
+        const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
+        const content = msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        return `${role}: ${content}`;
+      }).join('\n\n');
+      
+      const textArea = document.createElement('textarea');
+      textArea.value = conversationText;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.copiedMessageId.set(-1);
+        setTimeout(() => {
+          this.copiedMessageId.set(null);
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+
+  isConversationCopied(): boolean {
+    return this.copiedMessageId() === -1;
+  }
+
+  isCopied(message: ChatMessage): boolean {
+    return this.copiedMessageId() === message.timestamp.getTime();
   }
 
   trackByTimestamp(_index: number, message: ChatMessage): number {

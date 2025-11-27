@@ -14,6 +14,39 @@
     </div>
     <div class="flex items-center gap-3">
       <button
+        *ngIf="messages().length > 0"
+        type="button"
+        class="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900"
+        [class.text-red-600]="isConversationCopied()"
+        [class.bg-red-50]="isConversationCopied()"
+        [class.border-red-200]="isConversationCopied()"
+        (click)="copyConversation()"
+        [attr.aria-label]="isConversationCopied() ? 'Conversation copied!' : 'Copy conversation'"
+        title="Copy entire conversation"
+      >
+        <svg 
+          *ngIf="!isConversationCopied()"
+          viewBox="0 0 24 24" 
+          class="h-4 w-4" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+        </svg>
+        <svg 
+          *ngIf="isConversationCopied()"
+          viewBox="0 0 24 24" 
+          class="h-4 w-4" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+        {{ isConversationCopied() ? 'Copied!' : 'Copy Conversation' }}
+      </button>
+      <button
         type="button"
         class="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900"
         (click)="clearChat()"
@@ -111,21 +144,85 @@
             class="message-bubble"
           >
             <!-- User Message -->
-            <div *ngIf="message.role === 'user'" class="flex justify-end">
-              <div class="max-w-[80%] rounded-2xl rounded-br-md bg-neutral-900 px-5 py-4 text-white shadow-sm">
+            <div *ngIf="message.role === 'user'" class="flex justify-end group">
+              <div class="relative max-w-[80%] rounded-2xl rounded-br-md bg-neutral-900 px-5 py-4 text-white shadow-sm">
                 <p class="text-[15px] leading-relaxed">{{ message.content }}</p>
+                <!-- Copy Button -->
+                <button
+                  type="button"
+                  class="absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-md ring-1 ring-black/5 opacity-0 transition-opacity hover:bg-neutral-50 hover:text-red-600 group-hover:opacity-100"
+                  [class.opacity-100]="isCopied(message)"
+                  [class.text-red-600]="isCopied(message)"
+                  [class.bg-red-50]="isCopied(message)"
+                  (click)="copyMessage(message)"
+                  [attr.aria-label]="isCopied(message) ? 'Copied!' : 'Copy message'"
+                  title="Copy message"
+                >
+                  <svg 
+                    *ngIf="!isCopied(message)"
+                    viewBox="0 0 24 24" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                  </svg>
+                  <svg 
+                    *ngIf="isCopied(message)"
+                    viewBox="0 0 24 24" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </button>
               </div>
             </div>
 
             <!-- AI Message -->
-            <div *ngIf="message.role === 'model'" class="flex gap-4">
+            <div *ngIf="message.role === 'model'" class="flex gap-4 group">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900">
                 <svg viewBox="0 0 24 24" class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58" />
                 </svg>
               </div>
-              <div class="max-w-[85%] rounded-2xl rounded-tl-md bg-white px-5 py-4 shadow-sm ring-1 ring-black/5">
+              <div class="relative max-w-[85%] rounded-2xl rounded-tl-md bg-white px-5 py-4 shadow-sm ring-1 ring-black/5">
                 <div class="prose prose-neutral prose-sm max-w-none text-[15px] leading-relaxed" [innerHTML]="formatMessage(message.content)"></div>
+                <!-- Copy Button -->
+                <button
+                  type="button"
+                  class="absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-md ring-1 ring-black/5 opacity-0 transition-opacity hover:bg-neutral-50 hover:text-red-600 group-hover:opacity-100"
+                  [class.opacity-100]="isCopied(message)"
+                  [class.text-red-600]="isCopied(message)"
+                  [class.bg-red-50]="isCopied(message)"
+                  (click)="copyMessage(message)"
+                  [attr.aria-label]="isCopied(message) ? 'Copied!' : 'Copy message'"
+                  title="Copy message"
+                >
+                  <svg 
+                    *ngIf="!isCopied(message)"
+                    viewBox="0 0 24 24" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                  </svg>
+                  <svg 
+                    *ngIf="isCopied(message)"
+                    viewBox="0 0 24 24" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
