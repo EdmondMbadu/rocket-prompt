@@ -21,6 +21,7 @@ export class RocketGoalsAIComponent implements AfterViewChecked {
   readonly messages = this.aiService.messages;
   readonly isLoading = this.aiService.isLoading;
   readonly error = this.aiService.error;
+  readonly copiedMessageId = signal<number | null>(null);
   
   private shouldScrollToBottom = false;
 
@@ -84,6 +85,48 @@ export class RocketGoalsAIComponent implements AfterViewChecked {
 
   trackByTimestamp(_index: number, message: ChatMessage): number {
     return message.timestamp.getTime();
+  }
+
+  async copyMessage(message: ChatMessage): Promise<void> {
+    try {
+      // Get plain text content (strip HTML tags for copying)
+      const textContent = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      
+      await navigator.clipboard.writeText(textContent);
+      
+      // Show feedback
+      const messageId = message.timestamp.getTime();
+      this.copiedMessageId.set(messageId);
+      
+      // Reset feedback after 2 seconds
+      setTimeout(() => {
+        this.copiedMessageId.set(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        const messageId = message.timestamp.getTime();
+        this.copiedMessageId.set(messageId);
+        setTimeout(() => {
+          this.copiedMessageId.set(null);
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+
+  isCopied(message: ChatMessage): boolean {
+    return this.copiedMessageId() === message.timestamp.getTime();
   }
 
   private scrollToBottom(): void {

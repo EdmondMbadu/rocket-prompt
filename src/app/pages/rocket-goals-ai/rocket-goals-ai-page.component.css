@@ -84,3 +84,37 @@ textarea:focus-visible {
   outline: none;
 }
 
+/* Copy button tooltip */
+.copy-tooltip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 8px);
+  transform: translateY(-50%) translateX(4px);
+  background-color: #1f2937;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  z-index: 10;
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-left-color: #1f2937;
+}
+
+.copy-button:hover .copy-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
