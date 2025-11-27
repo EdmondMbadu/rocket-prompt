@@ -19,7 +19,7 @@
       (click)="closeMobileMenu()"
     ></button>
 
-    <div class="absolute left-0 top-0 h-full w-64 max-w-[80vw] bg-white shadow-xl">
+    <div class="absolute left-0 top-0 flex h-full w-64 max-w-[80vw] flex-col bg-white shadow-xl">
       <header class="flex items-center justify-between border-b border-slate-200 px-4 py-4">
         <span class="text-base font-semibold text-slate-900">Menu</span>
         <button
@@ -34,7 +34,7 @@
         </button>
       </header>
 
-      <nav class="space-y-1 px-3 py-4">
+      <nav class="flex-1 space-y-1 px-3 py-4">
         <a
           *ngFor="let item of navItems"
           [routerLink]="item.route"
@@ -43,7 +43,13 @@
           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
           (click)="closeMobileMenu()"
         >
-          <span class="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+          <span 
+            class="flex h-9 w-9 items-center justify-center rounded-md" 
+            [class.bg-neutral-900]="item.icon === 'ai'"
+            [class.text-red-500]="item.icon === 'ai'"
+            [class.bg-slate-100]="item.icon !== 'ai'"
+            [class.text-slate-600]="item.icon !== 'ai'"
+          >
             <ng-container [ngSwitch]="item.icon">
               <svg
                 *ngSwitchCase="'home'"
@@ -55,6 +61,16 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+              </svg>
+              <svg
+                *ngSwitchCase="'ai'"
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
               </svg>
               <svg
                 *ngSwitchCase="'collections'"
@@ -122,6 +138,7 @@
           <span>{{ item.label }}</span>
         </a>
       </nav>
+
     </div>
   </div>
 </ng-container>
@@ -157,7 +174,7 @@
     </header>
 
     <nav
-      class="flex flex-col gap-1 transition-all duration-200"
+      class="flex flex-1 flex-col gap-1 transition-all duration-200"
       [class.items-center]="collapsed()"
       [class.w-full]="!collapsed()"
     >
@@ -173,9 +190,13 @@
         [attr.aria-label]="collapsed() ? item.label : null"
       >
         <span
-          class="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition-all duration-200"
+          class="flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200"
           [class.h-10]="collapsed()"
           [class.w-10]="collapsed()"
+          [class.bg-neutral-900]="item.icon === 'ai'"
+          [class.text-red-500]="item.icon === 'ai'"
+          [class.bg-slate-100]="item.icon !== 'ai'"
+          [class.text-slate-600]="item.icon !== 'ai'"
         >
           <ng-container [ngSwitch]="item.icon">
             <svg
@@ -188,6 +209,16 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+            </svg>
+            <svg
+              *ngSwitchCase="'ai'"
+              viewBox="0 0 24 24"
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
             </svg>
             <svg
               *ngSwitchCase="'collections'"
@@ -257,4 +288,3 @@
     </nav>
   </div>
 </aside>
-

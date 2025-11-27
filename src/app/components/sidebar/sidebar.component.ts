@@ -38,6 +38,11 @@ export class SidebarComponent {
       exact: true
     },
     {
+      label: 'RocketGoals AI',
+      icon: 'ai',
+      route: '/ai'
+    },
+    {
       label: 'Collections',
       icon: 'collections',
       route: '/collections'

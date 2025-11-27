@@ -11,6 +11,8 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { GoogleAuth } from "google-auth-library";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+// Note: @google-cloud/vertexai is still installed for future use but not imported here
 
 admin.initializeApp();
 
@@ -677,4 +679,170 @@ export const generatePromptThumbnail = functions
       promptId,
       imageUrl,
     };
+  });
+
+// ============================================================================
+// RocketGoals AI - Gemini Powered Chatbot
+// ============================================================================
+
+// Get Gemini API key from environment or Firebase config
+const geminiApiKey =
+  process.env.GEMINI_API_KEY ||
+  functions.config().gemini?.api_key;
+
+interface ChatMessage {
+  role: "user" | "model";
+  content: string;
+}
+
+interface RocketGoalsAIRequest {
+  message: string;
+  conversationHistory?: ChatMessage[];
+}
+
+const SYSTEM_PROMPT = `You are RocketGoals AI, a friendly and knowledgeable assistant for RocketPrompt - a platform that helps users discover, create, and share powerful AI prompts.
+
+Your role is to:
+- Answer questions about using AI prompts effectively
+- Help users craft better prompts for various AI models (GPT, Gemini, Claude, etc.)
+- Provide tips on prompt engineering and best practices
+- Answer general questions in a helpful, concise manner
+- Be encouraging and supportive
+
+Guidelines:
+- Keep responses clear and concise
+- Use markdown formatting when helpful
+- Be friendly and approachable
+- If you don't know something, say so honestly
+- Focus on being practical and actionable`;
+
+/**
+ * RocketGoals AI - A Gemini powered chatbot for answering questions.
+ * Uses Google's Generative AI SDK with the latest Gemini model.
+ */
+export const rocketGoalsAI = functions
+  .region("us-central1")
+  .runWith({
+    timeoutSeconds: 120,
+    memory: "512MB",
+    secrets: ["GEMINI_API_KEY"],
+  })
+  .https.onCall(async (data: RocketGoalsAIRequest, context) => {
+    // Verify authentication
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "You must be signed in to use RocketGoals AI."
+      );
+    }
+
+    if (!geminiApiKey) {
+      functions.logger.error("Gemini API key not configured");
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "AI service is not configured. Please contact support."
+      );
+    }
+
+    const userMessage = data?.message?.trim();
+
+    if (!userMessage) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "A message is required."
+      );
+    }
+
+    if (userMessage.length > 10000) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Message is too long. Maximum 10,000 characters."
+      );
+    }
+
+    try {
+      // Initialize Google Generative AI with API key
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
+
+      // Use gemini-2.0-flash - the latest and fastest model available
+      // Falls back to gemini-1.5-flash if 2.0 isn't available
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.7,
+          topP: 0.9,
+        },
+        systemInstruction: SYSTEM_PROMPT,
+      });
+
+      // Build conversation history for context
+      const conversationHistory = data.conversationHistory ?? [];
+      const contents = conversationHistory.map((msg) => ({
+        role: msg.role,
+        parts: [{ text: msg.content }],
+      }));
+
+      // Add the current user message
+      contents.push({
+        role: "user",
+        parts: [{ text: userMessage }],
+      });
+
+      // Generate response using Gemini
+      const result = await model.generateContent({
+        contents,
+      });
+
+      const response = result.response;
+      const textResponse = response.text();
+
+      if (!textResponse) {
+        throw new Error("No response generated from Gemini");
+      }
+
+      functions.logger.info("RocketGoals AI response generated", {
+        userId: context.auth.uid,
+        messageLength: userMessage.length,
+        responseLength: textResponse.length,
+      });
+
+      return {
+        response: textResponse,
+        model: "gemini-2.0-flash",
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      functions.logger.error("RocketGoals AI error", {
+        error: errorMessage,
+        userId: context.auth.uid,
+      });
+
+      // Check for specific error types
+      if (errorMessage.includes("API_KEY") || errorMessage.includes("API key")) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "AI service configuration error. Please contact support."
+        );
+      }
+
+      if (errorMessage.includes("not found") || errorMessage.includes("404")) {
+        throw new functions.https.HttpsError(
+          "unavailable",
+          "The AI model is temporarily unavailable. Please try again later."
+        );
+      }
+
+      if (errorMessage.includes("quota") || errorMessage.includes("429")) {
+        throw new functions.https.HttpsError(
+          "resource-exhausted",
+          "AI request limit reached. Please try again in a moment."
+        );
+      }
+
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to generate AI response. Please try again."
+      );
+    }
   });

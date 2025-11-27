@@ -102,6 +102,12 @@ export const routes: Routes = [
       import('./pages/organizations/organizations-page.component').then(m => m.OrganizationsPageComponent)
   },
   {
+    path: 'ai',
+    canActivate: [verifiedUserGuard],
+    loadComponent: () =>
+      import('./pages/rocket-goals-ai/rocket-goals-ai-page.component').then(m => m.RocketGoalsAIPageComponent)
+  },
+  {
     path: 'organization/:username',
     loadComponent: () =>
       import('./pages/organization-profile/organization-profile.component').then(m => m.OrganizationProfileComponent)
