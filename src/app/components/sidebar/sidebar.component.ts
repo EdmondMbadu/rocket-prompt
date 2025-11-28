@@ -38,7 +38,7 @@ export class SidebarComponent {
       exact: true
     },
     {
-      label: 'RocketGoals AI',
+      label: 'Rocket AI',
       icon: 'ai',
       route: '/ai'
     },

@@ -208,7 +208,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
     try {
       // Format conversation as a readable text
       const conversationText = messages.map(msg => {
-        const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
+        const role = msg.role === 'user' ? 'You' : 'Rocket AI';
         const content = msg.type === 'image'
           ? (msg.imageUrl ?? '')
           : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
@@ -228,7 +228,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       console.error('Failed to copy conversation:', error);
       // Fallback for older browsers
       const conversationText = messages.map(msg => {
-        const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
+        const role = msg.role === 'user' ? 'You' : 'Rocket AI';
         const content = msg.type === 'image'
           ? (msg.imageUrl ?? '')
           : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
