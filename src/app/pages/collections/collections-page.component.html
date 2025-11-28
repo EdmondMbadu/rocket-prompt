@@ -191,358 +191,48 @@
       </ng-template>
     </main>
 
-    <div *ngIf="newCollectionModalOpen()" class="modal-overlay" (click)="closeCreateCollectionModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <button type="button" class="modal-close" aria-label="Close" (click)="closeCreateCollectionModal()"
-          [disabled]="isSavingCollection()">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-            <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
-        </button>
-
-        <header class="pr-10">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#DC2626] to-[#EF4444] shadow-lg">
-              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-white">
-                <rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M8 5v-1.5A1.5 1.5 0 0 1 9.5 2h5A1.5 1.5 0 0 1 16 3.5V5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M8 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M8 15h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-[#DC2626]">Create</p>
-              <h2 class="mt-1 text-2xl font-bold text-slate-900">New Collection</h2>
-            </div>
-          </div>
-          <p class="text-sm text-slate-600 leading-relaxed">Group your favorite prompts into a reusable set.</p>
-        </header>
-
-        <form class="mt-6 space-y-5" [formGroup]="collectionForm" (ngSubmit)="submitCollectionForm()">
-          <div class="grid gap-5 md:grid-cols-2">
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-name">Collection name</label>
-              <input id="collection-name" type="text" formControlName="name"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-                placeholder="e.g. Launch Campaign Toolkit" />
-              <p *ngIf="collectionForm.controls.name.invalid && collectionForm.controls.name.touched"
-                class="mt-2 text-xs text-red-600 font-medium">
-                A collection name with at least 3 characters is required.
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-tag">Collection tag</label>
-              <input id="collection-tag" type="text" formControlName="tag"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-                placeholder="e.g. marketing" />
-              <p *ngIf="collectionForm.controls.tag.invalid && collectionForm.controls.tag.touched"
-                class="mt-2 text-xs text-red-600 font-medium">
-                Add a tag so the collection can be grouped.
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-custom-url">Custom URL (optional)</label>
-            <input id="collection-custom-url" type="text" formControlName="customUrl"
-              class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md"
-              [class.border-red-300]="customUrlError()"
-              [class.border-slate-300]="!customUrlError()"
-              [class.focus:border-[#DC2626]]="!customUrlError()"
-              placeholder="e.g. my-awesome-collection"
-              (input)="onCustomUrlInput(($any($event.target)).value)" />
-            <p *ngIf="customUrlError()" class="mt-1 text-xs text-red-600">
-              {{ customUrlError() }}
-            </p>
-            <p *ngIf="!customUrlError() && !isCheckingCustomUrl() && collectionForm.controls.customUrl.value" class="mt-1 text-xs text-slate-500">
-              Your collection will be available at: rocketprompt.io/collection/{{ collectionForm.controls.customUrl.value }}
-            </p>
-            <p *ngIf="isCheckingCustomUrl()" class="mt-1 text-xs text-slate-500">
-              Checking availability...
-            </p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-blurb">Description (optional)</label>
-            <textarea id="collection-blurb" formControlName="blurb" rows="4"
-              class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:shadow-md resize-none"
-              placeholder="Add a brief description of what this collection is about..."></textarea>
-            <p class="mt-1 text-xs text-slate-500">
-              Help others understand what this collection contains.
-            </p>
-          </div>
-
-          <!-- Default AI Selection -->
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Default AI for Collection (optional)</label>
-            <p class="text-xs text-slate-500 mb-3">Set a default AI that will be used when visitors launch prompts from this collection. Leave empty to use the visitor's personal preference.</p>
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button"
-                class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm"
-                [ngClass]="collectionDefaultAi() === null
-                    ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
-                    : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
-                (click)="setCollectionDefaultAi(null)">
-                None
-              </button>
-              <button type="button" *ngFor="let bot of chatbotOptions"
-                class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm"
-                [ngClass]="collectionDefaultAi() === bot.id
-                    ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
-                    : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
-                (click)="setCollectionDefaultAi(bot.id)">
-                <span class="h-4 w-4 rounded-full overflow-hidden sm:h-5 sm:w-5">
-                  <img [src]="bot.icon" [alt]="bot.label + ' logo'" class="h-full w-full object-cover" />
-                </span>
-                <span>{{ bot.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Branding Section (Expandable) -->
-          <div class="border-t border-slate-200 pt-5">
-            <button type="button"
-              class="w-full flex items-center justify-between p-4 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white hover:from-purple-100 hover:to-purple-50 transition-all duration-200 group"
-              (click)="brandingSectionExpanded.set(!brandingSectionExpanded())">
-              <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-md">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="text-left">
-                  <p class="text-xs font-semibold uppercase tracking-wider text-purple-600">Branding</p>
-                  <h3 class="mt-0.5 text-base font-bold text-slate-900">Add Company Branding (Optional)</h3>
-                </div>
-              </div>
-              <svg aria-hidden="true" viewBox="0 0 24 24" 
-                class="h-5 w-5 text-purple-600 transition-transform duration-200"
-                [class.rotate-180]="brandingSectionExpanded()">
-                <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            
-            <div *ngIf="brandingSectionExpanded()" class="mt-4 border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50 to-white p-5">
-              <p class="text-sm text-slate-600 mb-5 leading-relaxed">
-                Add your company logo, link, and a short description to brand this collection.
-              </p>
-
-            <!-- Brand Logo Upload -->
-            <div class="mb-5">
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Company Logo (optional)</label>
-              <div *ngIf="!brandLogoUrl() && !uploadingBrandLogo()" class="flex items-center gap-3">
-                <label class="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer transition hover:border-purple-400 hover:bg-purple-50">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    <line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <span>Upload Logo</span>
-                  <input type="file" accept="image/*" class="hidden" (change)="onBrandLogoSelected($event)" />
-                </label>
-              </div>
-              <div *ngIf="uploadingBrandLogo()" class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-500">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 animate-spin">
-                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
-                  <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-                <span>Processing...</span>
-              </div>
-              <div *ngIf="brandLogoUrl() && !uploadingBrandLogo()" class="flex items-center gap-3">
-                <div class="relative">
-                  <img [src]="brandLogoUrl()" alt="Brand logo preview" class="h-16 w-auto rounded-lg border-2 border-slate-200 object-contain bg-white p-2" />
-                </div>
-                <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600" (click)="deleteBrandLogo()">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <span>Remove</span>
-                </button>
-              </div>
-              <p *ngIf="brandLogoUploadError()" class="mt-2 text-xs text-red-600">
-                {{ brandLogoUploadError() }}
-              </p>
-              <p *ngIf="!brandLogoUploadError()" class="mt-1 text-xs text-slate-500">
-                Upload your company logo (max 5MB, PNG, JPG, or GIF)
-              </p>
-            </div>
-
-            <!-- Brand Link -->
-            <div class="mb-5">
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-brand-link">Company Link (optional)</label>
-              <input id="collection-brand-link" type="url" formControlName="brandLink"
-                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:shadow-md"
-                placeholder="https://example.com" />
-              <p class="mt-1 text-xs text-slate-500">
-                Link to your company website or landing page.
-              </p>
-            </div>
-
-            <!-- Brand Subtext -->
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2" for="collection-brand-subtext">Brand Description (optional)</label>
-              <textarea id="collection-brand-subtext" formControlName="brandSubtext" rows="2"
-                class="w-full rounded-xl border px-4 py-3 text-sm text-slate-800 bg-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:shadow-md resize-none"
-                [class.border-red-300]="brandSubtextWordCount() > 50"
-                [class.border-slate-300]="brandSubtextWordCount() <= 50"
-                [class.focus:border-purple-500]="brandSubtextWordCount() <= 50"
-                placeholder="A short description about your company or brand..."></textarea>
-              <div class="mt-1 flex items-center justify-between">
-                <p class="text-xs text-slate-500">
-                  A brief explanation about your company or brand (appears in the hero image area).
-                </p>
-                <p class="text-xs font-medium"
-                   [class.text-red-600]="brandSubtextWordCount() > 50"
-                   [class.text-slate-500]="brandSubtextWordCount() <= 50">
-                  {{ brandSubtextWordCount() }}/50 words
-                </p>
-              </div>
-              <p *ngIf="brandSubtextWordCount() > 50" class="mt-1 text-xs text-red-600 font-medium">
-                Brand description must be 50 words or less.
-              </p>
-            </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-3">Select prompts</label>
-
-            <!-- Prompt Search -->
-            <div *ngIf="!isLoadingPrompts() && !loadPromptsError() && availablePrompts().length > 0" class="mb-4">
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
-                    <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                <input type="search"
-                  class="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
-                  placeholder="Search prompts by title or tag..."
-                  [value]="promptSearchTerm()"
-                  (input)="onPromptSearch(($any($event.target)).value)" />
-                <button *ngIf="promptSearchTerm()" type="button" (click)="promptSearchTerm.set('')"
-                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
-                    <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div *ngIf="isLoadingPrompts()"
-              class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-              Loading prompts…
-            </div>
-
-            <div *ngIf="!isLoadingPrompts() && loadPromptsError()"
-              class="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {{ loadPromptsError() }}
-            </div>
-
-            <div *ngIf="!isLoadingPrompts() && !loadPromptsError()"
-              class="mt-3 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-              <ng-container *ngIf="filteredPrompts().length > 0; else noPrompts">
-                <label *ngFor="let prompt of filteredPrompts(); trackBy: trackPromptOptionById"
-                  [class.prompt-option-selected]="isPromptSelected(prompt.id)"
-                  class="prompt-option flex cursor-pointer items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0 transition-all duration-200">
-                  <div class="flex-shrink-0">
-                    <div class="prompt-checkbox-wrapper">
-                      <input type="checkbox"
-                        class="prompt-checkbox h-5 w-5 rounded border-2 border-slate-300 text-[#DC2626] focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-0 cursor-pointer transition-all"
-                        [checked]="isPromptSelected(prompt.id)" (change)="togglePromptSelection(prompt.id)" />
-                      <svg *ngIf="isPromptSelected(prompt.id)" class="prompt-check-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <span class="block font-semibold text-slate-900 leading-snug">{{ prompt.title }}</span>
-                    <span
-                      class="mt-1.5 inline-flex items-center rounded-full bg-gradient-to-r from-slate-100 to-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 border border-slate-200">
-                      {{ prompt.tagLabel }}
-                    </span>
-                  </div>
-                </label>
-              </ng-container>
-            </div>
-
-            <ng-template #noPrompts>
-              <ng-container *ngIf="promptSearchTerm().trim(); else noPromptsFound">
-                <div class="px-4 py-8 text-center">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
-                    <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
-                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <p class="mt-3 text-sm font-medium text-slate-700">No prompts found</p>
-                  <p class="mt-1 text-xs text-slate-500">Try a different search term</p>
-                </div>
-              </ng-container>
-              <ng-template #noPromptsFound>
-                <ng-container *ngIf="profile(); else guestNoPrompts">
-                  <div class="px-4 py-8 text-center">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
-                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <p class="mt-3 text-sm font-medium text-slate-700">You have no prompts yet</p>
-                    <p class="mt-1 text-xs text-slate-500">Create prompts first to build a collection</p>
-                  </div>
-                </ng-container>
-                <ng-template #guestNoPrompts>
-                  <div class="px-4 py-8 text-center">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-slate-300">
-                      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <p class="mt-3 text-sm font-medium text-slate-700">Sign in to create prompts</p>
-                    <p class="mt-1 text-xs text-slate-500">Build your first collection</p>
-                  </div>
-                </ng-template>
-              </ng-template>
-            </ng-template>
-
-            <p *ngIf="collectionForm.controls.promptIds.invalid && collectionForm.controls.promptIds.touched"
-              class="mt-2 text-xs text-red-600">
-              Select at least one prompt.
-            </p>
-          </div>
-
-          <div *ngIf="collectionFormError()"
-            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {{ collectionFormError() }}
-          </div>
-
-          <div class="flex flex-col gap-3 pt-4 border-t border-slate-200 sm:flex-row sm:justify-end">
-            <button type="button"
-              class="inline-flex items-center justify-center rounded-xl border-2 border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-              (click)="closeCreateCollectionModal()" [disabled]="isSavingCollection()">
-              Cancel
-            </button>
-            <button type="submit"
-              class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
-              [disabled]="isSavingCollection() || availablePrompts().length === 0 || brandSubtextWordCount() > 50">
-              <ng-container *ngIf="isSavingCollection(); else saveLabel">
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25">
-                  </circle>
-                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round"></path>
-                </svg>
-                Saving…
-              </ng-container>
-              <ng-template #saveLabel>
-                <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4">
-                  <path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Save Collection
-              </ng-template>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <app-collection-modal
+      [isOpen]="newCollectionModalOpen()"
+      [isSaving]="isSavingCollection()"
+      [form]="collectionForm"
+      title="New Collection"
+      description="Group your favorite prompts into a reusable set."
+      customUrlPrefix="rocketprompt.io/collection/"
+      [customUrlError]="customUrlError()"
+      [isCheckingCustomUrl]="isCheckingCustomUrl()"
+      [promptSearchTerm]="promptSearchTerm()"
+      promptSearchPlaceholder="Search prompts by title or tag..."
+      [showPromptSearch]="!isLoadingPrompts() && !loadPromptsError() && availablePrompts().length > 0"
+      [prompts]="filteredPrompts()"
+      [selectedPromptIds]="collectionForm.controls.promptIds.value"
+      [chatbotOptions]="chatbotOptions"
+      [defaultAi]="collectionDefaultAi()"
+      [isLoadingPrompts]="isLoadingPrompts()"
+      [promptLoadError]="loadPromptsError()"
+      [enableBranding]="true"
+      [brandingSectionExpanded]="brandingSectionExpanded()"
+      brandSectionDescription="Add your company logo, link, and a short description to brand this collection."
+      [brandLogoUrl]="brandLogoUrl()"
+      [uploadingBrandLogo]="uploadingBrandLogo()"
+      [brandLogoUploadError]="brandLogoUploadError()"
+      [brandSubtextWordCount]="brandSubtextWordCount()"
+      [formError]="collectionFormError()"
+      [disableSubmit]="availablePrompts().length === 0 || brandSubtextWordCount() > 50"
+      submitButtonLabel="Save Collection"
+      cancelButtonLabel="Cancel"
+      [noPromptsTitle]="profile() ? 'You have no prompts yet' : 'Sign in to create prompts'"
+      [noPromptsDescription]="profile() ? 'Create prompts first to build a collection' : 'Build your first collection'"
+      (close)="closeCreateCollectionModal()"
+      (formSubmit)="submitCollectionForm()"
+      (customUrlInput)="onCustomUrlInput($event)"
+      (promptSearchChange)="onPromptSearch($event)"
+      (promptSearchCleared)="promptSearchTerm.set('')"
+      (promptSelectionToggle)="togglePromptSelection($event)"
+      (defaultAiChange)="setCollectionDefaultAi($event)"
+      (brandLogoSelected)="onBrandLogoSelected($event)"
+      (brandLogoRemoved)="deleteBrandLogo()"
+      (toggleBrandingSection)="brandingSectionExpanded.set(!brandingSectionExpanded())"
+    ></app-collection-modal>
   </div>
 </ng-container>
 

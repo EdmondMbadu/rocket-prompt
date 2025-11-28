@@ -9,6 +9,7 @@ import { AuthService } from '../../services/auth.service';
 import { CollectionService } from '../../services/collection.service';
 import { PromptService } from '../../services/prompt.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { CollectionModalComponent } from '../../components/collection-modal/collection-modal.component';
 import type { PromptCollection } from '../../models/collection.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
@@ -34,7 +35,7 @@ interface PromptOption {
 @Component({
     selector: 'app-collections-page',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, NavbarComponent],
+    imports: [CommonModule, ReactiveFormsModule, NavbarComponent, CollectionModalComponent],
     templateUrl: './collections-page.component.html',
     styleUrl: './collections-page.component.css'
 })
@@ -435,10 +436,6 @@ export class CollectionsPageComponent {
         }
     }
 
-    trackPromptOptionById(_: number, prompt: PromptOption) {
-        return prompt.id;
-    }
-
     navigateToCollection(collection: CollectionCard) {
         if (!collection?.id) {
             return;
@@ -739,4 +736,3 @@ export class CollectionsPageComponent {
         }
     }
 }
-

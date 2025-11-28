@@ -20,6 +20,7 @@ import { ShareModalComponent } from '../../components/share-modal/share-modal.co
 import { PromptFormComponent, type PromptFormData } from '../../components/prompt-form/prompt-form.component';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
+import { CollectionModalComponent } from '../../components/collection-modal/collection-modal.component';
 
 interface ChatbotOption {
   readonly id: DirectLaunchTarget;
@@ -31,7 +32,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-organization-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent, PromptFormComponent, NavbarComponent],
+  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent, PromptFormComponent, NavbarComponent, CollectionModalComponent],
   templateUrl: './organization-profile.component.html',
   styleUrl: './organization-profile.component.css'
 })
@@ -2394,6 +2395,15 @@ export class OrganizationProfileComponent {
 
       return haystack.includes(term);
     });
+  });
+
+  readonly organizationPromptOptions = computed(() => {
+    return this.filteredOrganizationPrompts().map(prompt => ({
+      id: prompt.id,
+      title: prompt.title,
+      tagLabel: this.formatTagLabel(prompt.tag),
+      tag: prompt.tag
+    }));
   });
 
   togglePromptSelection(promptId: string) {

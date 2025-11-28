@@ -1,0 +1,306 @@
+<ng-container *ngIf="isOpen()">
+  <div class="collection-modal__overlay" (click)="onClose()">
+    <div class="collection-modal__card" (click)="stopPropagation($event)">
+      <button type="button" class="collection-modal__close" aria-label="Close" (click)="onClose()" [disabled]="isSaving()">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+          <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+
+      <header class="collection-modal__header">
+        <p class="collection-modal__eyebrow">Create</p>
+        <h2 class="collection-modal__title">{{ title() }}</h2>
+        <p *ngIf="description()" class="collection-modal__description">
+          {{ description() }}
+        </p>
+      </header>
+
+      <form class="collection-modal__form" [formGroup]="form()" (ngSubmit)="onSubmit()">
+        <div class="collection-modal__grid">
+          <div>
+            <label class="collection-modal__label" for="collection-name">Collection name</label>
+            <input id="collection-name" type="text" formControlName="name"
+              class="collection-modal__input"
+              placeholder="e.g. Launch Campaign Toolkit">
+            <p *ngIf="form().controls?.['name']?.invalid && form().controls?.['name']?.touched"
+              class="collection-modal__error-text">
+              A collection name with at least 3 characters is required.
+            </p>
+          </div>
+
+          <div>
+            <label class="collection-modal__label" for="collection-tag">Collection tag</label>
+            <input id="collection-tag" type="text" formControlName="tag"
+              class="collection-modal__input"
+              placeholder="e.g. marketing">
+            <p *ngIf="form().controls?.['tag']?.invalid && form().controls?.['tag']?.touched"
+              class="collection-modal__error-text">
+              Add a tag so the collection can be grouped.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label class="collection-modal__label" for="collection-custom-url">Custom URL (optional)</label>
+          <div class="collection-modal__custom-url">
+            <span class="collection-modal__custom-url-prefix">{{ customUrlPrefix() }}</span>
+            <div class="collection-modal__custom-url-field">
+              <input id="collection-custom-url" type="text" formControlName="customUrl"
+                class="collection-modal__input collection-modal__input--compact"
+                [class.collection-modal__input--error]="!!customUrlError()"
+                placeholder="my-collection"
+                (input)="onCustomUrlInput(($any($event.target)).value)">
+              <div *ngIf="isCheckingCustomUrl()" class="collection-modal__spinner">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin text-slate-400">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
+                  <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="customUrlError()" class="collection-modal__error-text">
+            {{ customUrlError() }}
+          </p>
+          <p *ngIf="shouldShowCustomUrlPreview" class="collection-modal__helper-text">
+            Your collection will be available at: {{ customUrlPrefix() }}{{ customUrlValue }}
+          </p>
+        </div>
+
+        <div>
+          <label class="collection-modal__label" for="collection-blurb">Description (optional)</label>
+          <textarea id="collection-blurb" rows="3" formControlName="blurb"
+            class="collection-modal__textarea"
+            placeholder="Add a brief description of what this collection is about..."></textarea>
+        </div>
+
+        <section *ngIf="showDefaultAi() && chatbotOptions().length > 0">
+          <label class="collection-modal__label">Default AI for Collection (optional)</label>
+          <p class="collection-modal__helper-text collection-modal__helper-text--spaced">
+            Set a default AI that will be used when visitors launch prompts from this collection. Leave empty to use the visitor's personal preference.
+          </p>
+          <div class="collection-modal__chip-row">
+            <button type="button" class="collection-modal__chip"
+              [class.collection-modal__chip--active]="defaultAi() === null"
+              (click)="onDefaultAiChange(null)">
+              None
+            </button>
+            <button type="button" *ngFor="let bot of chatbotOptions()"
+              class="collection-modal__chip"
+              [class.collection-modal__chip--active]="defaultAi() === bot.id"
+              (click)="onDefaultAiChange(bot.id)">
+              <span class="collection-modal__chip-icon">
+                <img [src]="bot.icon" [alt]="bot.label + ' logo'" class="h-full w-full object-cover">
+              </span>
+              <span>{{ bot.label }}</span>
+            </button>
+          </div>
+        </section>
+
+        <section *ngIf="enableBranding()" class="collection-modal__branding">
+          <button type="button" class="collection-modal__branding-toggle" (click)="onToggleBrandingSection()">
+            <div class="collection-modal__branding-label">
+              <div class="collection-modal__branding-icon">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-white">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="collection-modal__branding-eyebrow">Branding</p>
+                <h3 class="collection-modal__branding-title">Add Company Branding (Optional)</h3>
+              </div>
+            </div>
+            <svg aria-hidden="true" viewBox="0 0 24 24"
+              class="collection-modal__branding-caret"
+              [class.rotate-180]="brandingSectionExpanded()">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"></path>
+            </svg>
+          </button>
+
+          <div *ngIf="brandingSectionExpanded()" class="collection-modal__branding-panel">
+            <p class="collection-modal__helper-text">
+              {{ brandSectionDescription() }}
+            </p>
+
+            <div class="collection-modal__branding-field">
+              <label class="collection-modal__label">Company Logo (optional)</label>
+              <div *ngIf="!brandLogoUrl() && !uploadingBrandLogo()" class="collection-modal__upload-wrapper">
+                <label class="collection-modal__upload-trigger">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+                    <polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round"></line>
+                  </svg>
+                  <span>Upload Logo</span>
+                  <input type="file" accept="image/*" class="hidden" (change)="onBrandLogoInput($event)">
+                </label>
+              </div>
+              <div *ngIf="uploadingBrandLogo()" class="collection-modal__upload-progress">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 animate-spin">
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+                  <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round"></path>
+                </svg>
+                <span>Processing...</span>
+              </div>
+              <div *ngIf="brandLogoUrl() && !uploadingBrandLogo()" class="collection-modal__upload-preview">
+                <img [src]="brandLogoUrl()" alt="Brand logo preview" class="collection-modal__upload-image">
+                <button type="button" class="collection-modal__remove-upload" (click)="onRemoveBrandLogo()">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+                  </svg>
+                  <span>Remove</span>
+                </button>
+              </div>
+              <p *ngIf="brandLogoUploadError()" class="collection-modal__error-text">
+                {{ brandLogoUploadError() }}
+              </p>
+              <p *ngIf="!brandLogoUploadError()" class="collection-modal__helper-text">
+                Upload your company logo (max 5MB, PNG, JPG, or GIF)
+              </p>
+            </div>
+
+            <div class="collection-modal__branding-field">
+              <label class="collection-modal__label" for="collection-brand-link">Company Link (optional)</label>
+              <input id="collection-brand-link" type="url" formControlName="brandLink"
+                class="collection-modal__input"
+                placeholder="https://example.com">
+            </div>
+
+            <div class="collection-modal__branding-field">
+              <label class="collection-modal__label" for="collection-brand-subtext">Brand Description (optional)</label>
+              <textarea id="collection-brand-subtext" rows="2" formControlName="brandSubtext"
+                class="collection-modal__textarea"
+                [class.collection-modal__input--error]="brandSubtextWordCount() > brandSubtextLimit()"
+                placeholder="A short description about your company or brand..."></textarea>
+              <div class="collection-modal__word-count">
+                <p class="collection-modal__helper-text">
+                  A brief explanation about your company or brand (appears in the hero image area).
+                </p>
+                <p class="collection-modal__word-count-value"
+                  [class.collection-modal__word-count-value--error]="brandSubtextWordCount() > brandSubtextLimit()">
+                  {{ brandSubtextWordCount() }}/{{ brandSubtextLimit() }} words
+                </p>
+              </div>
+              <p *ngIf="brandSubtextWordCount() > brandSubtextLimit()" class="collection-modal__error-text">
+                Brand description must be {{ brandSubtextLimit() }} words or less.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section *ngIf="showPromptSection()">
+          <label class="collection-modal__label">{{ promptSectionTitle() }}</label>
+
+          <div *ngIf="showPromptSearch()" class="collection-modal__prompt-search">
+            <div class="collection-modal__prompt-search-field">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-slate-400">
+                <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              <input type="search" [value]="promptSearchTerm()"
+                class="collection-modal__prompt-search-input"
+                [placeholder]="promptSearchPlaceholder()"
+                (input)="onPromptSearch(($any($event.target)).value)">
+              <button *ngIf="promptSearchTerm()" type="button" class="collection-modal__prompt-search-clear"
+                (click)="onClearPromptSearch()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4">
+                  <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="isLoadingPrompts()" class="collection-modal__prompt-loading">
+            Loading prompts…
+          </div>
+
+          <div *ngIf="!isLoadingPrompts() && promptLoadError()" class="collection-modal__prompt-error">
+            {{ promptLoadError() }}
+          </div>
+
+          <div *ngIf="!isLoadingPrompts() && !promptLoadError()"
+            class="collection-modal__prompt-list">
+            <ng-container *ngIf="hasFilteredPrompts; else noPromptResults">
+              <label *ngFor="let prompt of prompts(); trackBy: trackPromptById"
+                class="collection-modal__prompt-option"
+                [class.collection-modal__prompt-option--selected]="isPromptSelected(prompt.id)">
+                <input type="checkbox" class="collection-modal__prompt-checkbox"
+                  [checked]="isPromptSelected(prompt.id)"
+                  (change)="onTogglePromptSelection(prompt.id)">
+                <div class="collection-modal__prompt-meta">
+                  <span class="collection-modal__prompt-title">{{ prompt.title }}</span>
+                  <span class="collection-modal__prompt-tag">
+                    {{ promptTagLabel(prompt) }}
+                  </span>
+                </div>
+              </label>
+            </ng-container>
+          </div>
+
+          <ng-template #noPromptResults>
+            <ng-container *ngIf="isSearching; else noPromptOptions">
+              <div class="collection-modal__prompt-empty">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-10 w-10 text-slate-300">
+                  <path d="M21 21l-4.35-4.35m1.68-4.83a6.51 6.51 0 11-13.02 0 6.51 6.51 0 0113.02 0z" fill="none"
+                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <p class="collection-modal__prompt-empty-title">No prompts found</p>
+                <p class="collection-modal__prompt-empty-text">Try a different search term.</p>
+              </div>
+            </ng-container>
+            <ng-template #noPromptOptions>
+              <div class="collection-modal__prompt-empty">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-10 w-10 text-slate-300">
+                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                </svg>
+                <p class="collection-modal__prompt-empty-title">{{ noPromptsTitle() }}</p>
+                <p class="collection-modal__prompt-empty-text">{{ noPromptsDescription() }}</p>
+              </div>
+            </ng-template>
+          </ng-template>
+
+          <p *ngIf="promptIdsInvalid && !promptIdsControlMissing" class="collection-modal__error-text">
+            Select at least one prompt.
+          </p>
+        </section>
+
+        <div *ngIf="formError()" class="collection-modal__alert">
+          {{ formError() }}
+        </div>
+
+        <div class="collection-modal__actions">
+          <button type="button" class="collection-modal__button collection-modal__button--ghost"
+            (click)="onClose()" [disabled]="isSaving()">
+            {{ cancelButtonLabel() }}
+          </button>
+          <button type="submit" class="collection-modal__button collection-modal__button--primary"
+            [disabled]="isSaving() || disableSubmit()">
+            <ng-container *ngIf="isSaving(); else submitLabel">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="mr-2 h-4 w-4 animate-spin">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.25"></circle>
+                <path d="M21 12a9 9 0 00-9-9" fill="none" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round"></path>
+              </svg>
+              Saving…
+            </ng-container>
+            <ng-template #submitLabel>
+              {{ submitButtonLabel() }}
+            </ng-template>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-container>

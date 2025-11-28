@@ -17,6 +17,7 @@ import type { PromptCollection } from '../../models/collection.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { CollectionModalComponent } from '../../components/collection-modal/collection-modal.component';
 import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 import { generateDisplayUsername } from '../../utils/username.util';
 import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig } from '../../utils/subscription.util';
@@ -45,7 +46,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, NavbarComponent, PromptCardComponent, ShareModalComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, NavbarComponent, PromptCardComponent, ShareModalComponent, CollectionModalComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.css'
 })
