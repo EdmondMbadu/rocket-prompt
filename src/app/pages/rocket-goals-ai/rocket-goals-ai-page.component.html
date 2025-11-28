@@ -291,6 +291,21 @@
               <span class="text-sm text-neutral-400">Thinking...</span>
             </div>
           </div>
+
+          <!-- Image Generation Indicator -->
+          <div *ngIf="isGeneratingImage()" class="flex gap-4">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-yellow-600 ring-1 ring-yellow-200">
+              <span class="text-xl">🍌</span>
+            </div>
+            <div class="flex items-center gap-3 rounded-2xl rounded-tl-md bg-white px-5 py-4 shadow-sm ring-1 ring-yellow-100">
+              <div class="flex gap-1.5">
+                <span class="h-2.5 w-2.5 animate-bounce rounded-full bg-yellow-500" style="animation-delay: 0ms;"></span>
+                <span class="h-2.5 w-2.5 animate-bounce rounded-full bg-yellow-500" style="animation-delay: 150ms;"></span>
+                <span class="h-2.5 w-2.5 animate-bounce rounded-full bg-yellow-500" style="animation-delay: 300ms;"></span>
+              </div>
+              <span class="text-sm text-neutral-500">Generating your RocketGoals image...</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -339,10 +354,6 @@
               <span class="text-lg" aria-hidden="true">🍌</span>
               Generate Image
             </button>
-            <div *ngIf="isGeneratingImage()" class="inline-flex items-center gap-2 rounded-full border border-yellow-100 bg-white px-3 py-1 text-xs font-medium text-yellow-900">
-              <span class="h-2.5 w-2.5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent"></span>
-              Crafting your image...
-            </div>
             <p class="flex-1 text-center text-xs text-neutral-400 sm:text-right">
               RocketGoals AI can make mistakes. Consider checking important information.
             </p>
