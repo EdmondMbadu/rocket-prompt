@@ -44,7 +44,7 @@
         </div>
 
         <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">🚀 Launch</div>
-        <div class="grid grid-cols-4 gap-2">
+        <div class="grid grid-cols-4 gap-2 sm:grid-cols-5">
           <button type="button"
             class="group relative flex flex-col items-center justify-center gap-1 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 px-2 py-2.5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
             (click)="onOpenChatbot('ChatGPT')" title="Open in ChatGPT">
@@ -69,6 +69,12 @@
             <img src="/assets/grok.jpg" alt="Grok" class="h-5 w-5 rounded object-contain sm:h-6 sm:w-6" />
             <span class="text-[10px] font-semibold text-slate-700 sm:text-xs">Grok</span>
           </button>
+          <button type="button"
+            class="group relative flex flex-col items-center justify-center gap-1 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 px-2 py-2.5 transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            (click)="onOpenChatbot('RocketGoals')" title="Launch in RocketGoals AI">
+            <img src="/assets/rocket-logo.png" alt="RocketGoals" class="h-5 w-5 object-contain sm:h-6 sm:w-6" />
+            <span class="text-[10px] font-semibold text-slate-700 sm:text-xs">RocketGoals</span>
+          </button>
         </div>
 
         <button type="button"
@@ -80,4 +86,3 @@
     </div>
   </div>
 </div>
-

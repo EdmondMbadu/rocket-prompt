@@ -8,6 +8,8 @@ import { RocketGoalsAIService, ChatMessage } from '../../services/rocket-goals-a
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { AuthService } from '../../services/auth.service';
 import type { UserProfile } from '../../models/user-profile.model';
+import { ActivatedRoute } from '@angular/router';
+import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 
 @Component({
   selector: 'app-rocket-goals-ai-page',
@@ -23,6 +25,8 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   private readonly aiService = inject(RocketGoalsAIService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly rocketGoalsLaunchService = inject(RocketGoalsLaunchService);
   
   readonly inputMessage = signal('');
   readonly messages = this.aiService.messages;
@@ -33,6 +37,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   readonly profileLoaded = signal(false);
   
   private shouldScrollToBottom = false;
+  private autoLaunchHandled = false;
 
   constructor() {
     this.authService.currentUser$
@@ -48,6 +53,25 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       .subscribe(profile => {
         this.profile.set(profile ?? null);
         this.profileLoaded.set(true);
+      });
+
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const token = params.get('autoLaunch');
+        const inlinePrompt = params.get('prompt');
+
+        if (token && !this.autoLaunchHandled) {
+          const payload = this.rocketGoalsLaunchService.consumePrompt(token);
+          if (payload) {
+            this.triggerAutoLaunch(payload);
+            return;
+          }
+        }
+
+        if (inlinePrompt && !this.autoLaunchHandled) {
+          this.triggerAutoLaunch(inlinePrompt);
+        }
       });
   }
 
@@ -203,6 +227,17 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
 
   trackByTimestamp(_index: number, message: ChatMessage): number {
     return message.timestamp.getTime();
+  }
+
+  private triggerAutoLaunch(promptText: string): void {
+    if (this.autoLaunchHandled || !promptText?.trim()) {
+      return;
+    }
+
+    this.autoLaunchHandled = true;
+    this.inputMessage.set(promptText);
+    this.shouldScrollToBottom = true;
+    void this.sendMessage();
   }
 
   private scrollToBottom(): void {

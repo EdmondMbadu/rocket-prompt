@@ -15,6 +15,7 @@ import type { Organization } from '../../models/organization.model';
 import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 
 interface PromptOption {
   readonly id: string;
@@ -42,6 +43,7 @@ export class CollectionDetailComponent {
   private readonly collectionService = inject(CollectionService);
   private readonly promptService = inject(PromptService);
   private readonly organizationService = inject(OrganizationService);
+  private readonly rocketGoalsLaunchService = inject(RocketGoalsLaunchService);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -898,9 +900,14 @@ export class CollectionDetailComponent {
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok'): void {
+  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'): void {
     const prompt = this.sharePrompt();
     if (!prompt?.content) return;
+
+    if (chatbotName === 'RocketGoals') {
+      this.launchRocketGoalsPrompt(prompt);
+      return;
+    }
 
     let url: string;
     switch (chatbotName) {
@@ -918,6 +925,37 @@ export class CollectionDetailComponent {
         break;
     }
     void this.openChatbot(url, chatbotName, prompt.content);
+  }
+
+  private launchRocketGoalsPrompt(prompt: PromptCard): void {
+    const content = prompt.content ?? '';
+    if (!content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+
+    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, prompt.id ?? undefined);
+    if (typeof window !== 'undefined') {
+      window.open(launch.url, '_blank');
+    }
+
+    if (!launch.stored) {
+      this.copyTextForRocketGoals(content);
+      this.showCopyMessage('Prompt copied! Paste it into RocketGoals AI.');
+    } else {
+      this.showCopyMessage('Launching in RocketGoals AI…');
+    }
+  }
+
+  private copyTextForRocketGoals(text: string): void {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => {
+        this.fallbackCopyTextToClipboard(text);
+      });
+      return;
+    }
+
+    this.fallbackCopyTextToClipboard(text);
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
@@ -1784,4 +1822,3 @@ export class CollectionDetailComponent {
     this.copyPrompt(prompt);
   }
 }
-
