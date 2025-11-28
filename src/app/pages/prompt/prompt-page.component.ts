@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
 import { AuthService } from '../../services/auth.service';
 import { OrganizationService } from '../../services/organization.service';
+import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
@@ -23,6 +24,7 @@ export class PromptPageComponent {
   private readonly authService = inject(AuthService);
   private readonly organizationService = inject(OrganizationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly rocketGoalsLaunchService = inject(RocketGoalsLaunchService);
 
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
@@ -166,6 +168,11 @@ export class PromptPageComponent {
     const text = promptText ?? this.prompt()?.content ?? '';
     const p = this.prompt();
 
+    if (chatbotName === 'RocketGoals') {
+      this.launchRocketGoalsPrompt(text);
+      return;
+    }
+
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
@@ -235,6 +242,37 @@ export class PromptPageComponent {
         console.error('Failed to track launch', e);
       }
     }
+  }
+
+  private launchRocketGoalsPrompt(promptText: string) {
+    const content = promptText?.trim();
+    if (!content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+
+    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, this.prompt()?.id);
+    if (typeof window !== 'undefined') {
+      window.open(launch.url, '_blank');
+    }
+
+    if (!launch.stored) {
+      this.copyTextForRocketGoals(content);
+      this.showCopyMessage('Prompt copied! Paste it into Rocket AI.');
+    } else {
+      this.showCopyMessage('Launching in Rocket AI…');
+    }
+  }
+
+  private copyTextForRocketGoals(text: string) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => {
+        this.fallbackCopyTextToClipboard(text);
+      });
+      return;
+    }
+
+    this.fallbackCopyTextToClipboard(text);
   }
 
   copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
