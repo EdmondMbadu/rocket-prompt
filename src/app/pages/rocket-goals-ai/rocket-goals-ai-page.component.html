@@ -1,3 +1,4 @@
+<ng-container *ngIf="profileLoaded(); else loadingProfile">
 <div class="flex h-screen flex-col bg-neutral-50">
   <!-- Header -->
   <header class="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
@@ -56,6 +57,7 @@
         </svg>
         New Chat
       </button>
+      <app-navbar *ngIf="profile()" [profile]="profile()" />
     </div>
   </header>
 
@@ -291,3 +293,10 @@
     </div>
   </div>
 </div>
+</ng-container>
+
+<ng-template #loadingProfile>
+  <div class="flex h-screen items-center justify-center bg-neutral-50">
+    <div class="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-red-500"></div>
+  </div>
+</ng-template>

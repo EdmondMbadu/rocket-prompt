@@ -1,12 +1,18 @@
-import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RocketGoalsAIService, ChatMessage } from '../../services/rocket-goals-ai.service';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { AuthService } from '../../services/auth.service';
+import type { UserProfile } from '../../models/user-profile.model';
 
 @Component({
   selector: 'app-rocket-goals-ai-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NavbarComponent],
   templateUrl: './rocket-goals-ai-page.component.html',
   styleUrl: './rocket-goals-ai-page.component.css'
 })
@@ -15,14 +21,35 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   @ViewChild('messageInput') private messageInput!: ElementRef<HTMLTextAreaElement>;
 
   private readonly aiService = inject(RocketGoalsAIService);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   
   readonly inputMessage = signal('');
   readonly messages = this.aiService.messages;
   readonly isLoading = this.aiService.isLoading;
   readonly error = this.aiService.error;
   readonly copiedMessageId = signal<number | null>(null);
+  readonly profile = signal<UserProfile | null>(null);
+  readonly profileLoaded = signal(false);
   
   private shouldScrollToBottom = false;
+
+  constructor() {
+    this.authService.currentUser$
+      .pipe(
+        switchMap(user => {
+          if (!user) {
+            return of<UserProfile | null>(null);
+          }
+          return this.authService.userProfile$(user.uid);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(profile => {
+        this.profile.set(profile ?? null);
+        this.profileLoaded.set(true);
+      });
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
@@ -185,4 +212,3 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
     }
   }
 }
-
