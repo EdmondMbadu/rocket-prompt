@@ -120,6 +120,8 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="code-block"><code>$2</code></pre>')
       // Inline code
       .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+      // Headings (###)
+      .replace(/^### (.+)$/gm, '<h3 class="ai-heading">$1</h3>')
       // Bold
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       // Italic

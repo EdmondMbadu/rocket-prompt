@@ -77,6 +77,7 @@ export class RocketGoalsAIComponent implements AfterViewChecked {
   formatMessage(content: string): string {
     // Basic markdown-like formatting
     return content
+      .replace(/^### (.+)$/gm, '<h3 class="ai-heading">$1</h3>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-slate-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
@@ -136,4 +137,3 @@ export class RocketGoalsAIComponent implements AfterViewChecked {
     }
   }
 }
-
