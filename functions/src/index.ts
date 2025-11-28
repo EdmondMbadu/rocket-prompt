@@ -10,9 +10,8 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import { GoogleAuth } from "google-auth-library";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-// Note: @google-cloud/vertexai is still installed for future use but not imported here
+// Note: GoogleAuth and @google-cloud/vertexai are still installed for future use but not imported here
 
 admin.initializeApp();
 
@@ -281,9 +280,8 @@ export const stripeWebhook = functions
     }
   });
 
-// Vertex AI setup for image generation (uses Firebase service account credentials)
-const PROJECT_ID = "rocket-prompt";
-const LOCATION = "us-central1";
+// Image generation model - using Google's Generative AI SDK with Gemini 3 Pro Image
+const IMAGE_GENERATION_MODEL = "gemini-3-pro-image-preview";
 
 interface BulkPromptInput {
   title: string;
@@ -314,9 +312,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Generates an image using Google's Vertex AI Imagen 4 API based on the prompt content
+ * Generates an image using Google's Generative AI SDK with Gemini 3 Pro Image model
  * and uploads it to Firebase Storage.
- * Uses Imagen 4 - Google's best and most stable image generation model.
+ * Uses the latest Gemini image generation model for best quality.
  * Includes retry logic with exponential backoff for rate limiting.
  */
 async function generateThumbnailImage(
@@ -326,70 +324,58 @@ async function generateThumbnailImage(
   retryCount: number = 0
 ): Promise<string | null> {
   const MAX_RETRIES = 3;
-  const BASE_DELAY_MS = 3000; // 3 seconds base delay - Imagen 4 has better rate limits
+  const BASE_DELAY_MS = 3000; // 3 seconds base delay
+
+  if (!geminiApiKey) {
+    functions.logger.error("Gemini API key not configured for image generation");
+    return null;
+  }
 
   try {
-    // Get access token using Google Auth
-    const auth = new GoogleAuth({
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const client = await auth.getClient();
-    const accessToken = await client.getAccessToken();
+    // Initialize Google Generative AI with API key
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-    if (!accessToken.token) {
-      throw new Error("Failed to get access token");
-    }
+    // Use the Gemini 3 Pro Image model for image generation
+    const model = genAI.getGenerativeModel({
+      model: IMAGE_GENERATION_MODEL,
+      generationConfig: {
+        // @ts-expect-error - responseModalities is a valid config for image generation models
+        responseModalities: ["image", "text"],
+      },
+    });
 
     // Create a simplified prompt for thumbnail generation
-    const imagePrompt = `A visually appealing, artistic thumbnail image representing: ${promptText.substring(0, 400)}. Modern, vibrant, visually striking, no text in image.`;
+    const imagePrompt = `Generate a visually appealing, artistic thumbnail image representing: ${promptText.substring(0, 400)}. Modern, vibrant, visually striking, no text in image. Square aspect ratio.`;
 
-    // Call Imagen 4 API
-    const endpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-4.0-generate-001:predict`;
+    // Generate the image
+    const result = await model.generateContent(imagePrompt);
+    const response = result.response;
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        instances: [
-          {
-            prompt: imagePrompt,
-          },
-        ],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: "1:1",
-          outputOptions: {
-            mimeType: "image/png",
-          },
-        },
-      }),
-    });
+    // Extract image data from the response
+    let imageData: string | null = null;
+    let mimeType = "image/png";
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Imagen API error ${response.status}: ${errorText}`);
+    // Check for inline data in candidates
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          // Check if this part has inline image data
+          if (part.inlineData?.data) {
+            imageData = part.inlineData.data;
+            mimeType = part.inlineData.mimeType || "image/png";
+            break;
+          }
+        }
+      }
     }
 
-    const result = await response.json() as {
-      predictions?: Array<{
-        bytesBase64Encoded?: string;
-        mimeType?: string;
-      }>;
-    };
-
-    // Extract the image from the response
-    const prediction = result.predictions?.[0];
-    const imageData = prediction?.bytesBase64Encoded;
-    const mimeType = prediction?.mimeType || "image/png";
-
     if (!imageData) {
-      functions.logger.warn("No image data returned from Imagen 4", {
+      functions.logger.warn("No image data returned from Gemini 3 Pro Image", {
         promptId,
-        hasResponse: !!result,
-        predictionCount: result.predictions?.length || 0,
+        hasResponse: !!response,
+        candidateCount: candidates?.length || 0,
       });
       return null;
     }
@@ -410,6 +396,7 @@ async function generateThumbnailImage(
           promptId: promptId,
           batchId: batchId,
           generatedAt: new Date().toISOString(),
+          model: IMAGE_GENERATION_MODEL,
         },
       },
     });
@@ -418,16 +405,19 @@ async function generateThumbnailImage(
     await file.makePublic();
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
-    functions.logger.info(`Generated thumbnail for prompt ${promptId}: ${publicUrl}`);
+    functions.logger.info(`Generated thumbnail for prompt ${promptId}: ${publicUrl}`, {
+      model: IMAGE_GENERATION_MODEL,
+    });
     return publicUrl;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Check if it's a rate limit error (429) or quota error
-    if ((errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) && retryCount < MAX_RETRIES) {
+    if ((errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("quota")) && retryCount < MAX_RETRIES) {
       const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
       functions.logger.warn(`Rate limited, retrying in ${delayMs}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`, {
         promptId,
+        model: IMAGE_GENERATION_MODEL,
       });
       await sleep(delayMs);
       return generateThumbnailImage(promptText, promptId, batchId, retryCount + 1);
@@ -438,6 +428,7 @@ async function generateThumbnailImage(
       promptId,
       batchId,
       retryCount,
+      model: IMAGE_GENERATION_MODEL,
     });
     return null;
   }
@@ -446,7 +437,7 @@ async function generateThumbnailImage(
 /**
  * Cloud Function to bulk create prompts with optional auto-generated thumbnails.
  * This function processes an array of prompts, optionally generates thumbnails
- * using Gemini API, and saves everything to Firestore.
+ * using Google's Generative AI (Gemini 3 Pro Image model), and saves everything to Firestore.
  */
 export const bulkCreatePromptsWithThumbnails = functions
   .region("us-central1")
@@ -556,7 +547,7 @@ export const bulkCreatePromptsWithThumbnails = functions
             await docRef.update({ imageUrl });
           }
           // Add delay between image generations to avoid rate limiting
-          // Imagen 4 has better rate limits, 5 second delay should be sufficient
+          // Gemini 3 Pro Image model - 5 second delay should be sufficient
           await sleep(5000);
         }
 
