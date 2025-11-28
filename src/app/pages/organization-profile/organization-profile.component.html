@@ -1078,6 +1078,33 @@
           class="mt-1 w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs text-slate-800 bg-white shadow-sm focus:border-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/40 sm:px-3 sm:py-2.5 sm:text-sm resize-none"
           placeholder="Add a brief description of what this collection is about..."></textarea>
       </div>
+      
+      <!-- Default AI Selection -->
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-2 sm:text-sm">Default AI for Collection (optional)</label>
+        <p class="text-[10px] text-slate-500 mb-3 sm:text-xs">Set a default AI that will be used when visitors launch prompts from this collection. Leave empty to use the visitor's personal preference.</p>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button type="button"
+            class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 sm:text-xs"
+            [ngClass]="collectionDefaultAi() === null
+                ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
+                : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
+            (click)="setCollectionDefaultAi(null)">
+            None
+          </button>
+          <button type="button" *ngFor="let bot of chatbotOptions"
+            class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 sm:text-xs"
+            [ngClass]="collectionDefaultAi() === bot.id
+                ? 'border-[#DC2626] bg-[#DC2626] text-white shadow-lg shadow-red-500/30'
+                : 'border-black/10 bg-white text-slate-700 hover:border-[#DC2626]/40 hover:text-[#DC2626]'"
+            (click)="setCollectionDefaultAi(bot.id)">
+            <span class="h-4 w-4 rounded-full overflow-hidden">
+              <img [src]="bot.icon" [alt]="bot.label + ' logo'" class="h-full w-full object-cover" />
+            </span>
+            <span>{{ bot.label }}</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Branding Section (Expandable) -->
       <div class="border-t border-slate-200 pt-4">

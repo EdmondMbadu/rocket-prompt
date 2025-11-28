@@ -226,6 +226,7 @@ export class OrganizationProfileComponent {
   readonly brandLogoUrl = signal<string | null>(null);
   private brandLogoFile: File | null = null;
   readonly brandingSectionExpanded = signal(false);
+  readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
   
   readonly createCollectionForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -2309,6 +2310,7 @@ export class OrganizationProfileComponent {
     this.collectionCustomUrlError.set(null);
     this.clearCollectionCustomUrlDebounce();
     this.resetCreateCollectionForm();
+    this.collectionDefaultAi.set(null);
     
     // Prefill branding with org info
     const org = this.organization();
@@ -2350,6 +2352,7 @@ export class OrganizationProfileComponent {
     this.brandLogoFile = null;
     this.brandingSectionExpanded.set(false);
     this.clearCollectionCustomUrlDebounce();
+    this.collectionDefaultAi.set(null);
   }
 
   private resetCreateCollectionForm() {
@@ -2366,6 +2369,7 @@ export class OrganizationProfileComponent {
     this.collectionCustomUrlError.set(null);
     this.clearCollectionCustomUrlDebounce();
     this.collectionPromptSearchTerm.set('');
+    this.collectionDefaultAi.set(null);
     this.createCollectionForm.markAsPristine();
     this.createCollectionForm.markAsUntouched();
   }
@@ -2409,6 +2413,10 @@ export class OrganizationProfileComponent {
 
   isPromptSelected(promptId: string) {
     return this.createCollectionForm.controls.promptIds.value.includes(promptId);
+  }
+  
+  setCollectionDefaultAi(option: DirectLaunchTarget | null) {
+    this.collectionDefaultAi.set(option);
   }
 
   readonly brandSubtextWordCount = computed(() => {
@@ -2459,7 +2467,8 @@ export class OrganizationProfileComponent {
         brandLink: brandLink?.trim() || undefined,
         brandSubtext: brandSubtext?.trim() || undefined,
         organizationId: org.id,
-        brandLogoUrl: orgLogoUrl
+        brandLogoUrl: orgLogoUrl,
+        defaultAi: this.collectionDefaultAi() || undefined
       }, org.id); // Set authorId to org.id
 
       // Upload brand logo if file was selected (new file upload)
@@ -2476,6 +2485,7 @@ export class OrganizationProfileComponent {
 
       this.newCollectionModalOpen.set(false);
       this.resetCreateCollectionForm();
+      this.collectionDefaultAi.set(null);
       // Reload collections to show the new one
       this.loadOrganizationCollections(org);
     } catch (error) {
