@@ -798,14 +798,20 @@ export class LikedPromptsPageComponent {
     }, 3000);
   }
 
-  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude' | 'rocket') {
     const prompt = this.sharePrompt();
     if (!prompt) return;
 
     const url = this.buildOneShotLink(prompt, target);
     if (!url) return;
 
-    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
+    const label = target === 'gpt'
+      ? 'One Shot GPT'
+      : target === 'grok'
+      ? 'One Shot Grok'
+      : target === 'claude'
+      ? 'One Shot Claude'
+      : 'One Shot Rocket';
     navigator.clipboard.writeText(url).then(() => {
       // Could show a toast message here if needed
     }).catch(() => {
@@ -813,10 +819,14 @@ export class LikedPromptsPageComponent {
     });
   }
 
-  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok' | 'claude'): string | null {
+  private buildOneShotLink(prompt: PromptCard, target: 'gpt' | 'grok' | 'claude' | 'rocket'): string | null {
     const base = this.getPromptUrl(prompt as LikedPromptCard);
     if (!base) {
       return null;
+    }
+    if (target === 'rocket') {
+      const separator = base.includes('?') ? '&' : '?';
+      return `${base}${separator}rocket=1`;
     }
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
     return `${base}/${suffix}`;

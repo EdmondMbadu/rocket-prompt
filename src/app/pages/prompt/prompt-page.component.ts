@@ -42,6 +42,8 @@ export class PromptPageComponent {
   // copied state for the single prompt page (used to show check icon briefly)
   readonly copied = signal(false);
   private copyTimer?: ReturnType<typeof setTimeout>;
+  private readonly autoLaunchRocketRequest = signal(false);
+  private rocketOneShotHandled = false;
 
   // Collapsible sections state - launch stays open, share starts collapsed
   readonly launchSectionExpanded = signal(true);
@@ -124,6 +126,17 @@ export class PromptPageComponent {
         const p = this.prompt();
         if (p) {
           void this.updateLikedState(p.id);
+        }
+      });
+
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const shouldLaunch = params.has('rocket');
+        this.autoLaunchRocketRequest.set(shouldLaunch);
+        const prompt = this.prompt();
+        if (prompt) {
+          this.autoLaunchRocketFromOneShot(prompt);
         }
       });
   }
@@ -275,11 +288,40 @@ export class PromptPageComponent {
     this.fallbackCopyTextToClipboard(text);
   }
 
-  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
+  private autoLaunchRocketFromOneShot(prompt: Prompt) {
+    if (!this.autoLaunchRocketRequest() || this.rocketOneShotHandled) {
+      return;
+    }
+
+    this.rocketOneShotHandled = true;
+
+    const content = prompt.content ?? '';
+    if (!content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+
+    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, prompt.id);
+    if (!launch.stored) {
+      this.copyTextForRocketGoals(content);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.replace(launch.url);
+    }
+  }
+
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude' | 'rocket') {
     const url = this.buildOneShotLink(target);
     if (!url) return;
 
-    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
+    const label = target === 'gpt'
+      ? 'One Shot GPT'
+      : target === 'grok'
+      ? 'One Shot Grok'
+      : target === 'claude'
+      ? 'One Shot Claude'
+      : 'One Shot Rocket';
     navigator.clipboard.writeText(url).then(() => {
       this.showCopyMessage(`${label} link copied!`);
     }).catch(() => {
@@ -425,6 +467,7 @@ export class PromptPageComponent {
       this.prompt.set(found);
       this.loadError.set(null);
       this.isLoading.set(false);
+      this.autoLaunchRocketFromOneShot(found);
 
       // Load organization if organizationId exists, otherwise load author profile
       if (found.organizationId) {
@@ -516,9 +559,13 @@ export class PromptPageComponent {
     return p.customUrl ? `${origin}/${p.customUrl}` : `${origin}/prompt/${short}`;
   }
 
-  private buildOneShotLink(target: 'gpt' | 'grok' | 'claude'): string | null {
+  private buildOneShotLink(target: 'gpt' | 'grok' | 'claude' | 'rocket'): string | null {
     const base = this.getPromptUrl();
     if (!base) return null;
+    if (target === 'rocket') {
+      const separator = base.includes('?') ? '&' : '?';
+      return `${base}${separator}rocket=1`;
+    }
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
     return `${base}/${suffix}`;
   }

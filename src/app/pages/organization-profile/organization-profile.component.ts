@@ -1092,10 +1092,14 @@ export class OrganizationProfileComponent {
     return prompt.customUrl ? `${origin}/${prompt.customUrl}` : `${origin}/prompt/${short}`;
   }
 
-  private buildOneShotLink(prompt: Prompt, target: 'gpt' | 'grok' | 'claude'): string | null {
+  private buildOneShotLink(prompt: Prompt, target: 'gpt' | 'grok' | 'claude' | 'rocket'): string | null {
     const base = this.getPromptUrl(prompt);
     if (!base) {
       return null;
+    }
+    if (target === 'rocket') {
+      const separator = base.includes('?') ? '&' : '?';
+      return `${base}${separator}rocket=1`;
     }
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
     return `${base}/${suffix}`;
@@ -1445,14 +1449,20 @@ export class OrganizationProfileComponent {
     });
   }
 
-  copyOneClickLink(target: 'gpt' | 'grok' | 'claude') {
+  copyOneClickLink(target: 'gpt' | 'grok' | 'claude' | 'rocket') {
     const prompt = this.sharePrompt();
     if (!prompt) return;
 
     const url = this.buildOneShotLink(prompt, target);
     if (!url) return;
 
-    const label = target === 'gpt' ? 'One Shot GPT' : target === 'grok' ? 'One Shot Grok' : 'One Shot Claude';
+    const label = target === 'gpt'
+      ? 'One Shot GPT'
+      : target === 'grok'
+      ? 'One Shot Grok'
+      : target === 'claude'
+      ? 'One Shot Claude'
+      : 'One Shot Rocket';
     navigator.clipboard.writeText(url).then(() => {
       this.showCopyMessage(`${label} link copied!`);
     }).catch(() => {

@@ -22,7 +22,7 @@ export class ShareModalComponent {
   
   // Output events
   readonly close = output<void>();
-  readonly copyOneClickLink = output<'gpt' | 'grok' | 'claude'>();
+  readonly copyOneClickLink = output<'gpt' | 'grok' | 'claude' | 'rocket'>();
   readonly openChatbot = output<'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'>();
   readonly copyPromptUrl = output<void>();
   readonly copyPrompt = output<void>();
@@ -31,7 +31,7 @@ export class ShareModalComponent {
     this.close.emit();
   }
 
-  onCopyOneClickLink(target: 'gpt' | 'grok' | 'claude'): void {
+  onCopyOneClickLink(target: 'gpt' | 'grok' | 'claude' | 'rocket'): void {
     this.copyOneClickLink.emit(target);
   }
 
