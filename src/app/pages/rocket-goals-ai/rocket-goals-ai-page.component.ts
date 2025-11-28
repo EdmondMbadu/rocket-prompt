@@ -35,8 +35,6 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   readonly copiedMessageId = signal<number | null>(null);
   readonly profile = signal<UserProfile | null>(null);
   readonly profileLoaded = signal(false);
-  readonly generatedImageUrl = signal<string | null>(null);
-  readonly generatedImagePrompt = signal<string | null>(null);
   readonly isGeneratingImage = signal(false);
   readonly imageError = signal<string | null>(null);
   
@@ -115,7 +113,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
 
   clearChat(): void {
     this.aiService.clearConversation();
-    this.clearGeneratedImage();
+    this.imageError.set(null);
   }
 
   async generateImageFromInput(): Promise<void> {
@@ -127,28 +125,19 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
     this.isGeneratingImage.set(true);
     this.imageError.set(null);
 
+    this.aiService.addLocalUserMessage(prompt, { isImagePrompt: true });
+    this.inputMessage.set('');
+    this.shouldScrollToBottom = true;
+
     try {
       const url = await this.aiService.generateImage(prompt);
-      this.generatedImageUrl.set(url);
-      this.generatedImagePrompt.set(prompt);
+      this.aiService.addGeneratedImageMessage(url, prompt);
+      this.shouldScrollToBottom = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate image.';
       this.imageError.set(message);
     } finally {
       this.isGeneratingImage.set(false);
-    }
-  }
-
-  clearGeneratedImage(): void {
-    this.generatedImageUrl.set(null);
-    this.generatedImagePrompt.set(null);
-    this.imageError.set(null);
-  }
-
-  openGeneratedImage(): void {
-    const url = this.generatedImageUrl();
-    if (url) {
-      window.open(url, '_blank');
     }
   }
 
@@ -173,8 +162,9 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
 
   async copyMessage(message: ChatMessage): Promise<void> {
     try {
-      // Get plain text content (strip HTML tags for copying)
-      const textContent = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      const textContent = message.type === 'image'
+        ? `${message.imagePrompt ?? 'RocketGoals AI image'}: ${message.imageUrl ?? ''}`
+        : message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
       
       await navigator.clipboard.writeText(textContent);
       
@@ -190,7 +180,9 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       console.error('Failed to copy message:', error);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      textArea.value = message.type === 'image'
+        ? `${message.imagePrompt ?? 'RocketGoals AI image'}: ${message.imageUrl ?? ''}`
+        : message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
       textArea.style.position = 'fixed';
       textArea.style.opacity = '0';
       document.body.appendChild(textArea);
@@ -217,7 +209,9 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       // Format conversation as a readable text
       const conversationText = messages.map(msg => {
         const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
-        const content = msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const content = msg.type === 'image'
+          ? `Image -> ${msg.imagePrompt ?? 'Prompt'}: ${msg.imageUrl ?? ''}`
+          : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
         return `${role}: ${content}`;
       }).join('\n\n');
 
@@ -235,7 +229,9 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       // Fallback for older browsers
       const conversationText = messages.map(msg => {
         const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
-        const content = msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const content = msg.type === 'image'
+          ? `Image -> ${msg.imagePrompt ?? 'Prompt'}: ${msg.imageUrl ?? ''}`
+          : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
         return `${role}: ${content}`;
       }).join('\n\n');
       
@@ -268,6 +264,28 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
 
   trackByTimestamp(_index: number, message: ChatMessage): number {
     return message.timestamp.getTime();
+  }
+
+  openImage(url?: string): void {
+    if (!url) {
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  }
+
+  downloadImage(url?: string): void {
+    if (!url) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'rocketgoals-image.png';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   private triggerAutoLaunch(promptText: string): void {

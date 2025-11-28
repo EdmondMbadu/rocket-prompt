@@ -7,6 +7,10 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: Date;
+  type?: 'text' | 'image';
+  imageUrl?: string;
+  imagePrompt?: string;
+  isImagePrompt?: boolean;
 }
 
 interface AIRequest {
@@ -117,6 +121,40 @@ export class RocketGoalsAIService {
   clearConversation(): void {
     this.messages.set([]);
     this.error.set(null);
+  }
+
+  addLocalUserMessage(content: string, options?: { isImagePrompt?: boolean }): void {
+    const cleanContent = content.trim();
+    if (!cleanContent) {
+      return;
+    }
+
+    const message: ChatMessage = {
+      role: 'user',
+      content: cleanContent,
+      timestamp: new Date(),
+      isImagePrompt: options?.isImagePrompt ?? false,
+      type: 'text',
+    };
+
+    this.messages.update(msgs => [...msgs, message]);
+  }
+
+  addGeneratedImageMessage(imageUrl: string, prompt: string): void {
+    if (!imageUrl) {
+      return;
+    }
+
+    const message: ChatMessage = {
+      role: 'model',
+      content: `Generated image for: ${prompt}`,
+      timestamp: new Date(),
+      type: 'image',
+      imageUrl,
+      imagePrompt: prompt,
+    };
+
+    this.messages.update(msgs => [...msgs, message]);
   }
 
   async generateImage(prompt: string): Promise<string> {
