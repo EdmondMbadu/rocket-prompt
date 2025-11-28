@@ -2,7 +2,7 @@
   <!-- Header -->
   <header class="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
     <div class="flex items-center gap-4">
-      <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-900 shadow-lg">
+      <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-lg ring-1 ring-neutral-200">
         <svg viewBox="0 0 24 24" class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
         </svg>
@@ -67,7 +67,7 @@
       <div #messagesContainer class="flex-1 overflow-y-auto">
         <!-- Empty State -->
         <div *ngIf="messages().length === 0 && !isLoading()" class="flex h-full flex-col items-center justify-center px-4 py-12">
-          <div class="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-neutral-900 to-neutral-800 shadow-2xl">
+          <div class="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-white shadow-2xl ring-1 ring-red-100">
             <svg viewBox="0 0 24 24" class="h-12 w-12 text-red-500" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
             </svg>
@@ -185,8 +185,8 @@
 
             <!-- AI Message -->
             <div *ngIf="message.role === 'model'" class="flex gap-4 group">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900">
-                <svg viewBox="0 0 24 24" class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-red-100">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58" />
                 </svg>
               </div>
@@ -231,8 +231,8 @@
 
           <!-- Loading Indicator -->
           <div *ngIf="isLoading()" class="flex gap-4">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900">
-              <svg viewBox="0 0 24 24" class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-red-100">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58" />
               </svg>
             </div>

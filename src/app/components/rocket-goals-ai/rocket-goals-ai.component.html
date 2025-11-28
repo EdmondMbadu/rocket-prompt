@@ -33,8 +33,8 @@
   <!-- Header -->
   <header class="flex items-center justify-between border-b border-neutral-100 bg-neutral-950 px-5 py-4">
     <div class="flex items-center gap-3">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 shadow-lg shadow-red-600/30">
-        <svg viewBox="0 0 24 24" class="h-5 w-5 text-white" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg shadow-red-600/20">
+        <svg viewBox="0 0 24 24" class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
         </svg>
       </div>
@@ -113,8 +113,8 @@
           *ngIf="message.role === 'model'"
           class="flex max-w-[88%] gap-3 group"
         >
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
-            <svg viewBox="0 0 24 24" class="h-4 w-4 text-white" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-red-600 ring-1 ring-red-100">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58" />
             </svg>
           </div>
@@ -166,8 +166,8 @@
 
       <!-- Loading Indicator -->
       <div *ngIf="isLoading()" class="flex gap-3">
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
-          <svg viewBox="0 0 24 24" class="h-4 w-4 text-white" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-red-600 ring-1 ring-red-100">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58" />
           </svg>
         </div>

@@ -45,8 +45,10 @@
         >
           <span 
             class="flex h-9 w-9 items-center justify-center rounded-md" 
-            [class.bg-neutral-900]="item.icon === 'ai'"
-            [class.text-red-500]="item.icon === 'ai'"
+            [class.bg-white]="item.icon === 'ai'"
+            [class.text-red-600]="item.icon === 'ai'"
+            [class.ring-1]="item.icon === 'ai'"
+            [class.ring-red-100]="item.icon === 'ai'"
             [class.bg-slate-100]="item.icon !== 'ai'"
             [class.text-slate-600]="item.icon !== 'ai'"
           >
@@ -193,8 +195,10 @@
           class="flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200"
           [class.h-10]="collapsed()"
           [class.w-10]="collapsed()"
-          [class.bg-neutral-900]="item.icon === 'ai'"
-          [class.text-red-500]="item.icon === 'ai'"
+          [class.bg-white]="item.icon === 'ai'"
+          [class.text-red-600]="item.icon === 'ai'"
+          [class.ring-1]="item.icon === 'ai'"
+          [class.ring-red-100]="item.icon === 'ai'"
           [class.bg-slate-100]="item.icon !== 'ai'"
           [class.text-slate-600]="item.icon !== 'ai'"
         >
