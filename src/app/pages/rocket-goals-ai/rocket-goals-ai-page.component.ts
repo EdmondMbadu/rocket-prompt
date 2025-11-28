@@ -266,6 +266,10 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
     return message.timestamp.getTime();
   }
 
+  handleImageLoad(): void {
+    requestAnimationFrame(() => this.scrollToBottom());
+  }
+
   openImage(url?: string): void {
     if (!url) {
       return;

@@ -231,6 +231,7 @@
                     <img
                       [src]="message.imageUrl || ''"
                       alt="Generated RocketGoals image"
+                      (load)="handleImageLoad()"
                       class="w-full rounded-lg object-cover"
                     />
                   </div>
