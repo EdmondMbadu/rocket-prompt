@@ -147,7 +147,7 @@ export class RocketGoalsAIService {
 
     const message: ChatMessage = {
       role: 'model',
-      content: `Generated image for: ${prompt}`,
+      content: 'RocketGoals AI image',
       timestamp: new Date(),
       type: 'image',
       imageUrl,

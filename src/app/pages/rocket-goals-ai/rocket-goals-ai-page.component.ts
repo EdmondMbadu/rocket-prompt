@@ -163,7 +163,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   async copyMessage(message: ChatMessage): Promise<void> {
     try {
       const textContent = message.type === 'image'
-        ? `${message.imagePrompt ?? 'RocketGoals AI image'}: ${message.imageUrl ?? ''}`
+        ? (message.imageUrl ?? '')
         : message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
       
       await navigator.clipboard.writeText(textContent);
@@ -181,7 +181,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = message.type === 'image'
-        ? `${message.imagePrompt ?? 'RocketGoals AI image'}: ${message.imageUrl ?? ''}`
+        ? (message.imageUrl ?? '')
         : message.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
       textArea.style.position = 'fixed';
       textArea.style.opacity = '0';
@@ -210,7 +210,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       const conversationText = messages.map(msg => {
         const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
         const content = msg.type === 'image'
-          ? `Image -> ${msg.imagePrompt ?? 'Prompt'}: ${msg.imageUrl ?? ''}`
+          ? (msg.imageUrl ?? '')
           : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
         return `${role}: ${content}`;
       }).join('\n\n');
@@ -230,7 +230,7 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
       const conversationText = messages.map(msg => {
         const role = msg.role === 'user' ? 'You' : 'RocketGoals AI';
         const content = msg.type === 'image'
-          ? `Image -> ${msg.imagePrompt ?? 'Prompt'}: ${msg.imageUrl ?? ''}`
+          ? (msg.imageUrl ?? '')
           : msg.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
         return `${role}: ${content}`;
       }).join('\n\n');
