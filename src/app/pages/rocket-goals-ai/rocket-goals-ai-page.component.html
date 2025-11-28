@@ -144,7 +144,7 @@
           <div *ngFor="let message of messages(); trackBy: trackByTimestamp" class="message-bubble">
             <!-- User Message -->
             <div *ngIf="message.role === 'user'" class="flex justify-end group">
-              <div class="relative max-w-[80%] rounded-2xl rounded-br-md bg-amber-50 px-5 py-4 text-amber-900 shadow-sm ring-1 ring-amber-100">
+              <div class="relative max-w-[80%] rounded-2xl rounded-br-md bg-neutral-100 px-5 py-4 text-neutral-900 shadow-sm ring-1 ring-neutral-200">
                 <div class="flex items-start gap-3">
                   <p class="flex-1 text-[15px] leading-relaxed">{{ message.content }}</p>
                   <div
