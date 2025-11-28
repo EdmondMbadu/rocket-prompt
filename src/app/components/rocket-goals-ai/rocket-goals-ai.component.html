@@ -1,7 +1,7 @@
 <!-- Floating AI Button -->
 <button
   type="button"
-  class="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/35 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+  class="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg shadow-red-500/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/35 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
   [class.scale-0]="isOpen()"
   [class.opacity-0]="isOpen()"
   [class.pointer-events-none]="isOpen()"
@@ -22,7 +22,7 @@
 
 <!-- AI Chat Panel -->
 <div
-  class="fixed bottom-6 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl shadow-black/10 transition-all duration-300"
+  class="fixed bottom-6 right-6 z-[60] flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl shadow-black/10 transition-all duration-300"
   [class.translate-y-full]="!isOpen()"
   [class.opacity-0]="!isOpen()"
   [class.pointer-events-none]="!isOpen()"
