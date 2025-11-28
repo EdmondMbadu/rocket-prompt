@@ -283,6 +283,11 @@ export const stripeWebhook = functions
 // Image generation model - using Google's Generative AI SDK with Gemini 3 Pro Image
 const IMAGE_GENERATION_MODEL = "gemini-3-pro-image-preview";
 
+interface GeminiImagePayload {
+  data: string;
+  mimeType: string;
+}
+
 interface BulkPromptInput {
   title: string;
   content: string;
@@ -311,31 +316,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Generates an image using Google's Generative AI SDK with Gemini 3 Pro Image model
- * and uploads it to Firebase Storage.
- * Uses the latest Gemini image generation model for best quality.
- * Includes retry logic with exponential backoff for rate limiting.
- */
-async function generateThumbnailImage(
-  promptText: string,
-  promptId: string,
-  batchId: string,
+async function generateGeminiImagePayload(
+  prompt: string,
+  context: Record<string, unknown>,
   retryCount: number = 0
-): Promise<string | null> {
+): Promise<GeminiImagePayload | null> {
   const MAX_RETRIES = 3;
-  const BASE_DELAY_MS = 3000; // 3 seconds base delay
+  const BASE_DELAY_MS = 3000;
 
   if (!geminiApiKey) {
-    functions.logger.error("Gemini API key not configured for image generation");
+    functions.logger.error("Gemini API key not configured for image generation", context);
     return null;
   }
 
   try {
-    // Initialize Google Generative AI with API key
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-
-    // Use the Gemini 3 Pro Image model for image generation
     const model = genAI.getGenerativeModel({
       model: IMAGE_GENERATION_MODEL,
       generationConfig: {
@@ -344,24 +339,16 @@ async function generateThumbnailImage(
       },
     });
 
-    // Create a simplified prompt for thumbnail generation
-    const imagePrompt = `Generate a visually appealing, artistic thumbnail image representing: ${promptText.substring(0, 400)}. Modern, vibrant, visually striking, no text in image. Square aspect ratio.`;
-
-    // Generate the image
-    const result = await model.generateContent(imagePrompt);
+    const result = await model.generateContent(prompt);
     const response = result.response;
-
-    // Extract image data from the response
     let imageData: string | null = null;
     let mimeType = "image/png";
 
-    // Check for inline data in candidates
     const candidates = response.candidates;
     if (candidates && candidates.length > 0) {
       const parts = candidates[0].content?.parts;
       if (parts) {
         for (const part of parts) {
-          // Check if this part has inline image data
           if (part.inlineData?.data) {
             imageData = part.inlineData.data;
             mimeType = part.inlineData.mimeType || "image/png";
@@ -373,65 +360,117 @@ async function generateThumbnailImage(
 
     if (!imageData) {
       functions.logger.warn("No image data returned from Gemini 3 Pro Image", {
-        promptId,
+        ...context,
         hasResponse: !!response,
         candidateCount: candidates?.length || 0,
       });
       return null;
     }
 
-    // Upload to Firebase Storage
-    const bucket = admin.storage().bucket();
-    const fileExtension = mimeType.split("/")[1] || "png";
-    const fileName = `bulk-prompts/${batchId}/${promptId}/thumbnail.${fileExtension}`;
-    const file = bucket.file(fileName);
-
-    // Decode base64 and upload
-    const imageBuffer = Buffer.from(imageData, "base64");
-
-    await file.save(imageBuffer, {
-      metadata: {
-        contentType: mimeType,
-        metadata: {
-          promptId: promptId,
-          batchId: batchId,
-          generatedAt: new Date().toISOString(),
-          model: IMAGE_GENERATION_MODEL,
-        },
-      },
-    });
-
-    // Make the file publicly accessible and get the download URL
-    await file.makePublic();
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-    functions.logger.info(`Generated thumbnail for prompt ${promptId}: ${publicUrl}`, {
-      model: IMAGE_GENERATION_MODEL,
-    });
-    return publicUrl;
+    return {
+      data: imageData,
+      mimeType,
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-
-    // Check if it's a rate limit error (429) or quota error
     if ((errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("quota")) && retryCount < MAX_RETRIES) {
-      const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount); // Exponential backoff
-      functions.logger.warn(`Rate limited, retrying in ${delayMs}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`, {
-        promptId,
-        model: IMAGE_GENERATION_MODEL,
+      const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount);
+      functions.logger.warn("Rate limited while generating Gemini image", {
+        ...context,
+        retryAttempt: retryCount + 1,
+        delayMs,
       });
       await sleep(delayMs);
-      return generateThumbnailImage(promptText, promptId, batchId, retryCount + 1);
+      return generateGeminiImagePayload(prompt, context, retryCount + 1);
     }
 
-    functions.logger.error("Failed to generate thumbnail image", {
+    functions.logger.error("Failed to generate Gemini image", {
+      ...context,
       error: errorMessage,
-      promptId,
-      batchId,
-      retryCount,
-      model: IMAGE_GENERATION_MODEL,
     });
     return null;
   }
+}
+
+async function saveGeneratedImageToStorage(
+  image: GeminiImagePayload,
+  buildFileName: (extension: string) => string,
+  metadata: Record<string, string>,
+  context: Record<string, unknown>
+): Promise<string | null> {
+  try {
+    const bucket = admin.storage().bucket();
+    const fileExtension = image.mimeType.split("/")[1] || "png";
+    const fileName = buildFileName(fileExtension);
+    const file = bucket.file(fileName);
+    const imageBuffer = Buffer.from(image.data, "base64");
+
+    const storageMetadata: Record<string, string> = {
+      model: IMAGE_GENERATION_MODEL,
+      generatedAt: new Date().toISOString(),
+    };
+
+    for (const [key, value] of Object.entries(metadata)) {
+      storageMetadata[key] = value;
+    }
+
+    await file.save(imageBuffer, {
+      metadata: {
+        contentType: image.mimeType,
+        metadata: storageMetadata,
+      },
+    });
+
+    await file.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    functions.logger.info("Generated image saved", {
+      ...context,
+      fileName,
+      publicUrl,
+      model: IMAGE_GENERATION_MODEL,
+    });
+
+    return publicUrl;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    functions.logger.error("Failed to store generated image", {
+      ...context,
+      error: errorMessage,
+    });
+    return null;
+  }
+}
+
+/**
+ * Generates an image using Google's Generative AI SDK with Gemini 3 Pro Image model
+ * and uploads it to Firebase Storage.
+ * Uses the latest Gemini image generation model for best quality.
+ * Includes retry logic with exponential backoff for rate limiting.
+ */
+async function generateThumbnailImage(
+  promptText: string,
+  promptId: string,
+  batchId: string
+): Promise<string | null> {
+  const imagePrompt = `Generate a visually appealing, artistic thumbnail image representing: ${promptText.substring(0, 400)}. Modern, vibrant, visually striking, no text in image. Square aspect ratio.`;
+  const context = { promptId, batchId, requestType: "bulkPromptThumbnail" };
+  const payload = await generateGeminiImagePayload(imagePrompt, context);
+
+  if (!payload) {
+    return null;
+  }
+
+  return saveGeneratedImageToStorage(
+    payload,
+    (extension) => `bulk-prompts/${batchId}/${promptId}/thumbnail.${extension}`,
+    {
+      promptId,
+      batchId,
+      requestType: "bulkPromptThumbnail",
+    },
+    context
+  );
 }
 
 /**
@@ -691,6 +730,15 @@ interface RocketGoalsAIRequest {
   conversationHistory?: ChatMessage[];
 }
 
+interface RocketGoalsImageRequest {
+  prompt: string;
+}
+
+interface RocketGoalsImageResponse {
+  imageUrl: string;
+  prompt: string;
+}
+
 const GEMINI_MODEL =
   process.env.GEMINI_MODEL ||
   functions.config().gemini?.model ||
@@ -870,4 +918,86 @@ export const rocketGoalsAI = functions
         "Failed to generate AI response. Please try again."
       );
     }
+  });
+
+export const generateRocketGoalsImage = functions
+  .region("us-central1")
+  .runWith({
+    timeoutSeconds: 300,
+    memory: "1GB",
+    secrets: ["GEMINI_API_KEY"],
+  })
+  .https.onCall(async (data: RocketGoalsImageRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "You must be signed in to generate images."
+      );
+    }
+
+    const prompt = typeof data?.prompt === "string" ? data.prompt.trim() : "";
+
+    if (!prompt) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "An image prompt is required."
+      );
+    }
+
+    if (prompt.length > 1200) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Prompt is too long. Maximum 1,200 characters."
+      );
+    }
+
+    if (!geminiApiKey) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "AI image service is not configured."
+      );
+    }
+
+    const userId = context.auth.uid;
+    const logContext = {
+      userId,
+      requestType: "rocketGoalsImage",
+    };
+
+    const enrichedPrompt = `Create a cinematic, motivational concept art image inspired by the RocketGoals mindset. Highlight ${prompt}. Use vibrant lighting, energetic motion, and futuristic optimism. No readable text in the frame. Square aspect ratio.`;
+
+    const payload = await generateGeminiImagePayload(enrichedPrompt, logContext);
+
+    if (!payload) {
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to generate image. Please try again."
+      );
+    }
+
+    const promptSnippet = prompt.substring(0, 500);
+    const fileNameBuilder = (extension: string) => `rocket-goals-ai/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+
+    const imageUrl = await saveGeneratedImageToStorage(
+      payload,
+      fileNameBuilder,
+      {
+        userId,
+        promptSnippet,
+        requestType: "rocketGoalsImage",
+      },
+      logContext
+    );
+
+    if (!imageUrl) {
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to store generated image. Please try again."
+      );
+    }
+
+    return {
+      imageUrl,
+      prompt,
+    } as RocketGoalsImageResponse;
   });

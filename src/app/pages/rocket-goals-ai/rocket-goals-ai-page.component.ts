@@ -35,6 +35,10 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   readonly copiedMessageId = signal<number | null>(null);
   readonly profile = signal<UserProfile | null>(null);
   readonly profileLoaded = signal(false);
+  readonly generatedImageUrl = signal<string | null>(null);
+  readonly generatedImagePrompt = signal<string | null>(null);
+  readonly isGeneratingImage = signal(false);
+  readonly imageError = signal<string | null>(null);
   
   private shouldScrollToBottom = false;
   private autoLaunchHandled = false;
@@ -111,6 +115,41 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
 
   clearChat(): void {
     this.aiService.clearConversation();
+    this.clearGeneratedImage();
+  }
+
+  async generateImageFromInput(): Promise<void> {
+    const prompt = this.inputMessage().trim();
+    if (!prompt || this.isGeneratingImage()) {
+      return;
+    }
+
+    this.isGeneratingImage.set(true);
+    this.imageError.set(null);
+
+    try {
+      const url = await this.aiService.generateImage(prompt);
+      this.generatedImageUrl.set(url);
+      this.generatedImagePrompt.set(prompt);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate image.';
+      this.imageError.set(message);
+    } finally {
+      this.isGeneratingImage.set(false);
+    }
+  }
+
+  clearGeneratedImage(): void {
+    this.generatedImageUrl.set(null);
+    this.generatedImagePrompt.set(null);
+    this.imageError.set(null);
+  }
+
+  openGeneratedImage(): void {
+    const url = this.generatedImageUrl();
+    if (url) {
+      window.open(url, '_blank');
+    }
   }
 
   formatMessage(content: string): string {

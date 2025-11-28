@@ -19,6 +19,15 @@ interface AIResponse {
   model: string;
 }
 
+interface GenerateImageRequest {
+  prompt: string;
+}
+
+interface GenerateImageResponse {
+  imageUrl: string;
+  prompt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -108,6 +117,27 @@ export class RocketGoalsAIService {
   clearConversation(): void {
     this.messages.set([]);
     this.error.set(null);
+  }
+
+  async generateImage(prompt: string): Promise<string> {
+    const cleanPrompt = prompt.trim();
+    if (!cleanPrompt) {
+      throw new Error('Prompt cannot be empty');
+    }
+
+    try {
+      const { functions, functionsModule } = await this.getFunctionsContext();
+      const callable = functionsModule.httpsCallable<GenerateImageRequest, GenerateImageResponse>(
+        functions,
+        'generateRocketGoalsImage'
+      );
+
+      const result = await callable({ prompt: cleanPrompt });
+      return result.data.imageUrl;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate image';
+      throw new Error(errorMessage);
+    }
   }
 
   private async getFunctionsContext() {
