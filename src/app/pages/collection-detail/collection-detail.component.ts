@@ -941,9 +941,9 @@ export class CollectionDetailComponent {
 
     if (!launch.stored) {
       this.copyTextForRocketGoals(content);
-      this.showCopyMessage('Prompt copied! Paste it into RocketGoals AI.');
+      this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
     } else {
-      this.showCopyMessage('Launching in RocketGoals AI…');
+      this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
     }
   }
 

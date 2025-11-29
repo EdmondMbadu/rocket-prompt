@@ -300,7 +300,6 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
     this.autoLaunchHandled = true;
     this.inputMessage.set(promptText);
     this.shouldScrollToBottom = true;
-    void this.sendMessage();
   }
 
   private scrollToBottom(): void {
