@@ -292,23 +292,13 @@
                         </div>
                     </div>
 
-                    <button type="button" class="ai-platform-button ai-platform-button--copy"
-                        [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.title]="copied() ? 'Copied' : 'Copy prompt for other AI'" (click)="copyPrompt()">
+                    <button type="button" class="ai-platform-button ai-platform-button--rocket"
+                        aria-label="Launch in Rocket AI" title="Launch in Rocket AI"
+                        (click)="openChatbot('', 'RocketGoals', prompt()?.content)">
                         <div class="ai-platform-button__icon">
-                            <svg *ngIf="!copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
-                                stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
-                            <svg *ngIf="copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
-                                stroke="currentColor" stroke-width="2.2">
-                                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
+                            <img src="assets/rocket-logo.png" alt="Rocket AI" class="ai-icon" />
                         </div>
-                        <span class="ai-platform-button__label">{{ copied() ? 'Copied' : 'Copy' }}</span>
+                        <span class="ai-platform-button__label">Rocket</span>
                     </button>
                 </div>
             </div>
@@ -396,7 +386,43 @@
             <div class="content" [class.content--blurred]="isPrivateAndNotAuthor()">
                 <img *ngIf="prompt()?.imageUrl" [src]="prompt()?.imageUrl" [alt]="prompt()?.title"
                     class="w-full h-auto rounded-lg object-cover mb-4" />
-                <pre *ngIf="prompt()?.content">{{ prompt()?.content }}</pre>
+                <div *ngIf="prompt()?.content" class="relative group">
+                    <pre>{{ prompt()?.content }}</pre>
+                    <button
+                        type="button"
+                        class="copy-prompt-button absolute -right-2 -bottom-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-md ring-1 ring-black/5 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:shadow-lg hover:scale-110 group-hover:opacity-100"
+                        [class.opacity-100]="copied()"
+                        [class.text-red-600]="copied()"
+                        [class.bg-red-50]="copied()"
+                        (click)="copyPrompt()"
+                        [attr.aria-label]="copied() ? 'Copied!' : 'Copy prompt'"
+                        [attr.title]="copied() ? 'Copied!' : 'Copy prompt'"
+                    >
+                        <svg 
+                            *ngIf="!copied()"
+                            viewBox="0 0 24 24" 
+                            class="h-4 w-4" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            stroke-width="2"
+                        >
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <svg 
+                            *ngIf="copied()"
+                            viewBox="0 0 24 24" 
+                            class="h-4 w-4" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            stroke-width="2.2"
+                        >
+                            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- ACTIONS: Launch this prompt (Bottom) - only show if prompt is longer than 100 words -->
@@ -451,24 +477,14 @@
                         <span class="ai-platform-button__label">Grok</span>
                     </button>
 
-                    <button type="button" class="ai-platform-button ai-platform-button--copy"
-                        [attr.aria-label]="copied() ? 'Copied' : 'Copy prompt'"
-                        [attr.data-tooltip]="copied() ? 'Copied' : 'Copy prompt for other AI'"
-                        [attr.title]="copied() ? 'Copied' : 'Copy prompt for other AI'" (click)="copyPrompt()">
+                    <button type="button" class="ai-platform-button ai-platform-button--rocket"
+                        aria-label="Launch in Rocket AI" data-tooltip="Launch in Rocket AI"
+                        title="Launch in Rocket AI"
+                        (click)="openChatbot('', 'RocketGoals', prompt()?.content)">
                         <div class="ai-platform-button__icon">
-                            <svg *ngIf="!copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
-                                stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
-                            <svg *ngIf="copied()" aria-hidden="true" viewBox="0 0 24 24" class="ai-icon" fill="none"
-                                stroke="currentColor" stroke-width="2.2">
-                                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
+                            <img src="assets/rocket-logo.png" alt="Rocket AI" class="ai-icon" />
                         </div>
-                        <span class="ai-platform-button__label">{{ copied() ? 'Copied' : 'Copy' }}</span>
+                        <span class="ai-platform-button__label">Rocket AI</span>
                     </button>
                 </div>
             </div>
