@@ -155,6 +155,19 @@
                     class="inline-flex items-center rounded-full backdrop-blur-sm border-2 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide shadow-lg">
                     {{ collectionTagLabel() }}
                   </span>
+                  <!-- Private Badge (only visible to author) -->
+                  <span *ngIf="collection()?.isPrivate && canEdit()"
+                    [class.bg-amber-100/95]="collection()?.heroImageUrl"
+                    [class.bg-amber-100]="!collection()?.heroImageUrl"
+                    [class.border-amber-300/50]="collection()?.heroImageUrl"
+                    [class.border-amber-300]="!collection()?.heroImageUrl"
+                    [class.drop-shadow-lg]="collection()?.heroImageUrl"
+                    class="inline-flex items-center gap-1.5 rounded-full backdrop-blur-sm border-2 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-lg">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Private
+                  </span>
                   <span *ngIf="collection()" [class.text-white]="collection()?.heroImageUrl"
                     [class.text-slate-600]="!collection()?.heroImageUrl"
                     [class.drop-shadow-lg]="collection()?.heroImageUrl" class="text-sm font-semibold">
@@ -952,6 +965,40 @@
                   </span>
                   <span>{{ bot.label }}</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- Privacy Toggle -->
+            <div class="border-t-2 border-slate-200 pt-5 mt-5">
+              <div class="flex items-center justify-between">
+                <div class="flex-1 pr-4">
+                  <label class="block text-sm font-semibold text-slate-700 mb-1">Private Collection</label>
+                  <p class="text-xs text-slate-500">
+                    Private collections won't appear in the public collections list, but anyone with the direct link can still view it.
+                  </p>
+                </div>
+                <button type="button"
+                  class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2"
+                  [class.bg-[#DC2626]]="editCollectionIsPrivate()"
+                  [class.bg-slate-200]="!editCollectionIsPrivate()"
+                  [attr.aria-pressed]="editCollectionIsPrivate()"
+                  (click)="editCollectionIsPrivate.set(!editCollectionIsPrivate())"
+                  [disabled]="isUpdatingCollection()">
+                  <span class="sr-only">Toggle private collection</span>
+                  <span aria-hidden="true"
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    [class.translate-x-5]="editCollectionIsPrivate()"
+                    [class.translate-x-0]="!editCollectionIsPrivate()">
+                  </span>
+                </button>
+              </div>
+              <div *ngIf="editCollectionIsPrivate()" class="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                <svg class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p class="text-xs text-amber-800">
+                  This collection will be hidden from <span class="font-semibold">/collections</span> but accessible via direct link.
+                </p>
               </div>
             </div>
           </div>

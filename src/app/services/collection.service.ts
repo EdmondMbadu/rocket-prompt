@@ -36,7 +36,9 @@ export class CollectionService {
           unsubscribe = firestoreModule.onSnapshot(
             queryRef,
             (snapshot) => {
-              const collections = snapshot.docs.map((doc) => this.mapCollection(doc, firestoreModule));
+              const collections = snapshot.docs
+                .map((doc) => this.mapCollection(doc, firestoreModule))
+                .filter((collection) => !collection.isPrivate); // Filter out private collections
               subscriber.next(collections);
             },
             (error) => subscriber.error(error)
@@ -397,6 +399,11 @@ export class CollectionService {
       }
     }
 
+    // Handle isPrivate
+    if (typeof input.isPrivate === 'boolean') {
+      updatePayload['isPrivate'] = input.isPrivate;
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       return;
     }
@@ -495,6 +502,7 @@ export class CollectionService {
     const brandLinkValue = data['brandLink'];
     const brandSubtextValue = data['brandSubtext'];
     const defaultAiValue = data['defaultAi'];
+    const isPrivateValue = data['isPrivate'];
 
     // Validate defaultAi value
     const validAiOptions: DirectLaunchTarget[] = ['chatgpt', 'gemini', 'claude', 'grok'];
@@ -521,7 +529,8 @@ export class CollectionService {
       brandLogoUrl: typeof brandLogoUrlValue === 'string' ? brandLogoUrlValue : undefined,
       brandLink: typeof brandLinkValue === 'string' ? brandLinkValue : undefined,
       brandSubtext: typeof brandSubtextValue === 'string' ? brandSubtextValue : undefined,
-      defaultAi
+      defaultAi,
+      isPrivate: typeof isPrivateValue === 'boolean' ? isPrivateValue : undefined
     };
   }
 

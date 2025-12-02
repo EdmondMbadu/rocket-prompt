@@ -18,6 +18,7 @@ export interface PromptCollection {
   readonly brandLink?: string;
   readonly brandSubtext?: string;
   readonly defaultAi?: DirectLaunchTarget;
+  readonly isPrivate?: boolean;
 }
 
 export interface CreateCollectionInput {
@@ -44,5 +45,6 @@ export interface UpdateCollectionInput {
   readonly brandLink?: string;
   readonly brandSubtext?: string;
   readonly defaultAi?: DirectLaunchTarget | null;
+  readonly isPrivate?: boolean;
 }
 

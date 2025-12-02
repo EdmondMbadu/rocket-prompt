@@ -100,6 +100,7 @@ export class CollectionDetailComponent {
   readonly sharePrompt = signal<PromptCard | null>(null);
   readonly shareModalOpen = signal(false);
   readonly editCollectionDefaultAi = signal<DirectLaunchTarget | null>(null);
+  readonly editCollectionIsPrivate = signal(false);
   private collectionDefaultAiApplied = false;
   
   readonly brandSubtextWordCount = computed(() => {
@@ -1253,6 +1254,7 @@ export class CollectionDetailComponent {
     this.editBrandLink.set(collection?.brandLink ?? '');
     this.editBrandSubtext.set(collection?.brandSubtext ?? '');
     this.editCollectionDefaultAi.set(collection?.defaultAi ?? null);
+    this.editCollectionIsPrivate.set(collection?.isPrivate ?? false);
     this.brandingSectionExpanded.set(false);
     this.editCustomUrlError.set(null);
     this.brandLogoUploadError.set(null);
@@ -1276,6 +1278,7 @@ export class CollectionDetailComponent {
     this.editBrandLink.set('');
     this.editBrandSubtext.set('');
     this.editCollectionDefaultAi.set(null);
+    this.editCollectionIsPrivate.set(false);
     this.editCustomUrlError.set(null);
     this.brandLogoUploadError.set(null);
     this.clearCustomUrlDebounce();
@@ -1618,6 +1621,7 @@ export class CollectionDetailComponent {
 
     try {
       const defaultAi = this.editCollectionDefaultAi();
+      const isPrivate = this.editCollectionIsPrivate();
       const updateData: any = {
         name,
         tag,
@@ -1625,7 +1629,8 @@ export class CollectionDetailComponent {
         blurb: blurb || undefined,
         brandLink: brandLink || '',
         brandSubtext: brandSubtext || '',
-        defaultAi: defaultAi || null
+        defaultAi: defaultAi || null,
+        isPrivate
       };
 
       await this.collectionService.updateCollection(
@@ -1643,7 +1648,8 @@ export class CollectionDetailComponent {
         blurb: blurb || undefined,
         brandLink: brandLink || undefined,
         brandSubtext: brandSubtext || undefined,
-        defaultAi: defaultAi || undefined
+        defaultAi: defaultAi || undefined,
+        isPrivate
       });
       
       // Also update the current default chatbot if it was changed
