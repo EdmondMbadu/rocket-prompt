@@ -972,27 +972,47 @@
             <div class="border-t-2 border-slate-200 pt-5 mt-5">
               <div class="flex items-center justify-between">
                 <div class="flex-1 pr-4">
-                  <label class="block text-sm font-semibold text-slate-700 mb-1">Private Collection</label>
+                  <div class="flex items-center gap-2 mb-1">
+                    <label class="block text-sm font-semibold text-slate-700">Private Collection</label>
+                    <span *ngIf="!canUsePrivateCollections()"
+                      class="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-100 to-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
+                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Plus
+                    </span>
+                  </div>
                   <p class="text-xs text-slate-500">
                     Private collections won't appear in the public collections list, but anyone with the direct link can still view it.
                   </p>
                 </div>
                 <button type="button"
                   class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2"
-                  [class.bg-[#DC2626]]="editCollectionIsPrivate()"
-                  [class.bg-slate-200]="!editCollectionIsPrivate()"
+                  [class.bg-[#DC2626]]="editCollectionIsPrivate() && canUsePrivateCollections()"
+                  [class.bg-slate-200]="!editCollectionIsPrivate() || !canUsePrivateCollections()"
+                  [class.opacity-60]="!canUsePrivateCollections()"
                   [attr.aria-pressed]="editCollectionIsPrivate()"
-                  (click)="editCollectionIsPrivate.set(!editCollectionIsPrivate())"
+                  (click)="togglePrivateCollection()"
                   [disabled]="isUpdatingCollection()">
                   <span class="sr-only">Toggle private collection</span>
                   <span aria-hidden="true"
                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                    [class.translate-x-5]="editCollectionIsPrivate()"
-                    [class.translate-x-0]="!editCollectionIsPrivate()">
+                    [class.translate-x-5]="editCollectionIsPrivate() && canUsePrivateCollections()"
+                    [class.translate-x-0]="!editCollectionIsPrivate() || !canUsePrivateCollections()">
                   </span>
                 </button>
               </div>
-              <div *ngIf="editCollectionIsPrivate()" class="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+              <!-- Upgrade prompt for free users -->
+              <div *ngIf="!canUsePrivateCollections()" class="mt-3 flex items-start gap-2 rounded-lg bg-purple-50 border border-purple-200 px-3 py-2">
+                <svg class="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                <p class="text-xs text-purple-800">
+                  <span class="font-semibold">Upgrade to Plus</span> to make your collections private and control who can discover them.
+                </p>
+              </div>
+              <!-- Info message when private is enabled -->
+              <div *ngIf="editCollectionIsPrivate() && canUsePrivateCollections()" class="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
                 <svg class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>

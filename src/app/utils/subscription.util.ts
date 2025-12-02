@@ -165,6 +165,48 @@ export function getUpgradeBannerConfig(subscriptionStatus?: string | null): Upgr
 }
 
 /**
+ * Checks if a user has an active premium subscription (admin, plus, pro, or team).
+ * This is used to gate premium features like private collections.
+ * 
+ * @param profile - The user profile object
+ * @returns true if the user has access to premium features, false otherwise
+ */
+export function hasPremiumAccess(profile: {
+  admin?: boolean;
+  role?: string;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: unknown;
+} | null | undefined): boolean {
+  if (!profile) {
+    return false;
+  }
+
+  // Admin users always have access
+  if (profile.admin === true || profile.role === 'admin') {
+    return true;
+  }
+
+  const status = profile.subscriptionStatus?.toLowerCase();
+
+  // No subscription status means free user
+  if (!status) {
+    return false;
+  }
+
+  // Plus users have lifetime access
+  if (status === 'plus') {
+    return true;
+  }
+
+  // Pro and Team users have access if their subscription is not expired
+  if (status === 'pro' || status === 'team') {
+    return !isSubscriptionExpired(status, profile.subscriptionExpiresAt);
+  }
+
+  return false;
+}
+
+/**
  * Checks if a subscription has expired.
  * 
  * @param subscriptionStatus - The user's subscription status ('pro', 'team', 'plus', or undefined)

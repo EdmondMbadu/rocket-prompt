@@ -16,6 +16,7 @@ import type { PromptCard } from '../../models/prompt-card.model';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
+import { hasPremiumAccess } from '../../utils/subscription.util';
 
 interface PromptOption {
   readonly id: string;
@@ -146,6 +147,11 @@ export class CollectionDetailComponent {
       return false;
     }
     return collection.authorId === currentUser.uid;
+  });
+
+  // Check if user has premium access (admin, plus, pro, or team)
+  readonly canUsePrivateCollections = computed(() => {
+    return hasPremiumAccess(this.profile());
   });
 
   readonly canEdit = computed(() => {
@@ -1836,5 +1842,17 @@ export class CollectionDetailComponent {
     const prompt = this.sharePrompt();
     if (!prompt) return;
     this.copyPrompt(prompt);
+  }
+
+  togglePrivateCollection() {
+    if (!this.canUsePrivateCollections()) {
+      // Redirect to pricing page for free users
+      void this.router.navigate(['/pricing'], {
+        queryParams: { plan: 'plus', feature: 'private-collections' }
+      });
+      return;
+    }
+    // Toggle the private state
+    this.editCollectionIsPrivate.set(!this.editCollectionIsPrivate());
   }
 }
