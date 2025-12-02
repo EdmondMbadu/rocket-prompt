@@ -8,6 +8,7 @@
  */
 
 import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -478,36 +479,36 @@ async function generateThumbnailImage(
  * This function processes an array of prompts, optionally generates thumbnails
  * using Google's Generative AI (Gemini 3 Pro Image model), and saves everything to Firestore.
  */
-export const bulkCreatePromptsWithThumbnails = functions
-  .region("us-central1")
-  .runWith({
-    timeoutSeconds: 540, // 9 minutes max for long batches
-    memory: "1GB",
-  })
-  .https.onCall(async (data, context) => {
+export const bulkCreatePromptsWithThumbnails = onCall(
+  {
+    region: "us-central1",
+    timeoutSeconds: 3600, // 60 minutes for long batches with image generation
+    memory: "1GiB",
+  },
+  async (request) => {
     // Verify authentication
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError(
+    if (!request.auth?.uid) {
+      throw new HttpsError(
         "unauthenticated",
         "You must be signed in to create prompts."
       );
     }
 
-    const authorId = context.auth.uid;
+    const authorId = request.auth.uid;
 
     // Validate input
-    const prompts = data?.prompts as BulkPromptInput[] | undefined;
-    const autoThumbnail = data?.autoThumbnail === true;
+    const prompts = request.data?.prompts as BulkPromptInput[] | undefined;
+    const autoThumbnail = request.data?.autoThumbnail === true;
 
     if (!Array.isArray(prompts) || prompts.length === 0) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "An array of prompts is required."
       );
     }
 
     if (prompts.length > 100) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "Maximum 100 prompts per batch."
       );
