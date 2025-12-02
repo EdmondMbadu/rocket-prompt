@@ -1,8 +1,8 @@
 import type { UrlMatchResult, UrlSegment } from '@angular/router';
 
 /**
- * Matches URL patterns like `/some-slug/GPT`, `/some-slug/Grok`, or `/some-slug/Claude`.
- * Keeps conflicts low by only consuming URLs whose second segment is gpt/grok/claude.
+ * Matches URL patterns like `/some-slug/GPT`, `/some-slug/Grok`, `/some-slug/Claude`, or `/some-slug/rocket`.
+ * Keeps conflicts low by only consuming URLs whose second segment is gpt/grok/claude/rocket.
  */
 export function promptLaunchMatcher(segments: UrlSegment[]): UrlMatchResult | null {
   if (segments.length !== 2) {
@@ -12,7 +12,7 @@ export function promptLaunchMatcher(segments: UrlSegment[]): UrlMatchResult | nu
   const [slugSegment, targetSegment] = segments;
   const target = targetSegment.path.toLowerCase();
 
-  if (target !== 'gpt' && target !== 'grok' && target !== 'claude') {
+  if (target !== 'gpt' && target !== 'grok' && target !== 'claude' && target !== 'rocket') {
     return null;
   }
 

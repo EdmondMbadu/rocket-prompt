@@ -1816,11 +1816,7 @@ export class CollectionDetailComponent {
     if (!base) {
       return null;
     }
-    if (target === 'rocket') {
-      const separator = base.includes('?') ? '&' : '?';
-      return `${base}${separator}rocket=1`;
-    }
-    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'rocket';
     return `${base}/${suffix}`;
   }
 

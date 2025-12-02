@@ -3,9 +3,10 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
+import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 import type { Prompt } from '../../models/prompt.model';
 
-type LaunchTarget = 'gpt' | 'grok' | 'claude';
+type LaunchTarget = 'gpt' | 'grok' | 'claude' | 'rocket';
 
 @Component({
   selector: 'app-prompt-launch',
@@ -18,6 +19,7 @@ export class PromptLaunchComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly promptService = inject(PromptService);
+  private readonly rocketGoalsLaunchService = inject(RocketGoalsLaunchService);
 
   readonly status = signal<'loading' | 'launching' | 'error'>('loading');
   readonly errorMessage = signal<string | null>(null);
@@ -26,7 +28,7 @@ export class PromptLaunchComponent {
   readonly launchTarget = signal<LaunchTarget>('gpt');
   readonly launchTargetLabel = computed(() => {
     const target = this.launchTarget();
-    return target === 'gpt' ? 'GPT' : target === 'grok' ? 'Grok' : 'Claude';
+    return target === 'gpt' ? 'GPT' : target === 'grok' ? 'Grok' : target === 'claude' ? 'Claude' : 'Rocket';
   });
 
   private lastIdentifier: string | null = null;
@@ -38,7 +40,7 @@ export class PromptLaunchComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         const rawTarget = (params.get('target') ?? '').toLowerCase();
-        const target: LaunchTarget = rawTarget === 'grok' ? 'grok' : rawTarget === 'claude' ? 'claude' : 'gpt';
+        const target: LaunchTarget = rawTarget === 'grok' ? 'grok' : rawTarget === 'claude' ? 'claude' : rawTarget === 'rocket' ? 'rocket' : 'gpt';
         this.launchTarget.set(target);
 
         const idParam = params.get('id');
@@ -110,6 +112,9 @@ export class PromptLaunchComponent {
       url = this.createChatGPTUrl(text);
     } else if (target === 'grok') {
       url = this.createGrokUrl(text);
+    } else if (target === 'rocket') {
+      const launch = this.rocketGoalsLaunchService.prepareLaunch(text, prompt.id);
+      url = launch.url;
     } else {
       url = this.createClaudeUrl(text);
     }

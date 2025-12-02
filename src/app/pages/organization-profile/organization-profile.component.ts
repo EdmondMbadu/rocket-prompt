@@ -52,13 +52,13 @@ export class OrganizationProfileComponent {
   readonly organization = signal<Organization | null>(null);
   readonly organizationLoaded = signal(false);
   readonly currentUserProfile = signal<UserProfile | null>(null);
-  
+
   // Organization prompts
   readonly organizationPrompts = signal<Prompt[]>([]);
   readonly isLoadingPrompts = signal(false);
   readonly loadPromptsError = signal<string | null>(null);
   readonly authorProfiles = signal<Map<string, UserProfile>>(new Map());
-  
+
   // Search functionality
   readonly searchTerm = signal('');
   readonly filteredPrompts = computed(() => {
@@ -82,7 +82,7 @@ export class OrganizationProfileComponent {
       return haystack.includes(term);
     });
   });
-  
+
   // Invite functionality
   readonly inviteQuery = signal('');
   readonly inviteSuggestions = signal<UserProfile[]>([]);
@@ -91,7 +91,7 @@ export class OrganizationProfileComponent {
   readonly inviteSuccess = signal<string | null>(null);
   readonly isInviting = signal(false);
   private inviteSearchTimer: ReturnType<typeof setTimeout> | null = null;
-  
+
   // Prompt card functionality state
   readonly shareModalOpen = signal(false);
   readonly sharePrompt = signal<Prompt | null>(null);
@@ -115,7 +115,7 @@ export class OrganizationProfileComponent {
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly showFullDescription = signal(false);
-  
+
   // Image upload state
   readonly uploadingLogo = signal(false);
   readonly uploadingCover = signal(false);
@@ -129,7 +129,7 @@ export class OrganizationProfileComponent {
   readonly descriptionForm = this.fb.nonNullable.group({
     description: ['', [Validators.maxLength(10000)]]
   });
-  
+
   readonly organizationUrlCopied = signal(false);
 
   // Prompt creation state
@@ -150,9 +150,9 @@ export class OrganizationProfileComponent {
     const currentUser = this.authService.currentUser;
     const org = this.organization();
     if (!currentUser || !org) return false;
-    return org.createdBy === currentUser.uid || 
-           org.members.includes(currentUser.uid) || 
-           (org.admins?.includes(currentUser.uid) ?? false);
+    return org.createdBy === currentUser.uid ||
+      org.members.includes(currentUser.uid) ||
+      (org.admins?.includes(currentUser.uid) ?? false);
   });
 
   readonly isCurrentUserMember = computed(() => {
@@ -184,7 +184,7 @@ export class OrganizationProfileComponent {
   readonly canEditOrganization = computed(() => {
     return this.isCreator() || this.isAdmin();
   });
-  
+
   // Members list
   readonly organizationMembers = signal<UserProfile[]>([]);
   readonly isLoadingMembers = signal(false);
@@ -195,25 +195,25 @@ export class OrganizationProfileComponent {
   readonly removeMemberError = signal<string | null>(null);
   readonly managingAdminId = signal<string | null>(null);
   readonly adminManagementError = signal<string | null>(null);
-  
+
   // Settings section
   readonly settingsSectionExpanded = signal(false);
   readonly isSavingOpenMembership = signal(false);
   readonly openMembershipError = signal<string | null>(null);
-  
+
   // Join organization
   readonly isJoiningOrganization = signal(false);
   readonly joinOrganizationError = signal<string | null>(null);
   readonly joinOrganizationSuccess = signal<string | null>(null);
-  
+
   // Tabs
   readonly activeTab = signal<'prompts' | 'collections'>('prompts');
-  
+
   // Collections
   readonly organizationCollections = signal<PromptCollection[]>([]);
   readonly isLoadingCollections = signal(false);
   readonly loadCollectionsError = signal<string | null>(null);
-  
+
   // Collection creation state
   readonly newCollectionModalOpen = signal(false);
   readonly isSavingCollection = signal(false);
@@ -228,7 +228,7 @@ export class OrganizationProfileComponent {
   private brandLogoFile: File | null = null;
   readonly brandingSectionExpanded = signal(false);
   readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
-  
+
   readonly createCollectionForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
     tag: ['', [Validators.required, Validators.minLength(2)]],
@@ -244,10 +244,10 @@ export class OrganizationProfileComponent {
   readonly truncatedDescription = computed(() => {
     const description = this.organization()?.description;
     if (!description) return '';
-    
+
     const words = description.trim().split(/\s+/);
     if (words.length <= 50) return description;
-    
+
     return words.slice(0, 50).join(' ') + '...';
   });
 
@@ -311,7 +311,7 @@ export class OrganizationProfileComponent {
     if (!organization) return 'ORG';
     const name = organization.name?.trim() || '';
     if (name.length === 0) return 'ORG';
-    
+
     const words = name.split(/\s+/).filter(Boolean);
     if (words.length >= 2) {
       return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
@@ -458,14 +458,14 @@ export class OrganizationProfileComponent {
 
   getOrganizationUrl(organization: Organization | null): string {
     if (!organization) return '';
-    
+
     const username = organization.username;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    
+
     if (username) {
       return `${origin}/organization/${username}`;
     }
-    
+
     // Fallback to organizations list page if no username
     return `${origin}/organizations`;
   }
@@ -544,7 +544,7 @@ export class OrganizationProfileComponent {
   async onLogoSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (!file) {
       return;
     }
@@ -586,7 +586,7 @@ export class OrganizationProfileComponent {
   async onCoverSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (!file) {
       return;
     }
@@ -866,7 +866,7 @@ export class OrganizationProfileComponent {
 
   onCustomUrlInput(value: string) {
     const trimmed = String(value ?? '').trim();
-    
+
     // Clear any existing timer
     if (this.customUrlTimer) {
       clearTimeout(this.customUrlTimer);
@@ -898,7 +898,7 @@ export class OrganizationProfileComponent {
     // Debounce the uniqueness check
     this.isCheckingCustomUrl.set(true);
     this.customUrlError.set(null);
-    
+
     this.customUrlTimer = setTimeout(async () => {
       try {
         const isTaken = await this.promptService.isCustomUrlTaken(trimmed, null);
@@ -1001,7 +1001,7 @@ export class OrganizationProfileComponent {
 
   async navigateToAuthorProfile(authorId: string, event: Event, prompt?: Prompt) {
     event.stopPropagation();
-    
+
     // If prompt belongs to an organization, navigate to organization profile
     if (prompt?.organizationId) {
       const org = this.organization();
@@ -1009,7 +1009,7 @@ export class OrganizationProfileComponent {
         // Already on this organization's page, no need to navigate
         return;
       }
-      
+
       // Load organization and navigate to it
       try {
         const orgData = await this.organizationService.fetchOrganization(prompt.organizationId);
@@ -1024,7 +1024,7 @@ export class OrganizationProfileComponent {
       }
       return;
     }
-    
+
     // Otherwise, navigate to user profile
     if (authorId) {
       const profile = await this.authService.fetchUserProfile(authorId);
@@ -1099,11 +1099,7 @@ export class OrganizationProfileComponent {
     if (!base) {
       return null;
     }
-    if (target === 'rocket') {
-      const separator = base.includes('?') ? '&' : '?';
-      return `${base}${separator}rocket=1`;
-    }
-    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : 'CLAUDE';
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'rocket';
     return `${base}/${suffix}`;
   }
 
@@ -1286,7 +1282,7 @@ export class OrganizationProfileComponent {
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
     const text = promptText ?? this.sharePrompt()?.content ?? '';
-    
+
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
       window.open(url, '_blank');
       return;
@@ -1461,10 +1457,10 @@ export class OrganizationProfileComponent {
     const label = target === 'gpt'
       ? 'One Shot GPT'
       : target === 'grok'
-      ? 'One Shot Grok'
-      : target === 'claude'
-      ? 'One Shot Claude'
-      : 'One Shot Rocket';
+        ? 'One Shot Grok'
+        : target === 'claude'
+          ? 'One Shot Claude'
+          : 'One Shot Rocket';
     navigator.clipboard.writeText(url).then(() => {
       this.showCopyMessage(`${label} link copied!`);
     }).catch(() => {
@@ -1487,7 +1483,7 @@ export class OrganizationProfileComponent {
     this.promptFormError.set(null);
     this.customUrlError.set(null);
     this.clearCustomUrlDebounce();
-    
+
     this.promptFormInitialData.set({
       title: prompt.title,
       tag: prompt.tag,
@@ -1605,18 +1601,18 @@ export class OrganizationProfileComponent {
     if (!prompt.forkedFromPromptId) {
       return null;
     }
-    
+
     if (prompt.forkedFromCustomUrl) {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       return `${origin}/${prompt.forkedFromCustomUrl}`;
     }
-    
+
     if (prompt.forkedFromPromptId) {
       const short = prompt.forkedFromPromptId.slice(0, 8);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       return `${origin}/prompt/${short}`;
     }
-    
+
     return null;
   }
 
@@ -1636,7 +1632,7 @@ export class OrganizationProfileComponent {
         // Already on this organization's page, no need to navigate
         return;
       }
-      
+
       // Load organization and navigate to it
       this.organizationService.fetchOrganization(organizationId).then(orgData => {
         if (orgData?.username) {
@@ -1674,7 +1670,7 @@ export class OrganizationProfileComponent {
     this.inviteQuery.set(query);
     this.inviteError.set(null);
     this.inviteSuccess.set(null);
-    
+
     // Clear existing timer
     if (this.inviteSearchTimer) {
       clearTimeout(this.inviteSearchTimer);
@@ -1709,14 +1705,14 @@ export class OrganizationProfileComponent {
       const firestoreModule = await import('firebase/firestore');
       const firestore = firestoreModule.getFirestore(getApp());
       const usersRef = firestoreModule.collection(firestore, 'users');
-      
+
       // Search by username (exact match first)
       const usernameQuery = firestoreModule.query(
         usersRef,
         firestoreModule.where('username', '==', trimmed),
         firestoreModule.limit(5)
       );
-      
+
       const usernameSnapshot = await firestoreModule.getDocs(usernameQuery);
       const results: UserProfile[] = [];
       const seenIds = new Set<string>();
@@ -1741,22 +1737,22 @@ export class OrganizationProfileComponent {
         usersRef,
         firestoreModule.limit(50) // Limit to avoid fetching too many
       );
-      
+
       const allUsersSnapshot = await firestoreModule.getDocs(allUsersQuery);
       allUsersSnapshot.docs.forEach(doc => {
         if (seenIds.has(doc.id)) return;
-        
+
         const data = doc.data() as Omit<UserProfile, 'id'>;
         const firstName = (data.firstName || '').toLowerCase();
         const lastName = (data.lastName || '').toLowerCase();
         const email = (data.email || '').toLowerCase();
         const username = (data.username || '').toLowerCase();
-        
-        if (firstName.includes(trimmed) || 
-            lastName.includes(trimmed) || 
-            `${firstName} ${lastName}`.includes(trimmed) ||
-            email.includes(trimmed) ||
-            username.includes(trimmed)) {
+
+        if (firstName.includes(trimmed) ||
+          lastName.includes(trimmed) ||
+          `${firstName} ${lastName}`.includes(trimmed) ||
+          email.includes(trimmed) ||
+          username.includes(trimmed)) {
           const profile: UserProfile = {
             id: doc.id,
             ...data
@@ -1777,7 +1773,7 @@ export class OrganizationProfileComponent {
   async inviteUser(user: UserProfile) {
     const org = this.organization();
     const currentUser = this.authService.currentUser;
-    
+
     if (!org || !currentUser) {
       this.inviteError.set('Organization or user not found.');
       return;
@@ -1813,7 +1809,7 @@ export class OrganizationProfileComponent {
       this.inviteSuccess.set(`${user.firstName} ${user.lastName} has been added to the organization.`);
       this.inviteQuery.set('');
       this.inviteSuggestions.set([]);
-      
+
       // Reload members list if user is creator
       if (this.isCreator()) {
         const updatedOrg = this.organization();
@@ -1821,7 +1817,7 @@ export class OrganizationProfileComponent {
           this.loadOrganizationMembers(updatedOrg);
         }
       }
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         this.inviteSuccess.set(null);
@@ -1850,7 +1846,7 @@ export class OrganizationProfileComponent {
 
     const org = this.organization();
     const currentUser = this.authService.currentUser;
-    
+
     if (!org || !currentUser) {
       this.inviteError.set('Organization or user not found.');
       return;
@@ -1878,9 +1874,9 @@ export class OrganizationProfileComponent {
         firestoreModule.where('email', '==', trimmed),
         firestoreModule.limit(1)
       );
-      
+
       const emailSnapshot = await firestoreModule.getDocs(emailQuery);
-      
+
       if (!emailSnapshot.empty) {
         // User exists, add them directly
         const doc = emailSnapshot.docs[0];
@@ -1903,7 +1899,7 @@ export class OrganizationProfileComponent {
         );
 
         this.inviteSuccess.set(`${user.firstName || user.email} has been added to the organization.`);
-        
+
         // Reload members list if user is creator
         if (this.isCreator()) {
           const updatedOrg = this.organization();
@@ -1919,7 +1915,7 @@ export class OrganizationProfileComponent {
 
       this.inviteQuery.set('');
       this.inviteSuggestions.set([]);
-      
+
       // Clear success message after 3 seconds
       if (this.inviteSuccess()) {
         setTimeout(() => {
@@ -1940,10 +1936,10 @@ export class OrganizationProfileComponent {
 
   private async loadOrganizationMembers(org: Organization) {
     this.isLoadingMembers.set(true);
-    
+
     try {
       const memberProfiles: UserProfile[] = [];
-      
+
       // Load creator profile
       if (org.createdBy) {
         const creatorProfile = await this.authService.fetchUserProfile(org.createdBy);
@@ -1951,19 +1947,19 @@ export class OrganizationProfileComponent {
           memberProfiles.push(creatorProfile);
         }
       }
-      
+
       // Load member profiles
       const memberPromises = org.members
         .filter(memberId => memberId !== org.createdBy) // Don't duplicate creator
         .map(memberId => this.authService.fetchUserProfile(memberId));
-      
+
       const memberResults = await Promise.all(memberPromises);
       memberResults.forEach(profile => {
         if (profile) {
           memberProfiles.push(profile);
         }
       });
-      
+
       this.organizationMembers.set(memberProfiles);
     } catch (error) {
       console.error('Failed to load organization members', error);
@@ -1994,7 +1990,7 @@ export class OrganizationProfileComponent {
   async removeMember(member: UserProfile) {
     const org = this.organization();
     const currentUser = this.authService.currentUser;
-    
+
     if (!org || !currentUser) {
       this.removeMemberError.set('Organization or user not found.');
       return;
@@ -2049,7 +2045,7 @@ export class OrganizationProfileComponent {
   async makeAdmin(member: UserProfile) {
     const org = this.organization();
     const currentUser = this.authService.currentUser;
-    
+
     if (!org || !currentUser) {
       this.adminManagementError.set('Organization or user not found.');
       return;
@@ -2111,7 +2107,7 @@ export class OrganizationProfileComponent {
   async removeAdmin(member: UserProfile) {
     const org = this.organization();
     const currentUser = this.authService.currentUser;
-    
+
     if (!org || !currentUser) {
       this.adminManagementError.set('Organization or user not found.');
       return;
@@ -2256,14 +2252,14 @@ export class OrganizationProfileComponent {
     try {
       await this.organizationService.joinOrganization(org.id, currentUser.uid);
       this.joinOrganizationSuccess.set('Successfully joined the organization!');
-      
+
       // Reload organization data to reflect the membership change
       // The observable will automatically update, but we can trigger a reload
       const updatedOrg = await this.organizationService.fetchOrganization(org.id);
       if (updatedOrg) {
         this.organization.set(updatedOrg);
       }
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         this.joinOrganizationSuccess.set(null);
@@ -2312,7 +2308,7 @@ export class OrganizationProfileComponent {
     this.clearCollectionCustomUrlDebounce();
     this.resetCreateCollectionForm();
     this.collectionDefaultAi.set(null);
-    
+
     // Prefill branding with org info
     const org = this.organization();
     let hasPrefilledData = false;
@@ -2331,12 +2327,12 @@ export class OrganizationProfileComponent {
         hasPrefilledData = true;
       }
     }
-    
+
     // Expand branding section if we have prefilled data
     if (hasPrefilledData) {
       this.brandingSectionExpanded.set(true);
     }
-    
+
     this.newCollectionModalOpen.set(true);
   }
 
@@ -2424,7 +2420,7 @@ export class OrganizationProfileComponent {
   isPromptSelected(promptId: string) {
     return this.createCollectionForm.controls.promptIds.value.includes(promptId);
   }
-  
+
   setCollectionDefaultAi(option: DirectLaunchTarget | null) {
     this.collectionDefaultAi.set(option);
   }
@@ -2442,7 +2438,7 @@ export class OrganizationProfileComponent {
     }
 
     const { name, tag, promptIds, customUrl, blurb, brandLink, brandSubtext } = this.createCollectionForm.getRawValue();
-    
+
     // Validate brand subtext word limit (50 words)
     if (brandSubtext?.trim()) {
       const wordCount = brandSubtext.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -2466,7 +2462,7 @@ export class OrganizationProfileComponent {
       const brandLogoUrlValue = this.brandLogoUrl();
       const isDataUrl = brandLogoUrlValue?.startsWith('data:');
       const orgLogoUrl = !isDataUrl && brandLogoUrlValue ? brandLogoUrlValue : undefined;
-      
+
       // Create collection with organizationId set to org.id and authorId also set to org.id
       const collectionId = await this.collectionService.createCollection({
         name,
@@ -2511,7 +2507,7 @@ export class OrganizationProfileComponent {
   onCollectionCustomUrlInput(value: string) {
     const trimmed = String(value ?? '').trim();
     this.createCollectionForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
-    
+
     // Clear any existing timer
     if (this.collectionCustomUrlTimer) {
       clearTimeout(this.collectionCustomUrlTimer);
@@ -2543,7 +2539,7 @@ export class OrganizationProfileComponent {
     // Debounce the uniqueness check
     this.isCheckingCollectionCustomUrl.set(true);
     this.collectionCustomUrlError.set(null);
-    
+
     this.collectionCustomUrlTimer = setTimeout(async () => {
       try {
         const isTaken = await this.collectionService.isCustomUrlTaken(trimmed);
@@ -2571,7 +2567,7 @@ export class OrganizationProfileComponent {
   async onBrandLogoSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (!file) {
       return;
     }
