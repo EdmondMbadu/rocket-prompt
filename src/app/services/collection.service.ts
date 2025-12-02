@@ -237,6 +237,9 @@ export class CollectionService {
       payload['defaultAi'] = input.defaultAi;
     }
 
+    // Set isPrivate - default to false if not specified
+    payload['isPrivate'] = input.isPrivate === true;
+
     const docRef = await firestoreModule.addDoc(
       firestoreModule.collection(firestore, 'collections'),
       payload

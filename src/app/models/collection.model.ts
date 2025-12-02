@@ -32,6 +32,7 @@ export interface CreateCollectionInput {
   readonly brandSubtext?: string;
   readonly organizationId?: string;
   readonly defaultAi?: DirectLaunchTarget;
+  readonly isPrivate?: boolean;
 }
 
 export interface UpdateCollectionInput {

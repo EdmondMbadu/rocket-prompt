@@ -13,6 +13,7 @@ import { CollectionModalComponent } from '../../components/collection-modal/coll
 import type { PromptCollection } from '../../models/collection.model';
 import type { Prompt } from '../../models/prompt.model';
 import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
+import { hasPremiumAccess } from '../../utils/subscription.util';
 
 interface CollectionCard {
     readonly id: string;
@@ -94,6 +95,8 @@ export class CollectionsPageComponent {
     readonly bookmarkedCollections = signal<Set<string>>(new Set());
     readonly bookmarkingCollections = signal<Set<string>>(new Set());
     readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
+    readonly newCollectionIsPrivate = signal(false);
+    readonly canUsePrivateCollections = computed(() => hasPremiumAccess(this.profile()));
     readonly chatbotOptions: readonly { id: DirectLaunchTarget; label: string; icon: string }[] = [
         { id: 'chatgpt', label: 'ChatGPT', icon: 'assets/gpt.png' },
         { id: 'gemini', label: 'Gemini', icon: 'assets/gemini.png' },
@@ -241,7 +244,16 @@ export class CollectionsPageComponent {
         this.brandLogoFile = null;
         this.promptSearchTerm.set(''); // Reset prompt search when opening modal
         this.collectionDefaultAi.set(null);
+        this.newCollectionIsPrivate.set(false);
         this.newCollectionModalOpen.set(true);
+    }
+
+    toggleNewCollectionPrivate() {
+        if (!this.canUsePrivateCollections()) {
+            void this.router.navigate(['/pricing'], { queryParams: { plan: 'plus', feature: 'private-collections' } });
+            return;
+        }
+        this.newCollectionIsPrivate.update(prev => !prev);
     }
 
     closeCreateCollectionModal() {
@@ -329,7 +341,8 @@ export class CollectionsPageComponent {
                 blurb: blurb?.trim() || undefined,
                 brandLink: brandLink?.trim() || undefined,
                 brandSubtext: brandSubtext?.trim() || undefined,
-                defaultAi: this.collectionDefaultAi() || undefined
+                defaultAi: this.collectionDefaultAi() || undefined,
+                isPrivate: this.newCollectionIsPrivate()
             }, authorId);
 
             // Upload brand logo if file was selected
@@ -361,6 +374,7 @@ export class CollectionsPageComponent {
             this.brandLogoUploadError.set(null);
             this.brandLogoFile = null;
             this.collectionDefaultAi.set(null);
+            this.newCollectionIsPrivate.set(false);
             this.clearCustomUrlDebounce();
         } catch (error) {
             console.error('Failed to create collection', error);

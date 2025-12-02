@@ -1134,6 +1134,8 @@
       cancelButtonLabel="Cancel"
       noPromptsTitle="You have no prompts yet"
       noPromptsDescription="Create prompts first to build a collection."
+      [isPrivate]="newCollectionIsPrivate()"
+      [canUsePrivateCollections]="canUsePrivateCollections()"
       (close)="closeCreateCollectionModal()"
       (formSubmit)="submitCollectionForm()"
       (customUrlInput)="onCollectionCustomUrlInput($event)"
@@ -1141,6 +1143,7 @@
       (promptSearchCleared)="promptSearchTermForCollection.set('')"
       (promptSelectionToggle)="togglePromptSelectionForCollection($event)"
       (defaultAiChange)="setCollectionDefaultAi($event)"
+      (togglePrivate)="toggleNewCollectionPrivate()"
     ></app-collection-modal>
   </div>
 </ng-container>

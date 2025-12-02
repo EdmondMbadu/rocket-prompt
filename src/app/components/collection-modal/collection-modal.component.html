@@ -197,6 +197,47 @@
           </div>
         </section>
 
+        <!-- Private Collection Toggle -->
+        <section>
+          <div class="flex items-center justify-between py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <label for="collection-private-toggle" class="text-sm font-semibold text-slate-700">Private Collection</label>
+                <span *ngIf="!canUsePrivateCollections()" 
+                  class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-purple-700">
+                  <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                  Plus
+                </span>
+              </div>
+              <p class="mt-0.5 text-xs text-slate-500">
+                <ng-container *ngIf="canUsePrivateCollections(); else upgradeCTA">
+                  Won't appear in public collections list. Direct link still works.
+                </ng-container>
+                <ng-template #upgradeCTA>
+                  Upgrade to Plus to hide collections from the public list.
+                </ng-template>
+              </p>
+            </div>
+            <div class="flex-shrink-0 ml-4">
+              <button type="button" id="collection-private-toggle"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2"
+                [class.bg-[#DC2626]]="isPrivate()" 
+                [class.bg-slate-200]="!isPrivate()"
+                [class.opacity-50]="!canUsePrivateCollections()"
+                [attr.aria-checked]="isPrivate()" 
+                (click)="onTogglePrivate()">
+                <span class="sr-only">Toggle private collection</span>
+                <span aria-hidden="true"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  [class.translate-x-5]="isPrivate()" 
+                  [class.translate-x-0]="!isPrivate()"></span>
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section *ngIf="showPromptSection()">
           <label class="collection-modal__label">{{ promptSectionTitle() }}</label>
 

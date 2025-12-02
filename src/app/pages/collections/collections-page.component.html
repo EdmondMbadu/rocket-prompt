@@ -222,6 +222,8 @@
       cancelButtonLabel="Cancel"
       [noPromptsTitle]="profile() ? 'You have no prompts yet' : 'Sign in to create prompts'"
       [noPromptsDescription]="profile() ? 'Create prompts first to build a collection' : 'Build your first collection'"
+      [isPrivate]="newCollectionIsPrivate()"
+      [canUsePrivateCollections]="canUsePrivateCollections()"
       (close)="closeCreateCollectionModal()"
       (formSubmit)="submitCollectionForm()"
       (customUrlInput)="onCustomUrlInput($event)"
@@ -232,6 +234,7 @@
       (brandLogoSelected)="onBrandLogoSelected($event)"
       (brandLogoRemoved)="deleteBrandLogo()"
       (toggleBrandingSection)="brandingSectionExpanded.set(!brandingSectionExpanded())"
+      (togglePrivate)="toggleNewCollectionPrivate()"
     ></app-collection-modal>
   </div>
 </ng-container>

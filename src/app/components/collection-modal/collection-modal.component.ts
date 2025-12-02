@@ -73,6 +73,15 @@ export class CollectionModalComponent {
   readonly brandLogoRemoved = output<void>();
   readonly toggleBrandingSection = output<void>();
 
+  // Private collection feature
+  readonly isPrivate = input(false);
+  readonly canUsePrivateCollections = input(true);
+  readonly togglePrivate = output<void>();
+
+  onTogglePrivate(): void {
+    this.togglePrivate.emit();
+  }
+
   onClose(): void {
     this.close.emit();
   }

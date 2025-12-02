@@ -20,7 +20,7 @@ import { ShareModalComponent } from '../../components/share-modal/share-modal.co
 import { CollectionModalComponent } from '../../components/collection-modal/collection-modal.component';
 import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 import { generateDisplayUsername } from '../../utils/username.util';
-import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig } from '../../utils/subscription.util';
+import { getSubscriptionDetails, shouldShowUpgradeBanner, isSubscriptionExpired, getUpgradeBannerConfig, hasPremiumAccess } from '../../utils/subscription.util';
 import {
   BULK_UPLOAD_INSTRUCTIONS_URL,
   type BulkUploadProgressState,
@@ -131,6 +131,8 @@ export class ProfilePageComponent {
   readonly isCheckingCollectionCustomUrl = signal(false);
   readonly promptSearchTermForCollection = signal('');
   readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
+  readonly newCollectionIsPrivate = signal(false);
+  readonly canUsePrivateCollections = computed(() => hasPremiumAccess(this.currentUserProfile()));
   private collectionCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly copyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -508,12 +510,19 @@ export class ProfilePageComponent {
   readonly filteredCollections = computed(() => {
     const collections = this.collections();
     const term = this.collectionsSearchTerm().trim().toLowerCase();
+    const isOwnProfile = this.isViewingOwnProfile();
 
-    if (!term) {
-      return collections;
+    // First, filter out private collections if viewing someone else's profile
+    let visibleCollections = collections;
+    if (!isOwnProfile) {
+      visibleCollections = collections.filter(collection => !collection.isPrivate);
     }
 
-    return collections.filter(collection => {
+    if (!term) {
+      return visibleCollections;
+    }
+
+    return visibleCollections.filter(collection => {
       const haystack = [
         collection.name,
         collection.tag,
@@ -1218,7 +1227,16 @@ export class ProfilePageComponent {
     this.clearCollectionCustomUrlDebounce();
     this.promptSearchTermForCollection.set('');
     this.collectionDefaultAi.set(null);
+    this.newCollectionIsPrivate.set(false);
     this.newCollectionModalOpen.set(true);
+  }
+
+  toggleNewCollectionPrivate() {
+    if (!this.canUsePrivateCollections()) {
+      void this.router.navigate(['/pricing'], { queryParams: { plan: 'plus', feature: 'private-collections' } });
+      return;
+    }
+    this.newCollectionIsPrivate.update(prev => !prev);
   }
 
   closeCreateCollectionModal() {
@@ -1233,6 +1251,7 @@ export class ProfilePageComponent {
     this.collectionForm.markAsPristine();
     this.collectionForm.markAsUntouched();
     this.collectionDefaultAi.set(null);
+    this.newCollectionIsPrivate.set(false);
   }
 
   togglePromptSelectionForCollection(promptId: string) {
@@ -1346,7 +1365,8 @@ export class ProfilePageComponent {
         promptIds,
         customUrl: customUrl?.trim() || undefined,
         blurb: blurb?.trim() || undefined,
-        defaultAi: this.collectionDefaultAi() || undefined
+        defaultAi: this.collectionDefaultAi() || undefined,
+        isPrivate: this.newCollectionIsPrivate()
       }, authorId);
 
       this.newCollectionModalOpen.set(false);
