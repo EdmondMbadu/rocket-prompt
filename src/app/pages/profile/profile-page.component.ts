@@ -794,7 +794,7 @@ export class ProfilePageComponent {
     if (!base) {
       return null;
     }
-    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'rocket';
+    const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'ROCKET';
     return `${base}/${suffix}`;
   }
 
