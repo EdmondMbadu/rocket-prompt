@@ -1951,7 +1951,7 @@ export class HomeComponent {
 
   getTodayDateString(): string {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
     return now.toLocaleDateString('en-US', options);
   }
 
