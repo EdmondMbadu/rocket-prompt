@@ -8,7 +8,6 @@
  */
 
 import * as functions from "firebase-functions/v1";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -478,37 +477,40 @@ async function generateThumbnailImage(
  * Cloud Function to bulk create prompts with optional auto-generated thumbnails.
  * This function processes an array of prompts, optionally generates thumbnails
  * using Google's Generative AI (Gemini 3 Pro Image model), and saves everything to Firestore.
+ * 
+ * Note: v1 functions have a max timeout of 9 minutes (540 seconds).
+ * With image generation (~20s per prompt + 5s delay), can process ~20 prompts per batch.
  */
-export const bulkCreatePromptsWithThumbnails = onCall(
-  {
-    region: "us-central1",
-    timeoutSeconds: 3600, // 60 minutes for long batches with image generation
-    memory: "1GiB",
-  },
-  async (request) => {
+export const bulkCreatePromptsWithThumbnails = functions
+  .region("us-central1")
+  .runWith({
+    timeoutSeconds: 540, // 9 minutes max for v1 functions
+    memory: "1GB",
+  })
+  .https.onCall(async (data, context) => {
     // Verify authentication
-    if (!request.auth?.uid) {
-      throw new HttpsError(
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError(
         "unauthenticated",
         "You must be signed in to create prompts."
       );
     }
 
-    const authorId = request.auth.uid;
+    const authorId = context.auth.uid;
 
     // Validate input
-    const prompts = request.data?.prompts as BulkPromptInput[] | undefined;
-    const autoThumbnail = request.data?.autoThumbnail === true;
+    const prompts = data?.prompts as BulkPromptInput[] | undefined;
+    const autoThumbnail = data?.autoThumbnail === true;
 
     if (!Array.isArray(prompts) || prompts.length === 0) {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "invalid-argument",
         "An array of prompts is required."
       );
     }
 
     if (prompts.length > 100) {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "invalid-argument",
         "Maximum 100 prompts per batch."
       );
