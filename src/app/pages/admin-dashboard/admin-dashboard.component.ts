@@ -1070,13 +1070,13 @@ export class AdminDashboardComponent {
             currentTitle: 'Starting upload...'
         });
 
-        // Call the Cloud Function with extended timeout (9 minutes - max for v1 functions)
+        // Call the Cloud Function with extended timeout (60 minutes to match v2 server timeout)
         const functions = getFunctions(getApp(), 'us-central1');
         const bulkCreateFn = httpsCallable<
             { prompts: typeof prompts; autoThumbnail: boolean },
             BulkUploadResponse
         >(functions, 'bulkCreatePromptsWithThumbnails', {
-            timeout: 540000 // 9 minutes in milliseconds (max for v1 functions)
+            timeout: 3600000 // 60 minutes in milliseconds (matches v2 server timeout)
         });
 
         try {

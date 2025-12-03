@@ -8,6 +8,7 @@
  */
 
 import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -34,17 +35,22 @@ admin.initializeApp();
 //   response.send("Hello from Firebase!");
 // });
 
-const stripeSecret =
-  process.env.STRIPE_SECRET_KEY ||
-  functions.config().stripe?.secret_key;
+// Stripe configuration - uses environment variables only (no functions.config())
+// These are set via Firebase secrets or .env files
+const getStripeSecret = () => process.env.STRIPE_SECRET_KEY;
+const getWebhookSecret = () => process.env.STRIPE_WEBHOOK_SECRET;
 
-const stripe = stripeSecret ?
-  new Stripe(stripeSecret) :
-  undefined;
-
-const webhookSecret =
-  process.env.STRIPE_WEBHOOK_SECRET ||
-  functions.config().stripe?.webhook_secret;
+// Lazy initialization of Stripe to avoid module-level config access
+let stripeInstance: Stripe | undefined;
+const getStripe = (): Stripe | undefined => {
+  if (!stripeInstance) {
+    const secret = getStripeSecret();
+    if (secret) {
+      stripeInstance = new Stripe(secret);
+    }
+  }
+  return stripeInstance;
+};
 
 type PlanType = "plus" | "team";
 
@@ -123,6 +129,7 @@ export const createCheckoutSession = functions
       );
     }
 
+    const stripe = getStripe();
     if (!stripe) {
       throw new functions.https.HttpsError(
         "failed-precondition",
@@ -200,6 +207,8 @@ export const stripeWebhook = functions
       return;
     }
 
+    const stripe = getStripe();
+    const webhookSecret = getWebhookSecret();
     if (!stripe || !webhookSecret) {
       functions.logger.error("Stripe secrets are not configured.");
       res.status(500).send("Stripe configuration missing.");
@@ -324,13 +333,14 @@ async function generateGeminiImagePayload(
   const MAX_RETRIES = 3;
   const BASE_DELAY_MS = 3000;
 
-  if (!geminiApiKey) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
     functions.logger.error("Gemini API key not configured for image generation", context);
     return null;
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: IMAGE_GENERATION_MODEL,
       generationConfig: {
@@ -478,39 +488,39 @@ async function generateThumbnailImage(
  * This function processes an array of prompts, optionally generates thumbnails
  * using Google's Generative AI (Gemini 3 Pro Image model), and saves everything to Firestore.
  * 
- * Note: v1 functions have a max timeout of 9 minutes (540 seconds).
- * With image generation (~20s per prompt + 5s delay), can process ~20 prompts per batch.
+ * Using v2 functions to support 60-minute timeout for large batches with image generation.
  */
-export const bulkCreatePromptsWithThumbnails = functions
-  .region("us-central1")
-  .runWith({
-    timeoutSeconds: 540, // 9 minutes max for v1 functions
-    memory: "1GB",
-  })
-  .https.onCall(async (data, context) => {
+export const bulkCreatePromptsWithThumbnails = onCall(
+  {
+    region: "us-central1",
+    timeoutSeconds: 3600, // 60 minutes for long batches with image generation
+    memory: "1GiB",
+    secrets: ["GEMINI_API_KEY"],
+  },
+  async (request) => {
     // Verify authentication
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError(
+    if (!request.auth?.uid) {
+      throw new HttpsError(
         "unauthenticated",
         "You must be signed in to create prompts."
       );
     }
 
-    const authorId = context.auth.uid;
+    const authorId = request.auth.uid;
 
     // Validate input
-    const prompts = data?.prompts as BulkPromptInput[] | undefined;
-    const autoThumbnail = data?.autoThumbnail === true;
+    const prompts = request.data?.prompts as BulkPromptInput[] | undefined;
+    const autoThumbnail = request.data?.autoThumbnail === true;
 
     if (!Array.isArray(prompts) || prompts.length === 0) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "An array of prompts is required."
       );
     }
 
     if (prompts.length > 100) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "Maximum 100 prompts per batch."
       );
@@ -599,7 +609,7 @@ export const bulkCreatePromptsWithThumbnails = functions
           imageUrl,
         });
 
-        functions.logger.info(`Created prompt ${promptId}: ${title}`);
+        console.log(`Created prompt ${promptId}: ${title}`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         results.push({
@@ -607,14 +617,14 @@ export const bulkCreatePromptsWithThumbnails = functions
           title: promptInput.title || "Unknown",
           error: errorMessage,
         });
-        functions.logger.error(`Failed to create prompt: ${promptInput.title}`, error);
+        console.error(`Failed to create prompt: ${promptInput.title}`, error);
       }
     }
 
     const successCount = results.filter(r => !r.error).length;
     const failedCount = results.filter(r => r.error).length;
 
-    functions.logger.info(`Bulk upload complete: ${successCount} succeeded, ${failedCount} failed`);
+    console.log(`Bulk upload complete: ${successCount} succeeded, ${failedCount} failed`);
 
     return {
       batchId,
@@ -625,7 +635,8 @@ export const bulkCreatePromptsWithThumbnails = functions
         failed: failedCount,
       },
     };
-  });
+  }
+);
 
 /**
  * Cloud Function to generate a single thumbnail for an existing prompt.
@@ -718,10 +729,9 @@ export const generatePromptThumbnail = functions
 // RocketGoals AI - Gemini Powered Chatbot
 // ============================================================================
 
-// Get Gemini API key from environment or Firebase config
-const geminiApiKey =
-  process.env.GEMINI_API_KEY ||
-  functions.config().gemini?.api_key;
+// Get Gemini API key from environment variables only (no functions.config())
+const getGeminiApiKey = () => process.env.GEMINI_API_KEY;
+const getGeminiModel = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 interface ChatMessage {
   role: "user" | "model";
@@ -741,11 +751,6 @@ interface RocketGoalsImageResponse {
   imageUrl: string;
   prompt: string;
 }
-
-const GEMINI_MODEL =
-  process.env.GEMINI_MODEL ||
-  functions.config().gemini?.model ||
-  "gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `You are RocketGoals AI — a world-class coach, motivational genius, and unsurpassed goal-setting expert. You guide individuals through the ROCKET Goal framework while infusing the wisdom of Tony Robbins, Dr. Wayne Dyer, Emily Balcetis, Buckminster Fuller, and the relentless mindset of David Goggins. Your mission is to push users beyond their limits, help them master accountability, and elevate team growth through the CREW Team Method (Courage to Risk, Recognition of Progress, Expanding Horizons, Wisdom through Mentorship).
 
@@ -813,6 +818,7 @@ export const rocketGoalsAI = functions
       );
     }
 
+    const geminiApiKey = getGeminiApiKey();
     if (!geminiApiKey) {
       functions.logger.error("Gemini API key not configured");
       throw new functions.https.HttpsError(
@@ -843,7 +849,7 @@ export const rocketGoalsAI = functions
 
       // Use the latest Gemini 2.x model for high-quality coaching responses
       const model = genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
+        model: getGeminiModel(),
         generationConfig: {
           maxOutputTokens: 2048,
           temperature: 0.7,
@@ -885,7 +891,7 @@ export const rocketGoalsAI = functions
 
       return {
         response: textResponse,
-        model: GEMINI_MODEL,
+        model: getGeminiModel(),
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -954,7 +960,7 @@ export const generateRocketGoalsImage = functions
       );
     }
 
-    if (!geminiApiKey) {
+    if (!getGeminiApiKey()) {
       throw new functions.https.HttpsError(
         "failed-precondition",
         "AI image service is not configured."
