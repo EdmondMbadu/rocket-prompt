@@ -12,6 +12,7 @@ export interface Prompt {
   readonly launchGemini: number;
   readonly launchClaude: number;
   readonly launchGrok: number;
+  readonly launchRocket: number;
   readonly copied: number;
   readonly totalLaunch: number;
   readonly isInvisible?: boolean;
@@ -26,6 +27,15 @@ export interface Prompt {
   readonly forkCount?: number;
   // Organization-related fields
   readonly organizationId?: string;
+  // Bulk upload tracking fields
+  readonly isBulkUpload?: boolean;
+  readonly initialLaunchGpt?: number;
+  readonly initialLaunchGemini?: number;
+  readonly initialLaunchClaude?: number;
+  readonly initialLaunchGrok?: number;
+  readonly initialLaunchRocket?: number;
+  readonly initialCopied?: number;
+  readonly initialLikes?: number;
 }
 
 export interface CreatePromptInput {
@@ -41,6 +51,7 @@ export interface CreatePromptInput {
   readonly launchGemini?: number;
   readonly launchClaude?: number;
   readonly launchGrok?: number;
+  readonly launchRocket?: number;
   readonly copied?: number;
   // Fork-related fields
   readonly forkedFromPromptId?: string;
@@ -50,6 +61,8 @@ export interface CreatePromptInput {
   readonly isPrivate?: boolean;
   // Organization-related fields
   readonly organizationId?: string;
+  // Bulk upload flag - when true, initial values are tracked separately
+  readonly isBulkUpload?: boolean;
 }
 
 export interface UpdatePromptInput {

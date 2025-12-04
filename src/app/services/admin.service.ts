@@ -15,6 +15,18 @@ export interface AdminStats {
     promptsByMonth: Array<{ month: string; count: number }>;
 }
 
+export interface LaunchBaseline {
+    totalLaunches: number;
+    launchGpt: number;
+    launchGemini: number;
+    launchClaude: number;
+    launchGrok: number;
+    launchRocket: number;
+    copied: number;
+    setAt: Date;
+    setBy: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -173,6 +185,120 @@ export class AdminService {
                 .map(([month, count]) => ({ month, count }))
                 .sort((a, b) => a.month.localeCompare(b.month))
         };
+    }
+
+    /**
+     * Fetch the launch baseline from Firestore.
+     * Returns null if no baseline has been set.
+     */
+    async fetchLaunchBaseline(): Promise<LaunchBaseline | null> {
+        const { firestore, firestoreModule } = await this.getFirestoreContext();
+        const docRef = firestoreModule.doc(firestore, 'adminConfig', 'launchBaseline');
+        const docSnap = await firestoreModule.getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            return null;
+        }
+
+        const data = docSnap.data() as Record<string, unknown>;
+        const setAtValue = data['setAt'];
+        let setAt: Date | undefined;
+
+        if (setAtValue && typeof setAtValue === 'object') {
+            if ('toDate' in setAtValue && typeof (setAtValue as any).toDate === 'function') {
+                setAt = (setAtValue as any).toDate();
+            } else if ('seconds' in setAtValue) {
+                setAt = new Date((setAtValue as any).seconds * 1000);
+            }
+        }
+
+        return {
+            totalLaunches: typeof data['totalLaunches'] === 'number' ? data['totalLaunches'] : 0,
+            launchGpt: typeof data['launchGpt'] === 'number' ? data['launchGpt'] : 0,
+            launchGemini: typeof data['launchGemini'] === 'number' ? data['launchGemini'] : 0,
+            launchClaude: typeof data['launchClaude'] === 'number' ? data['launchClaude'] : 0,
+            launchGrok: typeof data['launchGrok'] === 'number' ? data['launchGrok'] : 0,
+            launchRocket: typeof data['launchRocket'] === 'number' ? data['launchRocket'] : 0,
+            copied: typeof data['copied'] === 'number' ? data['copied'] : 0,
+            setAt: setAt || new Date(),
+            setBy: typeof data['setBy'] === 'string' ? data['setBy'] : ''
+        };
+    }
+
+    /**
+     * Observable for launch baseline changes
+     */
+    launchBaseline$(): Observable<LaunchBaseline | null> {
+        return new Observable<LaunchBaseline | null>((subscriber) => {
+            let unsubscribe: (() => void) | undefined;
+
+            this.getFirestoreContext()
+                .then(({ firestore, firestoreModule }) => {
+                    const docRef = firestoreModule.doc(firestore, 'adminConfig', 'launchBaseline');
+
+                    unsubscribe = firestoreModule.onSnapshot(
+                        docRef,
+                        (docSnap) => {
+                            if (!docSnap.exists()) {
+                                subscriber.next(null);
+                                return;
+                            }
+
+                            const data = docSnap.data() as Record<string, unknown>;
+                            const setAtValue = data['setAt'];
+                            let setAt: Date | undefined;
+
+                            if (setAtValue && typeof setAtValue === 'object') {
+                                if ('toDate' in setAtValue && typeof (setAtValue as any).toDate === 'function') {
+                                    setAt = (setAtValue as any).toDate();
+                                } else if ('seconds' in setAtValue) {
+                                    setAt = new Date((setAtValue as any).seconds * 1000);
+                                }
+                            }
+
+                            subscriber.next({
+                                totalLaunches: typeof data['totalLaunches'] === 'number' ? data['totalLaunches'] : 0,
+                                launchGpt: typeof data['launchGpt'] === 'number' ? data['launchGpt'] : 0,
+                                launchGemini: typeof data['launchGemini'] === 'number' ? data['launchGemini'] : 0,
+                                launchClaude: typeof data['launchClaude'] === 'number' ? data['launchClaude'] : 0,
+                                launchGrok: typeof data['launchGrok'] === 'number' ? data['launchGrok'] : 0,
+                                launchRocket: typeof data['launchRocket'] === 'number' ? data['launchRocket'] : 0,
+                                copied: typeof data['copied'] === 'number' ? data['copied'] : 0,
+                                setAt: setAt || new Date(),
+                                setBy: typeof data['setBy'] === 'string' ? data['setBy'] : ''
+                            });
+                        },
+                        (error) => subscriber.error(error)
+                    );
+                })
+                .catch((error) => subscriber.error(error));
+
+            return () => unsubscribe?.();
+        });
+    }
+
+    /**
+     * Save the current launch totals as the baseline.
+     * This effectively "resets" the real launch count to 0.
+     */
+    async saveLaunchBaseline(
+        baseline: Omit<LaunchBaseline, 'setAt'>,
+        userId: string
+    ): Promise<void> {
+        const { firestore, firestoreModule } = await this.getFirestoreContext();
+        const docRef = firestoreModule.doc(firestore, 'adminConfig', 'launchBaseline');
+
+        await firestoreModule.setDoc(docRef, {
+            totalLaunches: baseline.totalLaunches,
+            launchGpt: baseline.launchGpt,
+            launchGemini: baseline.launchGemini,
+            launchClaude: baseline.launchClaude,
+            launchGrok: baseline.launchGrok,
+            launchRocket: baseline.launchRocket,
+            copied: baseline.copied,
+            setAt: firestoreModule.serverTimestamp(),
+            setBy: userId
+        });
     }
 
     private async getFirestoreContext() {

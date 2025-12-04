@@ -574,7 +574,16 @@ export const bulkCreatePromptsWithThumbnails = onCall(
           createdAt: timestamp,
           updatedAt: timestamp,
           bulkUploadBatchId: batchId,
+          isBulkUpload: true,
         };
+
+        // Store initial values to calculate real launches later
+        if (launchGpt > 0) promptData.initialLaunchGpt = launchGpt;
+        if (launchGemini > 0) promptData.initialLaunchGemini = launchGemini;
+        if (launchClaude > 0) promptData.initialLaunchClaude = launchClaude;
+        if (launchGrok > 0) promptData.initialLaunchGrok = launchGrok;
+        if (copied > 0) promptData.initialCopied = copied;
+        if (likes > 0) promptData.initialLikes = likes;
 
         if (promptInput.customUrl?.trim()) {
           promptData.customUrl = promptInput.customUrl.trim();

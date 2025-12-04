@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { AdminService, type AdminStats } from '../../services/admin.service';
+import { AdminService, type AdminStats, type LaunchBaseline } from '../../services/admin.service';
 import { PromptService } from '../../services/prompt.service';
 import { HomeContentService } from '../../services/home-content.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -101,18 +101,76 @@ export class AdminDashboardComponent {
     readonly isProcessingBulkUploadWithThumbnail = signal(false);
     readonly bulkUploadCompleted = signal(false);
 
+    // Launch baseline for "real" launch calculations
+    readonly launchBaseline = signal<LaunchBaseline | null>(null);
+    readonly isResettingBaseline = signal(false);
+
+    // Toggle for showing real launches vs total launches
+    readonly showRealLaunches = signal(true);
+
     // Metrics for all prompts
     readonly totalLaunches = computed(() => {
         return this.prompts().reduce((sum, prompt) => sum + (prompt.totalLaunch || 0), 0);
     });
+
+    // Real launches (excluding baseline and initial bulk upload values)
+    readonly realLaunches = computed(() => {
+        const baseline = this.launchBaseline();
+        const baselineTotal = baseline?.totalLaunches || 0;
+        
+        // Calculate total from all prompts, subtracting individual bulk upload initial values
+        const currentTotal = this.prompts().reduce((sum, prompt) => {
+            const total = prompt.totalLaunch || 0;
+            if (prompt.isBulkUpload) {
+                // Subtract initial values that were set during bulk upload
+                const initialGpt = prompt.initialLaunchGpt || 0;
+                const initialGemini = prompt.initialLaunchGemini || 0;
+                const initialClaude = prompt.initialLaunchClaude || 0;
+                const initialGrok = prompt.initialLaunchGrok || 0;
+                const initialRocket = prompt.initialLaunchRocket || 0;
+                const initialCopied = prompt.initialCopied || 0;
+                const initialTotal = initialGpt + initialGemini + initialClaude + initialGrok + initialRocket + initialCopied;
+                return sum + Math.max(0, total - initialTotal);
+            }
+            return sum + total;
+        }, 0);
+
+        // Subtract the baseline (for legacy prompts before isBulkUpload was implemented)
+        return Math.max(0, currentTotal - baselineTotal);
+    });
+
+    // Displayed launches based on toggle
+    readonly displayedLaunches = computed(() => {
+        return this.showRealLaunches() ? this.realLaunches() : this.totalLaunches();
+    });
+
+    // Count of bulk uploaded prompts
+    readonly bulkUploadedPromptsCount = computed(() => {
+        return this.prompts().filter(p => p.isBulkUpload).length;
+    });
     readonly launchBreakdown = computed(() => {
         const prompts = this.prompts();
+        const showReal = this.showRealLaunches();
+        const baseline = this.launchBaseline();
+        
         const stats = [
             {
                 id: 'gpt',
                 label: 'ChatGPT',
                 subtext: 'OpenAI',
-                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGpt || 0), 0),
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.launchGpt || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialLaunchGpt || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.launchGpt);
+                    }
+                    return total;
+                })(),
                 icon: 'assets/gpt.png',
                 colorClass: 'bg-[#74AA9C]',
                 bgClass: 'bg-emerald-50',
@@ -123,7 +181,19 @@ export class AdminDashboardComponent {
                 id: 'gemini',
                 label: 'Gemini',
                 subtext: 'Google',
-                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGemini || 0), 0),
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.launchGemini || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialLaunchGemini || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.launchGemini);
+                    }
+                    return total;
+                })(),
                 icon: 'assets/gemini.png',
                 colorClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
                 bgClass: 'bg-blue-50',
@@ -133,7 +203,19 @@ export class AdminDashboardComponent {
                 id: 'claude',
                 label: 'Claude',
                 subtext: 'Anthropic',
-                count: prompts.reduce((sum, prompt) => sum + (prompt.launchClaude || 0), 0),
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.launchClaude || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialLaunchClaude || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.launchClaude);
+                    }
+                    return total;
+                })(),
                 icon: 'assets/claude.jpeg',
                 colorClass: 'bg-[#D97757]',
                 bgClass: 'bg-orange-50',
@@ -143,17 +225,63 @@ export class AdminDashboardComponent {
                 id: 'grok',
                 label: 'Grok',
                 subtext: 'xAI',
-                count: prompts.reduce((sum, prompt) => sum + (prompt.launchGrok || 0), 0),
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.launchGrok || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialLaunchGrok || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.launchGrok);
+                    }
+                    return total;
+                })(),
                 icon: 'assets/grok.jpg',
                 colorClass: 'bg-slate-800',
                 bgClass: 'bg-slate-100',
                 isImage: true
             },
             {
+                id: 'rocket',
+                label: 'Rocket',
+                subtext: 'RocketPrompt',
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.launchRocket || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialLaunchRocket || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.launchRocket);
+                    }
+                    return total;
+                })(),
+                icon: 'assets/rocket-logo.png',
+                colorClass: 'bg-gradient-to-r from-red-500 to-rose-600',
+                bgClass: 'bg-red-50',
+                isImage: true
+            },
+            {
                 id: 'copied',
                 label: 'Copied',
                 subtext: 'Clipboard',
-                count: prompts.reduce((sum, prompt) => sum + (prompt.copied || 0), 0),
+                count: (() => {
+                    let total = prompts.reduce((sum, prompt) => {
+                        const val = prompt.copied || 0;
+                        if (showReal && prompt.isBulkUpload) {
+                            return sum + Math.max(0, val - (prompt.initialCopied || 0));
+                        }
+                        return sum + val;
+                    }, 0);
+                    if (showReal && baseline) {
+                        total = Math.max(0, total - baseline.copied);
+                    }
+                    return total;
+                })(),
                 icon: 'copy-icon', // Special handling for SVG
                 colorClass: 'bg-gray-500',
                 bgClass: 'bg-gray-50',
@@ -163,6 +291,92 @@ export class AdminDashboardComponent {
 
         return stats.sort((a, b) => b.count - a.count);
     });
+
+    toggleLaunchMode() {
+        this.showRealLaunches.set(!this.showRealLaunches());
+    }
+
+    /**
+     * Reset the baseline to current values.
+     * This sets all current launch counts as the "starting point" so real launches become 0.
+     */
+    async resetBaseline() {
+        const user = this.authService.currentUser;
+        if (!user) {
+            this.error.set('You must be logged in to reset baseline.');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            'This will reset the "Real Launches" counter to 0 by treating all current launches as the baseline. ' +
+            'Future launches will be counted from this point. Continue?'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        this.isResettingBaseline.set(true);
+
+        try {
+            const prompts = this.prompts();
+            
+            // Calculate current totals (not counting individual bulk upload initials, 
+            // as those are already tracked separately)
+            const currentTotals = {
+                totalLaunches: prompts.reduce((sum, p) => {
+                    const total = p.totalLaunch || 0;
+                    // For bulk uploads, we've already subtracted initial values in realLaunches
+                    // Here we want the raw total for the baseline
+                    if (p.isBulkUpload) {
+                        const initial = (p.initialLaunchGpt || 0) + (p.initialLaunchGemini || 0) + 
+                                        (p.initialLaunchClaude || 0) + (p.initialLaunchGrok || 0) + 
+                                        (p.initialLaunchRocket || 0) + (p.initialCopied || 0);
+                        return sum + Math.max(0, total - initial);
+                    }
+                    return sum + total;
+                }, 0),
+                launchGpt: prompts.reduce((sum, p) => {
+                    const val = p.launchGpt || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialLaunchGpt || 0));
+                    return sum + val;
+                }, 0),
+                launchGemini: prompts.reduce((sum, p) => {
+                    const val = p.launchGemini || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialLaunchGemini || 0));
+                    return sum + val;
+                }, 0),
+                launchClaude: prompts.reduce((sum, p) => {
+                    const val = p.launchClaude || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialLaunchClaude || 0));
+                    return sum + val;
+                }, 0),
+                launchGrok: prompts.reduce((sum, p) => {
+                    const val = p.launchGrok || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialLaunchGrok || 0));
+                    return sum + val;
+                }, 0),
+                launchRocket: prompts.reduce((sum, p) => {
+                    const val = p.launchRocket || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialLaunchRocket || 0));
+                    return sum + val;
+                }, 0),
+                copied: prompts.reduce((sum, p) => {
+                    const val = p.copied || 0;
+                    if (p.isBulkUpload) return sum + Math.max(0, val - (p.initialCopied || 0));
+                    return sum + val;
+                }, 0),
+                setBy: user.uid
+            };
+
+            await this.adminService.saveLaunchBaseline(currentTotals, user.uid);
+        } catch (err) {
+            console.error('Failed to reset baseline', err);
+            this.error.set(err instanceof Error ? err.message : 'Failed to reset baseline.');
+        } finally {
+            this.isResettingBaseline.set(false);
+        }
+    }
 
 
 
@@ -311,6 +525,7 @@ export class AdminDashboardComponent {
         this.observeUsers();
         this.observePrompts();
         this.observeHomeContent();
+        this.observeLaunchBaseline();
     }
 
     loadData() {
@@ -645,7 +860,8 @@ export class AdminDashboardComponent {
                         launchGpt,
                         launchGemini,
                         launchClaude,
-                        copied
+                        copied,
+                        isBulkUpload: true
                     });
 
                     // If isInvisible is true, update the prompt after creation
@@ -774,6 +990,20 @@ export class AdminDashboardComponent {
                 },
                 error: (error) => {
                     console.error('Failed to observe home content', error);
+                }
+            });
+    }
+
+    private observeLaunchBaseline() {
+        this.adminService
+            .launchBaseline$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (baseline) => {
+                    this.launchBaseline.set(baseline);
+                },
+                error: (error) => {
+                    console.error('Failed to observe launch baseline', error);
                 }
             });
     }
@@ -1184,7 +1414,8 @@ export class AdminDashboardComponent {
                     launchGpt,
                     launchGemini,
                     launchClaude,
-                    copied
+                    copied,
+                    isBulkUpload: true
                 });
 
                 if (isInvisible) {

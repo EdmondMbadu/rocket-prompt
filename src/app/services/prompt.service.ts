@@ -349,6 +349,18 @@ export class PromptService {
       payload['organizationId'] = input.organizationId;
     }
 
+    // Track bulk upload initial values if this is a bulk upload
+    if (input.isBulkUpload) {
+      payload['isBulkUpload'] = true;
+      // Store initial values to calculate real launches later
+      if (launchGpt > 0) payload['initialLaunchGpt'] = launchGpt;
+      if (launchGemini > 0) payload['initialLaunchGemini'] = launchGemini;
+      if (launchClaude > 0) payload['initialLaunchClaude'] = launchClaude;
+      if (launchGrok > 0) payload['initialLaunchGrok'] = launchGrok;
+      if (copied > 0) payload['initialCopied'] = copied;
+      if (likes > 0) payload['initialLikes'] = likes;
+    }
+
     // Add fork-related fields if this is a fork
     if (input.forkedFromPromptId) {
       payload['forkedFromPromptId'] = input.forkedFromPromptId;
@@ -559,6 +571,7 @@ export class PromptService {
     const launchGeminiValue = data['launchGemini'];
     const launchClaudeValue = data['launchClaude'];
     const launchGrokValue = data['launchGrok'];
+    const launchRocketValue = data['launchRocket'];
     const copiedValue = data['copied'];
     const totalLaunchValue = data['totalLaunch'];
     const isInvisibleValue = data['isInvisible'];
@@ -571,16 +584,26 @@ export class PromptService {
     const forkedFromCustomUrlValue = data['forkedFromCustomUrl'];
     const forkCountValue = data['forkCount'];
     const organizationIdValue = data['organizationId'];
+    // Bulk upload tracking fields
+    const isBulkUploadValue = data['isBulkUpload'];
+    const initialLaunchGptValue = data['initialLaunchGpt'];
+    const initialLaunchGeminiValue = data['initialLaunchGemini'];
+    const initialLaunchClaudeValue = data['initialLaunchClaude'];
+    const initialLaunchGrokValue = data['initialLaunchGrok'];
+    const initialLaunchRocketValue = data['initialLaunchRocket'];
+    const initialCopiedValue = data['initialCopied'];
+    const initialLikesValue = data['initialLikes'];
 
     const launchGpt = typeof launchGptValue === 'number' ? launchGptValue : 0;
     const launchGemini = typeof launchGeminiValue === 'number' ? launchGeminiValue : 0;
     const launchClaude = typeof launchClaudeValue === 'number' ? launchClaudeValue : 0;
     const launchGrok = typeof launchGrokValue === 'number' ? launchGrokValue : 0;
+    const launchRocket = typeof launchRocketValue === 'number' ? launchRocketValue : 0;
     const copied = typeof copiedValue === 'number' ? copiedValue : 0;
     // Calculate totalLaunch if not present, otherwise use stored value
     const totalLaunch = typeof totalLaunchValue === 'number' 
       ? totalLaunchValue 
-      : launchGpt + launchGemini + launchClaude + launchGrok + copied;
+      : launchGpt + launchGemini + launchClaude + launchGrok + launchRocket + copied;
 
     return {
       id: doc.id,
@@ -596,6 +619,7 @@ export class PromptService {
       launchGemini,
       launchClaude,
       launchGrok,
+      launchRocket,
       copied,
       totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
@@ -607,7 +631,16 @@ export class PromptService {
       forkedFromTitle: typeof forkedFromTitleValue === 'string' ? forkedFromTitleValue : undefined,
       forkedFromCustomUrl: typeof forkedFromCustomUrlValue === 'string' ? forkedFromCustomUrlValue : undefined,
       forkCount: typeof forkCountValue === 'number' ? forkCountValue : undefined,
-      organizationId: typeof organizationIdValue === 'string' ? organizationIdValue : undefined
+      organizationId: typeof organizationIdValue === 'string' ? organizationIdValue : undefined,
+      // Bulk upload tracking fields
+      isBulkUpload: typeof isBulkUploadValue === 'boolean' ? isBulkUploadValue : undefined,
+      initialLaunchGpt: typeof initialLaunchGptValue === 'number' ? initialLaunchGptValue : undefined,
+      initialLaunchGemini: typeof initialLaunchGeminiValue === 'number' ? initialLaunchGeminiValue : undefined,
+      initialLaunchClaude: typeof initialLaunchClaudeValue === 'number' ? initialLaunchClaudeValue : undefined,
+      initialLaunchGrok: typeof initialLaunchGrokValue === 'number' ? initialLaunchGrokValue : undefined,
+      initialLaunchRocket: typeof initialLaunchRocketValue === 'number' ? initialLaunchRocketValue : undefined,
+      initialCopied: typeof initialCopiedValue === 'number' ? initialCopiedValue : undefined,
+      initialLikes: typeof initialLikesValue === 'number' ? initialLikesValue : undefined
     };
   }
 
