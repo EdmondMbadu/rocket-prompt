@@ -662,6 +662,7 @@ export class LikedPromptsPageComponent {
     const text = prompt.content;
     const url = this.createChatGPTUrl(text);
     await this.openChatbot(url, 'ChatGPT', text);
+    await this.trackPromptLaunch(prompt, 'gpt');
   }
 
   openShareModal(prompt: PromptCard) {
@@ -674,7 +675,7 @@ export class LikedPromptsPageComponent {
     this.sharePrompt.set(null);
   }
 
-  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'): void {
+  async handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'): Promise<void> {
     const prompt = this.sharePrompt();
     if (!prompt?.content) return;
 
@@ -684,21 +685,27 @@ export class LikedPromptsPageComponent {
     }
 
     let url: string;
+    let launchType: 'gpt' | 'gemini' | 'claude' | 'grok';
     switch (chatbotName) {
       case 'ChatGPT':
         url = this.createChatGPTUrl(prompt.content);
+        launchType = 'gpt';
         break;
       case 'Gemini':
         url = this.createGeminiUrl(prompt.content);
+        launchType = 'gemini';
         break;
       case 'Claude':
         url = this.createClaudeUrl(prompt.content);
+        launchType = 'claude';
         break;
       case 'Grok':
         url = this.createGrokUrl(prompt.content);
+        launchType = 'grok';
         break;
     }
-    void this.openChatbot(url, chatbotName, prompt.content);
+    await this.openChatbot(url, chatbotName, prompt.content);
+    await this.trackPromptLaunch(prompt, launchType);
   }
 
   private launchRocketGoalsPrompt(prompt: PromptCard): void {
@@ -852,5 +859,31 @@ export class LikedPromptsPageComponent {
     }).catch(() => {
       this.fallbackCopyTextToClipboard(text);
     });
+  }
+
+  private async trackPromptLaunch(prompt: PromptCard, launchType: 'gpt' | 'gemini' | 'claude' | 'grok') {
+    if (!prompt?.id) {
+      return;
+    }
+
+    try {
+      const result = await this.promptService.trackLaunch(prompt.id, launchType);
+      this.likedPrompts.update(prev => prev.map(card => {
+        if (card.id !== prompt.id) {
+          return card;
+        }
+        return {
+          ...card,
+          launchGpt: result.launchGpt,
+          launchGemini: result.launchGemini,
+          launchClaude: result.launchClaude,
+          launchGrok: result.launchGrok,
+          copied: result.copied,
+          totalLaunch: result.totalLaunch
+        };
+      }));
+    } catch (error) {
+      console.error('Failed to record launch', error);
+    }
   }
 }

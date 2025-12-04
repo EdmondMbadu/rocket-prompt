@@ -370,7 +370,7 @@ export class HomeComponent {
     return `https://grok.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'): void {
+  async handleOpenChatbot(chatbotName: 'ChatGPT' | 'Gemini' | 'Claude' | 'Grok' | 'RocketGoals'): Promise<void> {
     const prompt = this.sharePrompt();
     if (!prompt?.content) return;
 
@@ -380,21 +380,27 @@ export class HomeComponent {
     }
 
     let url: string;
+    let launchType: 'gpt' | 'gemini' | 'claude' | 'grok';
     switch (chatbotName) {
       case 'ChatGPT':
         url = this.createChatGPTUrl(prompt.content);
+        launchType = 'gpt';
         break;
       case 'Gemini':
         url = this.createGeminiUrl(prompt.content);
+        launchType = 'gemini';
         break;
       case 'Claude':
         url = this.createClaudeUrl(prompt.content);
+        launchType = 'claude';
         break;
       case 'Grok':
         url = this.createGrokUrl(prompt.content);
+        launchType = 'grok';
         break;
     }
-    void this.openChatbot(url, chatbotName, prompt.content);
+    await this.openChatbot(url, chatbotName, prompt.content);
+    await this.trackPromptLaunch(prompt, launchType);
   }
 
   private launchRocketGoalsPrompt(prompt: PromptCard): void {
