@@ -801,18 +801,19 @@ Mindset Anchors:
 /**
  * RocketGoals AI - A Gemini powered chatbot for answering questions.
  * Uses Google's Generative AI SDK with the latest Gemini model.
+ * Converted to v2 API for better CORS handling.
  */
-export const rocketGoalsAI = functions
-  .region("us-central1")
-  .runWith({
+export const rocketGoalsAI = onCall(
+  {
+    region: "us-central1",
     timeoutSeconds: 120,
-    memory: "512MB",
+    memory: "512MiB",
     secrets: ["GEMINI_API_KEY"],
-  })
-  .https.onCall(async (data: RocketGoalsAIRequest, context) => {
+  },
+  async (request): Promise<{ response: string; model: string }> => {
     // Verify authentication
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError(
+    if (!request.auth?.uid) {
+      throw new HttpsError(
         "unauthenticated",
         "You must be signed in to use RocketGoals AI."
       );
@@ -821,23 +822,24 @@ export const rocketGoalsAI = functions
     const geminiApiKey = getGeminiApiKey();
     if (!geminiApiKey) {
       functions.logger.error("Gemini API key not configured");
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "failed-precondition",
         "AI service is not configured. Please contact support."
       );
     }
 
+    const data = request.data as RocketGoalsAIRequest;
     const userMessage = data?.message?.trim();
 
     if (!userMessage) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "A message is required."
       );
     }
 
     if (userMessage.length > 10000) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "Message is too long. Maximum 10,000 characters."
       );
@@ -860,7 +862,7 @@ export const rocketGoalsAI = functions
 
       // Build conversation history for context
       const conversationHistory = data.conversationHistory ?? [];
-      const contents = conversationHistory.map((msg) => ({
+      const contents = conversationHistory.map((msg: ChatMessage) => ({
         role: msg.role,
         parts: [{ text: msg.content }],
       }));
@@ -884,7 +886,7 @@ export const rocketGoalsAI = functions
       }
 
       functions.logger.info("RocketGoals AI response generated", {
-        userId: context.auth.uid,
+        userId: request.auth.uid,
         messageLength: userMessage.length,
         responseLength: textResponse.length,
       });
@@ -897,37 +899,38 @@ export const rocketGoalsAI = functions
       const errorMessage = error instanceof Error ? error.message : String(error);
       functions.logger.error("RocketGoals AI error", {
         error: errorMessage,
-        userId: context.auth.uid,
+        userId: request.auth.uid,
       });
 
       // Check for specific error types
       if (errorMessage.includes("API_KEY") || errorMessage.includes("API key")) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           "failed-precondition",
           "AI service configuration error. Please contact support."
         );
       }
 
       if (errorMessage.includes("not found") || errorMessage.includes("404")) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           "unavailable",
           "The AI model is temporarily unavailable. Please try again later."
         );
       }
 
       if (errorMessage.includes("quota") || errorMessage.includes("429")) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           "resource-exhausted",
           "AI request limit reached. Please try again in a moment."
         );
       }
 
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "internal",
         "Failed to generate AI response. Please try again."
       );
     }
-  });
+  }
+);
 
 export const generateRocketGoalsImage = functions
   .region("us-central1")
