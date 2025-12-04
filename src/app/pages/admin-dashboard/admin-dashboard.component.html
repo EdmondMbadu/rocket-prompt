@@ -54,7 +54,7 @@
           <!-- Total Launches Hero -->
           <div
             class="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg transition-transform hover:scale-[1.02]"
-            [ngClass]="showRealLaunches() ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-200' : 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'">
+            [ngClass]="showRealLaunches() ? 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-300' : 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'">
             <div class="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
             <div class="absolute -bottom-6 -left-6 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
 
@@ -64,7 +64,7 @@
                   <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
                     <span class="text-xl">{{ showRealLaunches() ? '✅' : '🚀' }}</span>
                   </div>
-                  <span class="font-medium" [class.text-emerald-50]="showRealLaunches()"
+                  <span class="font-medium" [class.text-red-50]="showRealLaunches()"
                     [class.text-red-50]="!showRealLaunches()">
                     {{ showRealLaunches() ? 'Real Launches' : 'Total Launches' }}
                   </span>
@@ -83,7 +83,7 @@
               </div>
               <div class="flex items-baseline gap-2">
                 <span class="text-4xl font-bold tracking-tight">{{ displayedLaunches() }}</span>
-                <span class="text-sm font-medium" [class.text-emerald-100]="showRealLaunches()"
+                <span class="text-sm font-medium" [class.text-red-100]="showRealLaunches()"
                   [class.text-red-100]="!showRealLaunches()">
                   {{ showRealLaunches() ? 'organic' : 'all time' }}
                 </span>
