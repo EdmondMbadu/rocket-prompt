@@ -809,6 +809,14 @@ export const rocketGoalsAI = onCall(
     timeoutSeconds: 120,
     memory: "512MiB",
     secrets: ["GEMINI_API_KEY"],
+    cors: [
+      "http://localhost:4200",
+      "http://127.0.0.1:4200",
+      "https://rocketprompt.io",
+      "https://www.rocketprompt.io",
+      "https://rocket-prompt.web.app",
+      "https://rocket-prompt.firebaseapp.com",
+    ],
   },
   async (request): Promise<{ response: string; model: string }> => {
     // Verify authentication
