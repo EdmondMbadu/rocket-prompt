@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, distinctUntilChanged, switchMap, combineLatest, catchError } from 'rxjs/operators';
@@ -9,7 +10,7 @@ import { CollectionService } from '../../services/collection.service';
 import { PromptService } from '../../services/prompt.service';
 import { OrganizationService } from '../../services/organization.service';
 import type { PromptCollection } from '../../models/collection.model';
-import type { Prompt } from '../../models/prompt.model';
+import type { Prompt, CreatePromptInput, UpdatePromptInput } from '../../models/prompt.model';
 import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.model';
 import type { Organization } from '../../models/organization.model';
 import type { PromptCard } from '../../models/prompt-card.model';
@@ -35,7 +36,7 @@ interface ChatbotOption {
 @Component({
   selector: 'app-collection-detail',
   standalone: true,
-  imports: [CommonModule, PromptCardComponent, ShareModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, PromptCardComponent, ShareModalComponent],
   templateUrl: './collection-detail.component.html',
   styleUrl: './collection-detail.component.css'
 })
@@ -48,6 +49,7 @@ export class CollectionDetailComponent {
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
 
   readonly currentUser$ = this.authService.currentUser$;
   readonly profile = signal<UserProfile | null>(null);
@@ -103,6 +105,35 @@ export class CollectionDetailComponent {
   readonly editCollectionDefaultAi = signal<DirectLaunchTarget | null>(null);
   readonly editCollectionIsPrivate = signal(false);
   private collectionDefaultAiApplied = false;
+
+  // Prompt edit modal state
+  readonly newPromptModalOpen = signal(false);
+  readonly isEditingPrompt = signal(false);
+  readonly editingPromptId = signal<string | null>(null);
+  readonly isSavingPrompt = signal(false);
+  readonly promptFormError = signal<string | null>(null);
+  readonly deletingPromptId = signal<string | null>(null);
+  readonly deleteError = signal<string | null>(null);
+
+  // Prompt form
+  readonly createPromptForm = this.fb.nonNullable.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    tag: ['', [Validators.required]],
+    customUrl: [''],
+    content: [''],
+    isPrivate: [false]
+  });
+
+  // Prompt image handling
+  readonly promptImageFile = signal<File | null>(null);
+  readonly promptImagePreview = signal<string | null>(null);
+  readonly uploadingPromptImage = signal(false);
+  readonly promptImageError = signal<string | null>(null);
+
+  // Custom URL validation for prompts
+  readonly promptCustomUrlError = signal<string | null>(null);
+  readonly isCheckingPromptCustomUrl = signal(false);
+  private promptCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
   
   readonly brandSubtextWordCount = computed(() => {
     const text = this.editBrandSubtext().trim();
@@ -454,6 +485,10 @@ export class CollectionDetailComponent {
 
   @HostListener('document:keydown.escape')
   handleEscape() {
+    if (this.newPromptModalOpen()) {
+      this.closeCreatePromptModal();
+      return;
+    }
     if (this.editModalOpen()) {
       this.closeEditModal();
       return;
@@ -1850,5 +1885,353 @@ export class CollectionDetailComponent {
     }
     // Toggle the private state
     this.editCollectionIsPrivate.set(!this.editCollectionIsPrivate());
+  }
+
+  /**
+   * Check if the current user can edit a prompt (must be the author).
+   */
+  canEditPrompt(prompt: PromptCard): boolean {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return false;
+    }
+    // If prompt has no authorId, allow edit (for backward compatibility with old prompts)
+    // If prompt has authorId, only allow if current user is the author
+    return !prompt.authorId || prompt.authorId === currentUser.uid;
+  }
+
+  canManagePrivatePrompts(profile: UserProfile | null | undefined): boolean {
+    if (!profile) {
+      return false;
+    }
+
+    if (profile.role === 'admin' || profile.admin) {
+      return true;
+    }
+
+    const status = profile.subscriptionStatus?.toLowerCase();
+    return status === 'pro' || status === 'plus';
+  }
+
+  onPromptImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.promptImageError.set('Only image files are allowed.');
+      input.value = '';
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      this.promptImageError.set('Image size must be less than 10MB.');
+      input.value = '';
+      return;
+    }
+
+    this.promptImageError.set(null);
+    this.promptImageFile.set(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.promptImagePreview.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removePromptImage() {
+    this.promptImageFile.set(null);
+    this.promptImagePreview.set(null);
+    this.promptImageError.set(null);
+  }
+
+  onPromptCustomUrlInput(value: string) {
+    const trimmed = String(value ?? '').trim();
+    this.createPromptForm.controls.customUrl.setValue(trimmed, { emitEvent: false });
+
+    // Clear any existing timer
+    if (this.promptCustomUrlTimer) {
+      clearTimeout(this.promptCustomUrlTimer);
+    }
+
+    // Clear error if empty
+    if (!trimmed) {
+      this.promptCustomUrlError.set(null);
+      this.isCheckingPromptCustomUrl.set(false);
+      return;
+    }
+
+    // Validate format first
+    const urlPattern = /^[a-z0-9-]+$/i;
+    if (!urlPattern.test(trimmed)) {
+      this.promptCustomUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+      this.isCheckingPromptCustomUrl.set(false);
+      return;
+    }
+
+    // Check for reserved paths
+    const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+    if (reservedPaths.includes(trimmed.toLowerCase())) {
+      this.promptCustomUrlError.set('This URL is reserved. Please choose a different one.');
+      this.isCheckingPromptCustomUrl.set(false);
+      return;
+    }
+
+    // Debounce the uniqueness check
+    this.isCheckingPromptCustomUrl.set(true);
+    this.promptCustomUrlError.set(null);
+
+    this.promptCustomUrlTimer = setTimeout(async () => {
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmed, this.editingPromptId());
+        if (isTaken) {
+          this.promptCustomUrlError.set('This custom URL is already taken. Please choose a different one.');
+        } else {
+          this.promptCustomUrlError.set(null);
+        }
+      } catch (error) {
+        console.error('Failed to check custom URL', error);
+        this.promptCustomUrlError.set('Unable to verify custom URL availability. Please try again.');
+      } finally {
+        this.isCheckingPromptCustomUrl.set(false);
+      }
+    }, 500); // 500ms debounce
+  }
+
+  private clearPromptCustomUrlDebounce() {
+    if (this.promptCustomUrlTimer) {
+      clearTimeout(this.promptCustomUrlTimer);
+      this.promptCustomUrlTimer = null;
+    }
+  }
+
+  closeCreatePromptModal() {
+    if (this.isSavingPrompt()) {
+      return;
+    }
+
+    this.newPromptModalOpen.set(false);
+    this.isEditingPrompt.set(false);
+    this.editingPromptId.set(null);
+    this.promptFormError.set(null);
+    this.promptCustomUrlError.set(null);
+    this.clearPromptCustomUrlDebounce();
+    this.removePromptImage();
+    this.resetCreatePromptForm();
+  }
+
+  private resetCreatePromptForm() {
+    this.createPromptForm.reset({
+      title: '',
+      tag: '',
+      customUrl: '',
+      content: '',
+      isPrivate: false
+    });
+    this.promptFormError.set(null);
+    this.promptCustomUrlError.set(null);
+    this.clearPromptCustomUrlDebounce();
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    this.removePromptImage();
+  }
+
+  async submitPromptForm() {
+    if (this.createPromptForm.invalid) {
+      this.createPromptForm.markAllAsTouched();
+      return;
+    }
+
+    const { title, tag, customUrl, content, isPrivate } = this.createPromptForm.getRawValue();
+    const trimmedContent = (content ?? '').trim();
+    const trimmedCustomUrl = (customUrl ?? '').trim();
+    const imageFile = this.promptImageFile();
+
+    // Validate that either content or image is provided
+    if (!trimmedContent && !imageFile && !this.promptImagePreview()) {
+      this.promptFormError.set('Either prompt content or an image is required.');
+      this.createPromptForm.controls.content.markAsTouched();
+      return;
+    }
+
+    // Validate content length if provided
+    if (trimmedContent && trimmedContent.length < 10) {
+      this.promptFormError.set('Content must be at least 10 characters if provided.');
+      this.createPromptForm.controls.content.markAsTouched();
+      return;
+    }
+
+    // Validate custom URL if provided
+    if (trimmedCustomUrl) {
+      // Check format
+      const urlPattern = /^[a-z0-9-]+$/i;
+      if (!urlPattern.test(trimmedCustomUrl)) {
+        this.promptCustomUrlError.set('Custom URL can only contain letters, numbers, and hyphens.');
+        return;
+      }
+
+      // Check reserved paths
+      const reservedPaths = ['home', 'auth', 'prompt', 'prompts', 'collections', 'collection', 'admin', 'verify-email', 'community-guidelines', 'profile'];
+      if (reservedPaths.includes(trimmedCustomUrl.toLowerCase())) {
+        this.promptCustomUrlError.set('This URL is reserved. Please choose a different one.');
+        return;
+      }
+
+      // Final uniqueness check before submitting
+      try {
+        const isTaken = await this.promptService.isCustomUrlTaken(trimmedCustomUrl, this.editingPromptId());
+        if (isTaken) {
+          this.promptCustomUrlError.set('This custom URL is already taken. Please choose a different one.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to verify custom URL', error);
+        this.promptFormError.set('Unable to verify custom URL availability. Please try again.');
+        return;
+      }
+    }
+
+    this.isSavingPrompt.set(true);
+    this.promptFormError.set(null);
+    this.promptCustomUrlError.set(null);
+
+    try {
+      const currentUser = this.authService.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to update a prompt.');
+      }
+
+      // Check if the user can manage private prompts (admins or Plus/Pro subscribers)
+      const profile = await this.authService.fetchUserProfile(currentUser.uid);
+      const canSetPrivate = this.canManagePrivatePrompts(profile);
+
+      let imageUrl: string | undefined = undefined;
+
+      // Upload image if provided
+      if (imageFile) {
+        this.uploadingPromptImage.set(true);
+        try {
+          if (this.isEditingPrompt() && this.editingPromptId()) {
+            imageUrl = await this.promptService.uploadPromptImage(this.editingPromptId()!, imageFile, currentUser.uid);
+          }
+        } catch (error) {
+          console.error('Failed to upload image', error);
+          this.promptImageError.set(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
+          this.isSavingPrompt.set(false);
+          this.uploadingPromptImage.set(false);
+          return;
+        } finally {
+          this.uploadingPromptImage.set(false);
+        }
+      }
+
+      if (this.isEditingPrompt() && this.editingPromptId()) {
+        const updateInput: UpdatePromptInput = {
+          title,
+          content: trimmedContent,
+          tag,
+          customUrl: trimmedCustomUrl,
+          ...(imageUrl ? { imageUrl } : {}),
+          ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
+        };
+        await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
+        this.showCopyMessage('Prompt updated successfully.');
+      }
+
+      this.resetCreatePromptForm();
+      this.isEditingPrompt.set(false);
+      this.editingPromptId.set(null);
+      this.newPromptModalOpen.set(false);
+      this.removePromptImage();
+    } catch (error) {
+      console.error('Failed to save prompt', error);
+      this.promptFormError.set(error instanceof Error ? error.message : 'Could not save the prompt. Please try again.');
+    } finally {
+      this.isSavingPrompt.set(false);
+    }
+  }
+
+  openEditPromptModal(prompt: PromptCard) {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.promptFormError.set('You must be signed in to edit a prompt.');
+      return;
+    }
+
+    // Check if user is the author
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.promptFormError.set('You do not have permission to edit this prompt. Only the author can edit it.');
+      return;
+    }
+
+    this.promptFormError.set(null);
+    this.promptCustomUrlError.set(null);
+    this.clearPromptCustomUrlDebounce();
+    this.isEditingPrompt.set(true);
+    this.editingPromptId.set(prompt.id);
+    this.createPromptForm.setValue({
+      title: prompt.title,
+      tag: prompt.tag,
+      customUrl: prompt.customUrl ?? '',
+      content: prompt.content ?? '',
+      isPrivate: prompt.isPrivate ?? false
+    });
+    this.createPromptForm.markAsPristine();
+    this.createPromptForm.markAsUntouched();
+    // Set image preview if prompt has image
+    if (prompt.imageUrl) {
+      this.promptImagePreview.set(prompt.imageUrl);
+      this.promptImageFile.set(null); // We don't have the file, just the URL
+    } else {
+      this.removePromptImage();
+    }
+    this.newPromptModalOpen.set(true);
+  }
+
+  async onDeletePrompt(prompt: PromptCard) {
+    if (this.deletingPromptId() === prompt.id) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.deleteError.set('You must be signed in to delete a prompt.');
+      return;
+    }
+
+    // Check if user is the author
+    if (prompt.authorId && prompt.authorId !== currentUser.uid) {
+      this.deleteError.set('You do not have permission to delete this prompt. Only the author can delete it.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${prompt.title}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingPromptId.set(prompt.id);
+    this.deleteError.set(null);
+
+    try {
+      await this.promptService.deletePrompt(prompt.id, currentUser.uid);
+      this.showCopyMessage('Prompt deleted successfully.');
+    } catch (error) {
+      console.error('Failed to delete prompt', error);
+      this.deleteError.set(
+        error instanceof Error ? error.message : 'Could not delete the prompt. Please try again.'
+      );
+    } finally {
+      this.deletingPromptId.set(null);
+    }
   }
 }
