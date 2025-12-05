@@ -104,6 +104,8 @@ export class CollectionDetailComponent {
   readonly shareModalOpen = signal(false);
   readonly editCollectionDefaultAi = signal<DirectLaunchTarget | null>(null);
   readonly editCollectionIsPrivate = signal(false);
+  readonly isHidingPromptsFromHome = signal(false);
+  readonly isShowingPromptsOnHome = signal(false);
   private collectionDefaultAiApplied = false;
 
   // Prompt edit modal state
@@ -621,8 +623,9 @@ export class CollectionDetailComponent {
   }
 
   private observePrompts() {
+    // Use promptsIncludingHidden$ so that prompts hidden from home page still appear in the collection
     this.promptService
-      .prompts$()
+      .promptsIncludingHidden$()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: prompts => {
@@ -1915,6 +1918,76 @@ export class CollectionDetailComponent {
     }
     // Toggle the private state
     this.editCollectionIsPrivate.set(!this.editCollectionIsPrivate());
+  }
+
+  /**
+   * Hide all prompts in this collection from the home screen.
+   * This sets isInvisible = true on all prompts in the collection.
+   */
+  async hideAllPromptsFromHome() {
+    const collection = this.collection();
+    if (!collection || !collection.promptIds || collection.promptIds.length === 0) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to hide all prompts in this collection from the home screen? They will still be visible within this collection.')) {
+      return;
+    }
+
+    this.isHidingPromptsFromHome.set(true);
+    this.updateCollectionError.set(null);
+
+    try {
+      await this.promptService.setPromptsInvisibility(collection.promptIds, true);
+      this.showCopyMessage('All prompts in this collection are now hidden from the home screen.');
+    } catch (error) {
+      console.error('Failed to hide prompts from home', error);
+      this.updateCollectionError.set(
+        error instanceof Error ? error.message : 'Failed to hide prompts. Please try again.'
+      );
+    } finally {
+      this.isHidingPromptsFromHome.set(false);
+    }
+  }
+
+  /**
+   * Show all prompts in this collection on the home screen.
+   * This sets isInvisible = false on all prompts in the collection.
+   */
+  async showAllPromptsOnHome() {
+    const collection = this.collection();
+    if (!collection || !collection.promptIds || collection.promptIds.length === 0) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to show all prompts in this collection on the home screen?')) {
+      return;
+    }
+
+    this.isShowingPromptsOnHome.set(true);
+    this.updateCollectionError.set(null);
+
+    try {
+      await this.promptService.setPromptsInvisibility(collection.promptIds, false);
+      this.showCopyMessage('All prompts in this collection are now visible on the home screen.');
+    } catch (error) {
+      console.error('Failed to show prompts on home', error);
+      this.updateCollectionError.set(
+        error instanceof Error ? error.message : 'Failed to show prompts. Please try again.'
+      );
+    } finally {
+      this.isShowingPromptsOnHome.set(false);
+    }
   }
 
   /**

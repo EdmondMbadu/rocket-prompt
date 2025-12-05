@@ -181,6 +181,59 @@ export class PromptService {
   }
 
   /**
+   * Get all prompts including invisible and private ones (for collection use).
+   * This allows collections to display prompts that are hidden from the home page.
+   */
+  promptsIncludingHidden$(): Observable<Prompt[]> {
+    return new Observable<Prompt[]>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(collectionRef, firestoreModule.orderBy('createdAt', 'desc'));
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              // Don't filter out invisible or private prompts - collections should show them
+              const prompts = snapshot.docs.map((doc) => this.mapPrompt(doc, firestoreModule));
+              subscriber.next(prompts);
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
+   * Set isInvisible flag for multiple prompts (used to hide prompts from home screen)
+   * @param promptIds Array of prompt IDs to update
+   * @param isInvisible Whether to hide the prompts from home screen
+   */
+  async setPromptsInvisibility(promptIds: readonly string[], isInvisible: boolean): Promise<void> {
+    if (!Array.isArray(promptIds) || promptIds.length === 0) {
+      throw new Error('At least one prompt ID is required.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const batch = firestoreModule.writeBatch(firestore);
+
+    for (const promptId of promptIds) {
+      const trimmedId = promptId?.trim();
+      if (!trimmedId) continue;
+
+      const docRef = firestoreModule.doc(firestore, 'prompts', trimmedId);
+      batch.update(docRef, { isInvisible, updatedAt: firestoreModule.serverTimestamp() });
+    }
+
+    await batch.commit();
+  }
+
+  /**
    * Get prompts by authorId (for profile page)
    * @param authorId The author's user ID
    * @param currentUserId Optional. If provided and matches authorId, private prompts will be included
