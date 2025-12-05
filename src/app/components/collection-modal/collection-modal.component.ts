@@ -78,8 +78,16 @@ export class CollectionModalComponent {
   readonly canUsePrivateCollections = input(true);
   readonly togglePrivate = output<void>();
 
+  // Hide prompts from home feature
+  readonly hidePromptsFromHome = input(false);
+  readonly toggleHideFromHome = output<void>();
+
   onTogglePrivate(): void {
     this.togglePrivate.emit();
+  }
+
+  onToggleHideFromHome(): void {
+    this.toggleHideFromHome.emit();
   }
 
   onClose(): void {

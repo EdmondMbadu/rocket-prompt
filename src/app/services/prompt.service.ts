@@ -265,8 +265,9 @@ export class PromptService {
               const prompts = snapshot.docs
                 .map((doc) => this.mapPrompt(doc, firestoreModule))
                 .filter((prompt) => {
-                  // Filter out invisible prompts
-                  if (prompt.isInvisible) return false;
+                  // Filter out invisible prompts unless viewing own profile
+                  // (users should see their hidden prompts on their own profile)
+                  if (prompt.isInvisible && !isViewingOwnProfile) return false;
                   // Filter out private prompts unless viewing own profile
                   if (prompt.isPrivate && !isViewingOwnProfile) return false;
                   // Filter out prompts that belong to an organization (they should only show on org page)

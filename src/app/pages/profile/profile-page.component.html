@@ -1136,6 +1136,7 @@
       noPromptsDescription="Create prompts first to build a collection."
       [isPrivate]="newCollectionIsPrivate()"
       [canUsePrivateCollections]="canUsePrivateCollections()"
+      [hidePromptsFromHome]="hidePromptsFromHome()"
       (close)="closeCreateCollectionModal()"
       (formSubmit)="submitCollectionForm()"
       (customUrlInput)="onCollectionCustomUrlInput($event)"
@@ -1144,6 +1145,7 @@
       (promptSelectionToggle)="togglePromptSelectionForCollection($event)"
       (defaultAiChange)="setCollectionDefaultAi($event)"
       (togglePrivate)="toggleNewCollectionPrivate()"
+      (toggleHideFromHome)="toggleHidePromptsFromHome()"
     ></app-collection-modal>
   </div>
 </ng-container>

@@ -108,21 +108,34 @@ export class CollectionDetailComponent {
   readonly isShowingPromptsOnHome = signal(false);
   private collectionDefaultAiApplied = false;
 
-  // Computed signal to check if prompts in this collection are hidden from home
-  readonly hiddenPromptsCount = computed(() => {
+  // Computed signal for prompts in this collection that the current user owns
+  readonly userOwnedPromptsInCollection = computed(() => {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) return [];
     const collectionPromptsList = this.collectionPrompts();
-    return collectionPromptsList.filter(p => p.isInvisible).length;
+    return collectionPromptsList.filter(p => p.authorId === currentUser.uid);
+  });
+
+  // Computed signal to check if prompts in this collection are hidden from home
+  // Only counts user-owned prompts
+  readonly hiddenPromptsCount = computed(() => {
+    const userOwned = this.userOwnedPromptsInCollection();
+    return userOwned.filter(p => p.isInvisible).length;
   });
 
   readonly allPromptsHiddenFromHome = computed(() => {
-    const collectionPromptsList = this.collectionPrompts();
-    if (collectionPromptsList.length === 0) return false;
-    return collectionPromptsList.every(p => p.isInvisible);
+    const userOwned = this.userOwnedPromptsInCollection();
+    if (userOwned.length === 0) return false;
+    return userOwned.every(p => p.isInvisible);
   });
 
   readonly somePromptsHiddenFromHome = computed(() => {
-    const collectionPromptsList = this.collectionPrompts();
-    return collectionPromptsList.some(p => p.isInvisible);
+    const userOwned = this.userOwnedPromptsInCollection();
+    return userOwned.some(p => p.isInvisible);
+  });
+
+  readonly userOwnedPromptsCount = computed(() => {
+    return this.userOwnedPromptsInCollection().length;
   });
 
   // Prompt edit modal state
@@ -662,8 +675,18 @@ export class CollectionDetailComponent {
   }
 
   private observeAvailablePrompts() {
+    // Only load the current user's prompts for adding to collections
+    // Users can only add their own prompts
     rxjsCombineLatest([
-      this.promptService.prompts$(),
+      this.currentUser$.pipe(
+        switchMap(user => {
+          if (!user) {
+            return of<Prompt[]>([]);
+          }
+          // Use promptsByAuthor$ to only get the current user's prompts
+          return this.promptService.promptsByAuthor$(user.uid, user.uid);
+        })
+      ),
       this.route.paramMap.pipe(
         map(params => params.get('id')),
         distinctUntilChanged(),
@@ -1940,20 +1963,25 @@ export class CollectionDetailComponent {
 
   /**
    * Hide all prompts in this collection from the home screen.
-   * This sets isInvisible = true on all prompts in the collection.
+   * This sets isInvisible = true on prompts in the collection that the user owns.
+   * Users can only hide their own prompts.
    */
   async hideAllPromptsFromHome() {
-    const collection = this.collection();
-    if (!collection || !collection.promptIds || collection.promptIds.length === 0) {
-      return;
-    }
-
     const currentUser = this.authService.currentUser;
     if (!currentUser) {
       return;
     }
 
-    if (!confirm('Are you sure you want to hide all prompts in this collection from the home screen? They will still be visible within this collection.')) {
+    // Only hide prompts that the current user owns
+    const userOwnedPrompts = this.userOwnedPromptsInCollection();
+    const promptIdsToHide = userOwnedPrompts.map(p => p.id);
+
+    if (promptIdsToHide.length === 0) {
+      this.updateCollectionError.set('You can only hide prompts that you created.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to hide your ${promptIdsToHide.length} prompt(s) in this collection from the home screen? They will still be visible within this collection.`)) {
       return;
     }
 
@@ -1961,8 +1989,8 @@ export class CollectionDetailComponent {
     this.updateCollectionError.set(null);
 
     try {
-      await this.promptService.setPromptsInvisibility(collection.promptIds, true);
-      this.showCopyMessage('All prompts in this collection are now hidden from the home screen.');
+      await this.promptService.setPromptsInvisibility(promptIdsToHide, true);
+      this.showCopyMessage(`Your ${promptIdsToHide.length} prompt(s) are now hidden from the home screen.`);
     } catch (error) {
       console.error('Failed to hide prompts from home', error);
       this.updateCollectionError.set(
@@ -1975,20 +2003,25 @@ export class CollectionDetailComponent {
 
   /**
    * Show all prompts in this collection on the home screen.
-   * This sets isInvisible = false on all prompts in the collection.
+   * This sets isInvisible = false on prompts in the collection that the user owns.
+   * Users can only show their own prompts.
    */
   async showAllPromptsOnHome() {
-    const collection = this.collection();
-    if (!collection || !collection.promptIds || collection.promptIds.length === 0) {
-      return;
-    }
-
     const currentUser = this.authService.currentUser;
     if (!currentUser) {
       return;
     }
 
-    if (!confirm('Are you sure you want to show all prompts in this collection on the home screen?')) {
+    // Only show prompts that the current user owns
+    const userOwnedPrompts = this.userOwnedPromptsInCollection();
+    const promptIdsToShow = userOwnedPrompts.map(p => p.id);
+
+    if (promptIdsToShow.length === 0) {
+      this.updateCollectionError.set('You can only show prompts that you created.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to show your ${promptIdsToShow.length} prompt(s) in this collection on the home screen?`)) {
       return;
     }
 
@@ -1996,8 +2029,8 @@ export class CollectionDetailComponent {
     this.updateCollectionError.set(null);
 
     try {
-      await this.promptService.setPromptsInvisibility(collection.promptIds, false);
-      this.showCopyMessage('All prompts in this collection are now visible on the home screen.');
+      await this.promptService.setPromptsInvisibility(promptIdsToShow, false);
+      this.showCopyMessage(`Your ${promptIdsToShow.length} prompt(s) are now visible on the home screen.`);
     } catch (error) {
       console.error('Failed to show prompts on home', error);
       this.updateCollectionError.set(

@@ -224,6 +224,7 @@
       [noPromptsDescription]="profile() ? 'Create prompts first to build a collection' : 'Build your first collection'"
       [isPrivate]="newCollectionIsPrivate()"
       [canUsePrivateCollections]="canUsePrivateCollections()"
+      [hidePromptsFromHome]="hidePromptsFromHome()"
       (close)="closeCreateCollectionModal()"
       (formSubmit)="submitCollectionForm()"
       (customUrlInput)="onCustomUrlInput($event)"
@@ -235,6 +236,7 @@
       (brandLogoRemoved)="deleteBrandLogo()"
       (toggleBrandingSection)="brandingSectionExpanded.set(!brandingSectionExpanded())"
       (togglePrivate)="toggleNewCollectionPrivate()"
+      (toggleHideFromHome)="toggleHidePromptsFromHome()"
     ></app-collection-modal>
   </div>
 </ng-container>

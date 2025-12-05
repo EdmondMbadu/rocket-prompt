@@ -96,6 +96,7 @@ export class CollectionsPageComponent {
     readonly bookmarkingCollections = signal<Set<string>>(new Set());
     readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
     readonly newCollectionIsPrivate = signal(false);
+    readonly hidePromptsFromHome = signal(false);
     readonly canUsePrivateCollections = computed(() => hasPremiumAccess(this.profile()));
     readonly chatbotOptions: readonly { id: DirectLaunchTarget; label: string; icon: string }[] = [
         { id: 'chatgpt', label: 'ChatGPT', icon: 'assets/gpt.png' },
@@ -245,6 +246,7 @@ export class CollectionsPageComponent {
         this.promptSearchTerm.set(''); // Reset prompt search when opening modal
         this.collectionDefaultAi.set(null);
         this.newCollectionIsPrivate.set(false);
+        this.hidePromptsFromHome.set(false);
         this.newCollectionModalOpen.set(true);
     }
 
@@ -254,6 +256,10 @@ export class CollectionsPageComponent {
             return;
         }
         this.newCollectionIsPrivate.update(prev => !prev);
+    }
+
+    toggleHidePromptsFromHome() {
+        this.hidePromptsFromHome.update(prev => !prev);
     }
 
     closeCreateCollectionModal() {
@@ -354,6 +360,16 @@ export class CollectionsPageComponent {
                 } catch (logoError) {
                     console.error('Failed to upload brand logo', logoError);
                     // Don't fail the whole operation if logo upload fails
+                }
+            }
+
+            // Hide prompts from home screen if option was selected
+            if (this.hidePromptsFromHome() && promptIds.length > 0) {
+                try {
+                    await this.promptService.setPromptsInvisibility(promptIds, true);
+                } catch (hideError) {
+                    console.error('Failed to hide prompts from home', hideError);
+                    // Don't fail the whole operation if hiding fails
                 }
             }
 
@@ -497,9 +513,19 @@ export class CollectionsPageComponent {
     }
 
     private observePrompts() {
-        this.promptService
-            .prompts$()
-            .pipe(takeUntilDestroyed(this.destroyRef))
+        // Only load the current user's prompts for collection creation
+        // Users can only add their own prompts to collections
+        this.currentUser$
+            .pipe(
+                switchMap(user => {
+                    if (!user) {
+                        return of<Prompt[]>([]);
+                    }
+                    // Use promptsByAuthor$ to only get the current user's prompts
+                    return this.promptService.promptsByAuthor$(user.uid, user.uid);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
             .subscribe({
                 next: prompts => {
                     const options = prompts.map(prompt => this.mapPromptToOption(prompt));

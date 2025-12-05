@@ -132,6 +132,7 @@ export class ProfilePageComponent {
   readonly promptSearchTermForCollection = signal('');
   readonly collectionDefaultAi = signal<DirectLaunchTarget | null>(null);
   readonly newCollectionIsPrivate = signal(false);
+  readonly hidePromptsFromHome = signal(false);
   readonly canUsePrivateCollections = computed(() => hasPremiumAccess(this.currentUserProfile()));
   private collectionCustomUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -1239,6 +1240,7 @@ export class ProfilePageComponent {
     this.promptSearchTermForCollection.set('');
     this.collectionDefaultAi.set(null);
     this.newCollectionIsPrivate.set(false);
+    this.hidePromptsFromHome.set(false);
     this.newCollectionModalOpen.set(true);
   }
 
@@ -1248,6 +1250,10 @@ export class ProfilePageComponent {
       return;
     }
     this.newCollectionIsPrivate.update(prev => !prev);
+  }
+
+  toggleHidePromptsFromHome() {
+    this.hidePromptsFromHome.update(prev => !prev);
   }
 
   closeCreateCollectionModal() {
@@ -1263,6 +1269,7 @@ export class ProfilePageComponent {
     this.collectionForm.markAsUntouched();
     this.collectionDefaultAi.set(null);
     this.newCollectionIsPrivate.set(false);
+    this.hidePromptsFromHome.set(false);
   }
 
   togglePromptSelectionForCollection(promptId: string) {
@@ -1379,6 +1386,16 @@ export class ProfilePageComponent {
         defaultAi: this.collectionDefaultAi() || undefined,
         isPrivate: this.newCollectionIsPrivate()
       }, authorId);
+
+      // Hide prompts from home screen if option was selected
+      if (this.hidePromptsFromHome() && promptIds.length > 0) {
+        try {
+          await this.promptService.setPromptsInvisibility(promptIds, true);
+        } catch (hideError) {
+          console.error('Failed to hide prompts from home', hideError);
+          // Don't fail the whole operation if hiding fails
+        }
+      }
 
       this.newCollectionModalOpen.set(false);
       this.collectionForm.reset({
