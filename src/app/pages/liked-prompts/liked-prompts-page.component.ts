@@ -750,7 +750,7 @@ export class LikedPromptsPageComponent {
     if (!prompt?.content) return;
 
     if (chatbotName === 'RocketGoals') {
-      this.launchRocketGoalsPrompt(prompt);
+      await this.launchRocketGoalsPrompt(prompt);
       return;
     }
 
@@ -778,7 +778,7 @@ export class LikedPromptsPageComponent {
     await this.trackPromptLaunch(prompt, launchType);
   }
 
-  private launchRocketGoalsPrompt(prompt: PromptCard): void {
+  private async launchRocketGoalsPrompt(prompt: PromptCard): Promise<void> {
     const content = prompt.content ?? '';
     if (!content) {
       return;
@@ -794,6 +794,30 @@ export class LikedPromptsPageComponent {
       this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
     } else {
       this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
+    }
+
+    // Track launch
+    if (prompt.id) {
+      try {
+        const result = await this.promptService.trackLaunch(prompt.id, 'rocket');
+        this.likedPrompts.update(prev => prev.map(card => {
+          if (card.id !== prompt.id) {
+            return card;
+          }
+          return {
+            ...card,
+            launchGpt: result.launchGpt,
+            launchGemini: result.launchGemini,
+            launchClaude: result.launchClaude,
+            launchGrok: result.launchGrok,
+            launchRocket: result.launchRocket,
+            copied: result.copied,
+            totalLaunch: result.totalLaunch
+          };
+        }));
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
     }
   }
 

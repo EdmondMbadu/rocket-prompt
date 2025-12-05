@@ -375,7 +375,7 @@ export class HomeComponent {
     if (!prompt?.content) return;
 
     if (chatbotName === 'RocketGoals') {
-      this.launchRocketGoalsPrompt(prompt);
+      await this.launchRocketGoalsPrompt(prompt);
       return;
     }
 
@@ -403,7 +403,7 @@ export class HomeComponent {
     await this.trackPromptLaunch(prompt, launchType);
   }
 
-  private launchRocketGoalsPrompt(prompt: PromptCard): void {
+  private async launchRocketGoalsPrompt(prompt: PromptCard): Promise<void> {
     const content = prompt.content ?? '';
     if (!content) {
       this.showCopyMessage('Prompt is missing content.');
@@ -420,6 +420,15 @@ export class HomeComponent {
       this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
     } else {
       this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
+    }
+
+    // Track launch
+    if (prompt.id) {
+      try {
+        await this.promptService.trackLaunch(prompt.id, 'rocket');
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
     }
   }
 

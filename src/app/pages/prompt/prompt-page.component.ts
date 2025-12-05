@@ -182,7 +182,7 @@ export class PromptPageComponent {
     const p = this.prompt();
 
     if (chatbotName === 'RocketGoals') {
-      this.launchRocketGoalsPrompt(text);
+      await this.launchRocketGoalsPrompt(text);
       return;
     }
 
@@ -257,14 +257,15 @@ export class PromptPageComponent {
     }
   }
 
-  private launchRocketGoalsPrompt(promptText: string) {
+  private async launchRocketGoalsPrompt(promptText: string) {
     const content = promptText?.trim();
     if (!content) {
       this.showCopyMessage('Prompt is missing content.');
       return;
     }
 
-    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, this.prompt()?.id);
+    const p = this.prompt();
+    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, p?.id);
     if (typeof window !== 'undefined') {
       window.open(launch.url, '_blank');
     }
@@ -274,6 +275,16 @@ export class PromptPageComponent {
       this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
     } else {
       this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
+    }
+
+    // Track launch
+    if (p) {
+      try {
+        const result = await this.promptService.trackLaunch(p.id, 'rocket');
+        this.prompt.set({ ...p, ...result } as Prompt);
+      } catch (e) {
+        console.error('Failed to track launch', e);
+      }
     }
   }
 
@@ -288,7 +299,7 @@ export class PromptPageComponent {
     this.fallbackCopyTextToClipboard(text);
   }
 
-  private autoLaunchRocketFromOneShot(prompt: Prompt) {
+  private async autoLaunchRocketFromOneShot(prompt: Prompt) {
     if (!this.autoLaunchRocketRequest() || this.rocketOneShotHandled) {
       return;
     }
@@ -308,6 +319,14 @@ export class PromptPageComponent {
 
     if (typeof window !== 'undefined') {
       window.location.replace(launch.url);
+    }
+
+    // Track launch
+    try {
+      const result = await this.promptService.trackLaunch(prompt.id, 'rocket');
+      this.prompt.set({ ...prompt, ...result } as Prompt);
+    } catch (e) {
+      console.error('Failed to track launch', e);
     }
   }
 
