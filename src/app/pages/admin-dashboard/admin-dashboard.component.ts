@@ -292,6 +292,13 @@ export class AdminDashboardComponent {
         return stats.sort((a, b) => b.count - a.count);
     });
 
+    // Top model based on current launch breakdown (respects real/total toggle)
+    readonly topModel = computed(() => {
+        const breakdown = this.launchBreakdown();
+        // launchBreakdown is already sorted by count descending, so first item is top
+        return breakdown.length > 0 ? breakdown[0] : null;
+    });
+
     toggleLaunchMode() {
         this.showRealLaunches.set(!this.showRealLaunches());
     }
