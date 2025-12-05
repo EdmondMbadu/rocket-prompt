@@ -299,6 +299,29 @@ export class AdminDashboardComponent {
         return breakdown.length > 0 ? breakdown[0] : null;
     });
 
+    // Calculate percentage difference between top model and second model
+    readonly topModelPercentageDiff = computed(() => {
+        const breakdown = this.launchBreakdown();
+        if (breakdown.length < 2) {
+            return null; // Need at least 2 models to calculate difference
+        }
+
+        const topCount = breakdown[0].count;
+        const secondCount = breakdown[1].count;
+
+        if (topCount === 0 && secondCount === 0) {
+            return null; // Both are zero, no meaningful difference
+        }
+
+        if (secondCount === 0) {
+            return 100; // Top model has all launches, second has none
+        }
+
+        // Calculate percentage difference: ((top - second) / second) * 100
+        const diff = ((topCount - secondCount) / secondCount) * 100;
+        return Math.round(diff);
+    });
+
     toggleLaunchMode() {
         this.showRealLaunches.set(!this.showRealLaunches());
     }

@@ -130,7 +130,10 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12%</span>
+              <span *ngIf="topModelPercentageDiff() !== null"
+                class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                {{ topModelPercentageDiff()! > 0 ? '+' : '' }}{{ topModelPercentageDiff() }}%
+              </span>
             </div>
             <h3 class="text-slate-500 text-sm font-medium">Top Model</h3>
             <div class="mt-2 flex items-baseline gap-2">
