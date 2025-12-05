@@ -32,5 +32,6 @@ export interface PromptCard {
   readonly forkedFromCustomUrl?: string;
   readonly forkCount?: number;
   readonly isPrivate?: boolean;
+  readonly isInvisible?: boolean;
 }
 

@@ -108,6 +108,23 @@ export class CollectionDetailComponent {
   readonly isShowingPromptsOnHome = signal(false);
   private collectionDefaultAiApplied = false;
 
+  // Computed signal to check if prompts in this collection are hidden from home
+  readonly hiddenPromptsCount = computed(() => {
+    const collectionPromptsList = this.collectionPrompts();
+    return collectionPromptsList.filter(p => p.isInvisible).length;
+  });
+
+  readonly allPromptsHiddenFromHome = computed(() => {
+    const collectionPromptsList = this.collectionPrompts();
+    if (collectionPromptsList.length === 0) return false;
+    return collectionPromptsList.every(p => p.isInvisible);
+  });
+
+  readonly somePromptsHiddenFromHome = computed(() => {
+    const collectionPromptsList = this.collectionPrompts();
+    return collectionPromptsList.some(p => p.isInvisible);
+  });
+
   // Prompt edit modal state
   readonly newPromptModalOpen = signal(false);
   readonly isEditingPrompt = signal(false);
@@ -872,7 +889,8 @@ export class CollectionDetailComponent {
       forkedFromTitle: prompt.forkedFromTitle,
       forkedFromCustomUrl: prompt.forkedFromCustomUrl,
       forkCount: prompt.forkCount,
-      isPrivate: prompt.isPrivate
+      isPrivate: prompt.isPrivate,
+      isInvisible: prompt.isInvisible
     };
   }
 
