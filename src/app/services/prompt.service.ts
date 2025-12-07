@@ -286,6 +286,129 @@ export class PromptService {
   }
 
   /**
+   * Get prompts by authorId with pagination support (for infinite scroll on profile page)
+   * Returns the first 50 prompts and the last document snapshot for pagination
+   * @param authorId The author's user ID
+   * @param currentUserId Optional. If provided and matches authorId, private prompts will be included
+   */
+  promptsByAuthorWithPagination$(
+    authorId: string,
+    currentUserId?: string
+  ): Observable<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }> {
+    return new Observable<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }>((subscriber) => {
+      let unsubscribe: (() => void) | undefined;
+
+      const trimmedAuthorId = authorId?.trim();
+      if (!trimmedAuthorId) {
+        subscriber.next({ prompts: [], lastDoc: null });
+        return () => unsubscribe?.();
+      }
+
+      const isViewingOwnProfile = currentUserId && currentUserId === trimmedAuthorId;
+
+      this.getFirestoreContext()
+        .then(({ firestore, firestoreModule }) => {
+          const collectionRef = firestoreModule.collection(firestore, 'prompts');
+          const queryRef = firestoreModule.query(
+            collectionRef,
+            firestoreModule.where('authorId', '==', trimmedAuthorId),
+            firestoreModule.orderBy('createdAt', 'desc'),
+            firestoreModule.limit(50)
+          );
+
+          unsubscribe = firestoreModule.onSnapshot(
+            queryRef,
+            (snapshot) => {
+              const prompts = snapshot.docs
+                .map((doc) => this.mapPrompt(doc, firestoreModule))
+                .filter((prompt) => {
+                  if (prompt.isInvisible && !isViewingOwnProfile) return false;
+                  if (prompt.isPrivate && !isViewingOwnProfile) return false;
+                  if (prompt.organizationId) return false;
+                  return true;
+                });
+
+              // Get the last document from the snapshot (before filtering) for pagination
+              const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+              subscriber.next({ prompts, lastDoc: lastDoc as QueryDocumentSnapshot | null });
+            },
+            (error) => subscriber.error(error)
+          );
+        })
+        .catch((error) => subscriber.error(error));
+
+      return () => unsubscribe?.();
+    });
+  }
+
+  /**
+   * Load more prompts by author with pagination (for infinite scroll on profile page)
+   * @param authorId The author's user ID
+   * @param lastDoc The last document snapshot from the previous page
+   * @param currentUserId Optional. If provided and matches authorId, private prompts will be included
+   * @param limit Number of prompts to load (default: 50)
+   * @returns Promise with the prompts and the last document snapshot for next page
+   */
+  async loadMorePromptsByAuthor(
+    authorId: string,
+    lastDoc?: QueryDocumentSnapshot | null,
+    currentUserId?: string,
+    limit: number = 50
+  ): Promise<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean }> {
+    const trimmedAuthorId = authorId?.trim();
+    if (!trimmedAuthorId) {
+      return { prompts: [], lastDoc: null, hasMore: false };
+    }
+
+    const isViewingOwnProfile = currentUserId && currentUserId === trimmedAuthorId;
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const collectionRef = firestoreModule.collection(firestore, 'prompts');
+
+    let queryRef = firestoreModule.query(
+      collectionRef,
+      firestoreModule.where('authorId', '==', trimmedAuthorId),
+      firestoreModule.orderBy('createdAt', 'desc'),
+      firestoreModule.limit(limit + 1) // Load one extra to check if there are more
+    );
+
+    // If we have a last document, start after it
+    if (lastDoc) {
+      queryRef = firestoreModule.query(
+        collectionRef,
+        firestoreModule.where('authorId', '==', trimmedAuthorId),
+        firestoreModule.orderBy('createdAt', 'desc'),
+        firestoreModule.startAfter(lastDoc),
+        firestoreModule.limit(limit + 1)
+      );
+    }
+
+    const snapshot = await firestoreModule.getDocs(queryRef);
+    const docs = snapshot.docs;
+
+    // Check if there are more documents
+    const hasMore = docs.length > limit;
+    const promptsToReturn = hasMore ? docs.slice(0, limit) : docs;
+
+    const prompts = promptsToReturn
+      .map((doc) => this.mapPrompt(doc, firestoreModule))
+      .filter((prompt) => {
+        if (prompt.isInvisible && !isViewingOwnProfile) return false;
+        if (prompt.isPrivate && !isViewingOwnProfile) return false;
+        if (prompt.organizationId) return false;
+        return true;
+      });
+
+    const newLastDoc = promptsToReturn.length > 0 ? promptsToReturn[promptsToReturn.length - 1] : null;
+
+    return {
+      prompts,
+      lastDoc: newLastDoc as QueryDocumentSnapshot | null,
+      hasMore
+    };
+  }
+
+  /**
    * Get prompts by organizationId (for organization page)
    * @param organizationId The organization's ID
    */

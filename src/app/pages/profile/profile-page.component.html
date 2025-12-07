@@ -596,6 +596,14 @@
               </ng-container>
             </div>
 
+            <!-- Loading indicator for infinite scroll -->
+            <div *ngIf="isLoadingMore()" class="mt-8 flex justify-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#DC2626]"></div>
+                <p class="text-sm text-slate-600">Loading more prompts...</p>
+              </div>
+            </div>
+
             <!-- Bulk Delete Floating Action Bar -->
             <div *ngIf="bulkDeleteMode()" class="bulk-delete-action-bar">
               <div class="bulk-delete-action-bar-inner">

@@ -15,6 +15,7 @@ import type { UserProfile, DirectLaunchTarget } from '../../models/user-profile.
 import type { Organization } from '../../models/organization.model';
 import type { PromptCollection } from '../../models/collection.model';
 import type { PromptCard } from '../../models/prompt-card.model';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { PromptCardComponent } from '../../components/prompt-card/prompt-card.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { CollectionModalComponent } from '../../components/collection-modal/collection-modal.component';
@@ -101,6 +102,13 @@ export class ProfilePageComponent {
   readonly promptFormError = signal<string | null>(null);
   readonly deleteError = signal<string | null>(null);
   readonly deletingPromptId = signal<string | null>(null);
+  
+  // Pagination state for infinite scroll
+  readonly isLoadingMore = signal(false);
+  readonly hasMorePrompts = signal(true);
+  private lastPromptDoc: QueryDocumentSnapshot | null = null;
+  private currentAuthorId: string | null = null;
+  private currentUserId: string | null = null;
   
   // Bulk delete state
   readonly bulkDeleteMode = signal(false);
@@ -457,6 +465,7 @@ export class ProfilePageComponent {
       });
     this.observePrompts();
     this.observeCollections();
+    this.setupScrollListener();
   }
 
   selectTab(tab: 'prompts' | 'collections') {
@@ -502,6 +511,99 @@ export class ProfilePageComponent {
         this.loadCollectionsError.set('We could not load collections. Please try again.');
       }
     });
+  }
+
+  private setupScrollListener() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+    let isLoading = false;
+
+    const handleScroll = () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      scrollTimeout = setTimeout(() => {
+        // Only load more when on prompts tab
+        if (this.activeTab() !== 'prompts') {
+          return;
+        }
+
+        // Check if we're near the bottom of the page
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const pageHeight = document.documentElement.scrollHeight;
+        const threshold = 300; // Load more when 300px from bottom
+
+        const isNearBottom = scrollPosition >= pageHeight - threshold;
+        const canLoadMore = !isLoading && 
+                           !this.isLoadingMore() && 
+                           !this.isLoadingPrompts() && 
+                           this.hasMorePrompts() &&
+                           this.lastPromptDoc !== null;
+
+        if (isNearBottom && canLoadMore) {
+          isLoading = true;
+          this.loadMorePrompts().finally(() => {
+            isLoading = false;
+          });
+        }
+      }, 150); // Debounce scroll events
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Cleanup on destroy
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    });
+  }
+
+  async loadMorePrompts() {
+    if (this.isLoadingMore() || !this.hasMorePrompts() || !this.lastPromptDoc || !this.currentAuthorId) {
+      return;
+    }
+
+    this.isLoadingMore.set(true);
+
+    try {
+      const result = await this.promptService.loadMorePromptsByAuthor(
+        this.currentAuthorId,
+        this.lastPromptDoc,
+        this.currentUserId ?? undefined,
+        50
+      );
+      
+      if (result.prompts.length > 0) {
+        const newCards = result.prompts.map(prompt => this.mapPromptToCard(prompt));
+        const currentCards = this.prompts();
+        
+        // Append new prompts to existing ones, avoiding duplicates
+        const existingIds = new Set(currentCards.map(card => card.id));
+        const uniqueNewCards = newCards.filter(card => !existingIds.has(card.id));
+        
+        if (uniqueNewCards.length > 0) {
+          this.prompts.set([...currentCards, ...uniqueNewCards]);
+          this.syncCategories(result.prompts);
+          this.loadAuthorProfiles(result.prompts);
+          this.loadOrganizations(result.prompts);
+        }
+      }
+
+      this.lastPromptDoc = result.lastDoc;
+      this.hasMorePrompts.set(result.hasMore && result.lastDoc !== null);
+    } catch (error) {
+      console.error('Failed to load more prompts', error);
+      // Don't show error to user, just stop trying to load more
+      this.hasMorePrompts.set(false);
+    } finally {
+      this.isLoadingMore.set(false);
+    }
   }
 
   readonly userCollectionCount = computed(() => {
@@ -2197,7 +2299,10 @@ export class ProfilePageComponent {
                 return this.currentUser$.pipe(
                   switchMap(currentUser => {
                     const currentUserId = currentUser?.uid;
-                    return this.promptService.promptsByAuthor$(profile.userId, currentUserId);
+                    // Store for pagination
+                    this.currentAuthorId = profile.userId;
+                    this.currentUserId = currentUserId ?? null;
+                    return this.promptService.promptsByAuthorWithPagination$(profile.userId, currentUserId);
                   })
                 );
               }
@@ -2206,9 +2311,12 @@ export class ProfilePageComponent {
                 switchMap(user => {
                   if (!user) {
                     this.isLoadingPrompts.set(false);
-                    return of<Prompt[]>([]);
+                    return of<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }>({ prompts: [], lastDoc: null });
                   }
-                  return this.promptService.promptsByAuthor$(user.uid, user.uid);
+                  // Store for pagination
+                  this.currentAuthorId = user.uid;
+                  this.currentUserId = user.uid;
+                  return this.promptService.promptsByAuthorWithPagination$(user.uid, user.uid);
                 })
               );
             })
@@ -2221,7 +2329,10 @@ export class ProfilePageComponent {
           return this.currentUser$.pipe(
             switchMap(currentUser => {
               const currentUserId = currentUser?.uid;
-              return this.promptService.promptsByAuthor$(userId, currentUserId);
+              // Store for pagination
+              this.currentAuthorId = userId;
+              this.currentUserId = currentUserId ?? null;
+              return this.promptService.promptsByAuthorWithPagination$(userId, currentUserId);
             })
           );
         }
@@ -2231,15 +2342,18 @@ export class ProfilePageComponent {
           switchMap(user => {
             if (!user) {
               this.isLoadingPrompts.set(false);
-              return of<Prompt[]>([]);
+              return of<{ prompts: Prompt[]; lastDoc: QueryDocumentSnapshot | null }>({ prompts: [], lastDoc: null });
             }
-            return this.promptService.promptsByAuthor$(user.uid, user.uid);
+            // Store for pagination
+            this.currentAuthorId = user.uid;
+            this.currentUserId = user.uid;
+            return this.promptService.promptsByAuthorWithPagination$(user.uid, user.uid);
           })
         );
       }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
-      next: prompts => {
+      next: ({ prompts, lastDoc }) => {
         const cards = prompts.map(prompt => this.mapPromptToCard(prompt));
 
         const hidden = this.hiddenCategories();
@@ -2266,6 +2380,12 @@ export class ProfilePageComponent {
         this.loadOrganizations(prompts);
         this.isLoadingPrompts.set(false);
         this.loadPromptsError.set(null);
+        
+        // Store the last document for pagination
+        this.lastPromptDoc = lastDoc;
+        // If we got a lastDoc, there might be more prompts
+        this.hasMorePrompts.set(lastDoc !== null);
+        
         if (this.promptFormError()) {
           this.promptFormError.set(null);
         }
