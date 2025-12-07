@@ -283,6 +283,31 @@ export class AuthService {
     );
   }
 
+  async updateSubscriptionStatus(uid: string, status: 'plus' | 'team'): Promise<void> {
+    const trimmedUid = uid?.trim();
+
+    if (!trimmedUid) {
+      throw new Error('A user id is required to update subscription status.');
+    }
+
+    const { firestore, firestoreModule } = await this.getFirestoreContext();
+    const docRef = firestoreModule.doc(firestore, 'users', trimmedUid);
+
+    const updateData: Record<string, unknown> = {
+      subscriptionStatus: status,
+      subscriptionPaidAt: firestoreModule.serverTimestamp()
+    };
+
+    // For team/pro plan, set expiration to 1 year from now
+    if (status === 'team') {
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      updateData['subscriptionExpiresAt'] = firestoreModule.Timestamp.fromDate(oneYearFromNow);
+    }
+
+    await firestoreModule.updateDoc(docRef, updateData);
+  }
+
   async uploadProfilePicture(uid: string, file: File): Promise<string> {
     const trimmedUid = uid?.trim();
 

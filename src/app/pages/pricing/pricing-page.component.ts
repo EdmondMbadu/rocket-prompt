@@ -1,17 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild, computed, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { BillingService } from '../../services/billing.service';
 import { AuthService } from '../../services/auth.service';
+import { AdminService, type PromoCodes } from '../../services/admin.service';
 import type { UserProfile } from '../../models/user-profile.model';
 
 @Component({
   selector: 'app-pricing-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './pricing-page.component.html',
   styleUrl: './pricing-page.component.css'
 })
@@ -20,11 +22,17 @@ export class PricingPageComponent implements OnInit {
   readonly checkoutError = signal<string | null>(null);
   readonly currentUserProfile = signal<UserProfile | null>(null);
   readonly isPlusUser = computed(() => (this.currentUserProfile()?.subscriptionStatus ?? '').toLowerCase() === 'plus');
+  readonly promoCode = signal<string>('');
+  readonly promoError = signal<string | null>(null);
+  readonly promoSuccess = signal<string | null>(null);
+  readonly applyingPromo = signal<boolean>(false);
+  readonly promoCodes = signal<PromoCodes>({ plusCode: 'ROCKETPLUS24', proCode: 'ROCKETPRO24' });
   @ViewChild('proPlanCard') proPlanCard?: ElementRef<HTMLDivElement>;
 
   constructor(
     private readonly billingService: BillingService,
     private readonly authService: AuthService,
+    private readonly adminService: AdminService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
   ) {
@@ -39,6 +47,11 @@ export class PricingPageComponent implements OnInit {
         takeUntilDestroyed()
       )
       .subscribe(profile => this.currentUserProfile.set(profile));
+
+    // Fetch promo codes from Firestore
+    this.adminService.promoCodes$()
+      .pipe(takeUntilDestroyed())
+      .subscribe(codes => this.promoCodes.set(codes));
   }
 
   ngOnInit() {
@@ -128,5 +141,59 @@ export class PricingPageComponent implements OnInit {
     if (this.proPlanCard?.nativeElement) {
       this.proPlanCard.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  }
+
+  async applyPromoCode(): Promise<void> {
+    const code = this.promoCode().trim().toUpperCase();
+    const codes = this.promoCodes();
+    
+    if (!code) {
+      this.promoError.set('Please enter a promo code.');
+      return;
+    }
+
+    const user = this.authService.currentUser;
+    if (!user) {
+      this.promoError.set('Please sign in to apply a promo code.');
+      return;
+    }
+
+    this.promoError.set(null);
+    this.promoSuccess.set(null);
+    this.applyingPromo.set(true);
+
+    try {
+      if (code === codes.plusCode.toUpperCase()) {
+        if (this.isPlusUser()) {
+          this.promoError.set('You already have Plus. Use a Pro code to upgrade further.');
+          return;
+        }
+        await this.authService.updateSubscriptionStatus(user.uid, 'plus');
+        this.promoSuccess.set('🎉 Plus plan activated! Refreshing...');
+        setTimeout(() => {
+          this.router.navigate(['/home'], { queryParams: { checkout: 'success', plan: 'plus' } });
+        }, 1500);
+      } else if (code === codes.proCode.toUpperCase()) {
+        await this.authService.updateSubscriptionStatus(user.uid, 'team');
+        this.promoSuccess.set('🎉 Pro plan activated! Refreshing...');
+        setTimeout(() => {
+          this.router.navigate(['/home'], { queryParams: { checkout: 'success', plan: 'team' } });
+        }, 1500);
+      } else {
+        this.promoError.set('Invalid promo code. Please check and try again.');
+      }
+    } catch (error) {
+      console.error('Failed to apply promo code', error);
+      this.promoError.set('Failed to apply promo code. Please try again.');
+    } finally {
+      this.applyingPromo.set(false);
+    }
+  }
+
+  onPromoCodeChange(value: string): void {
+    this.promoCode.set(value);
+    // Clear messages when user types
+    this.promoError.set(null);
+    this.promoSuccess.set(null);
   }
 }

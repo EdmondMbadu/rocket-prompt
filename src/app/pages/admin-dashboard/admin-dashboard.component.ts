@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { AdminService, type AdminStats, type LaunchBaseline } from '../../services/admin.service';
+import { AdminService, type AdminStats, type LaunchBaseline, type PromoCodes } from '../../services/admin.service';
 import { PromptService } from '../../services/prompt.service';
 import { HomeContentService } from '../../services/home-content.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -104,6 +104,15 @@ export class AdminDashboardComponent {
     // Launch baseline for "real" launch calculations
     readonly launchBaseline = signal<LaunchBaseline | null>(null);
     readonly isResettingBaseline = signal(false);
+
+    // Promo codes management
+    readonly isPromoCodesExpanded = signal(false);
+    readonly promoCodes = signal<PromoCodes>({ plusCode: 'ROCKETPLUS24', proCode: 'ROCKETPRO24' });
+    readonly plusCodeInput = signal('');
+    readonly proCodeInput = signal('');
+    readonly isSavingPromoCodes = signal(false);
+    readonly promoCodesError = signal<string | null>(null);
+    readonly promoCodesSuccess = signal<string | null>(null);
 
     // Toggle for showing real launches vs total launches
     readonly showRealLaunches = signal(true);
@@ -556,6 +565,7 @@ export class AdminDashboardComponent {
         this.observePrompts();
         this.observeHomeContent();
         this.observeLaunchBaseline();
+        this.observePromoCodes();
     }
 
     loadData() {
@@ -1036,6 +1046,66 @@ export class AdminDashboardComponent {
                     console.error('Failed to observe launch baseline', error);
                 }
             });
+    }
+
+    private observePromoCodes() {
+        this.adminService
+            .promoCodes$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (codes) => {
+                    this.promoCodes.set(codes);
+                    this.plusCodeInput.set(codes.plusCode);
+                    this.proCodeInput.set(codes.proCode);
+                },
+                error: (error) => {
+                    console.error('Failed to observe promo codes', error);
+                }
+            });
+    }
+
+    async savePromoCodes() {
+        const currentUser = this.authService.currentUser;
+        if (!currentUser) {
+            this.promoCodesError.set('You must be logged in to save promo codes.');
+            return;
+        }
+
+        const plusCode = this.plusCodeInput().trim();
+        const proCode = this.proCodeInput().trim();
+
+        if (!plusCode || !proCode) {
+            this.promoCodesError.set('Both promo codes are required.');
+            return;
+        }
+
+        if (plusCode.length < 4 || proCode.length < 4) {
+            this.promoCodesError.set('Promo codes must be at least 4 characters.');
+            return;
+        }
+
+        this.isSavingPromoCodes.set(true);
+        this.promoCodesError.set(null);
+        this.promoCodesSuccess.set(null);
+
+        try {
+            await this.adminService.savePromoCodes(
+                { plusCode, proCode },
+                currentUser.uid
+            );
+
+            this.promoCodesSuccess.set('Promo codes saved successfully!');
+            setTimeout(() => {
+                this.promoCodesSuccess.set(null);
+            }, 3000);
+        } catch (error) {
+            console.error('Failed to save promo codes', error);
+            this.promoCodesError.set(
+                error instanceof Error ? error.message : 'Failed to save promo codes. Please try again.'
+            );
+        } finally {
+            this.isSavingPromoCodes.set(false);
+        }
     }
 
     async saveHomeContent() {

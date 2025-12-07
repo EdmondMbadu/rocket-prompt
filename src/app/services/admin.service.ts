@@ -27,6 +27,13 @@ export interface LaunchBaseline {
     setBy: string;
 }
 
+export interface PromoCodes {
+    plusCode: string;
+    proCode: string;
+    updatedAt?: Date;
+    updatedBy?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -298,6 +305,82 @@ export class AdminService {
             copied: baseline.copied,
             setAt: firestoreModule.serverTimestamp(),
             setBy: userId
+        });
+    }
+
+    /**
+     * Fetch promo codes from Firestore.
+     * Returns default codes if none have been set.
+     */
+    async fetchPromoCodes(): Promise<PromoCodes> {
+        const { firestore, firestoreModule } = await this.getFirestoreContext();
+        const docRef = firestoreModule.doc(firestore, 'adminConfig', 'promoCodes');
+        const docSnap = await firestoreModule.getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            // Return default codes if none set
+            return {
+                plusCode: 'ROCKETPLUS24',
+                proCode: 'ROCKETPRO24'
+            };
+        }
+
+        const data = docSnap.data() as Record<string, unknown>;
+        return {
+            plusCode: typeof data['plusCode'] === 'string' ? data['plusCode'] : 'ROCKETPLUS24',
+            proCode: typeof data['proCode'] === 'string' ? data['proCode'] : 'ROCKETPRO24'
+        };
+    }
+
+    /**
+     * Observable for promo codes changes
+     */
+    promoCodes$(): Observable<PromoCodes> {
+        return new Observable<PromoCodes>((subscriber) => {
+            let unsubscribe: (() => void) | undefined;
+
+            this.getFirestoreContext()
+                .then(({ firestore, firestoreModule }) => {
+                    const docRef = firestoreModule.doc(firestore, 'adminConfig', 'promoCodes');
+
+                    unsubscribe = firestoreModule.onSnapshot(
+                        docRef,
+                        (docSnap) => {
+                            if (!docSnap.exists()) {
+                                subscriber.next({
+                                    plusCode: 'ROCKETPLUS24',
+                                    proCode: 'ROCKETPRO24'
+                                });
+                                return;
+                            }
+
+                            const data = docSnap.data() as Record<string, unknown>;
+                            subscriber.next({
+                                plusCode: typeof data['plusCode'] === 'string' ? data['plusCode'] : 'ROCKETPLUS24',
+                                proCode: typeof data['proCode'] === 'string' ? data['proCode'] : 'ROCKETPRO24'
+                            });
+                        },
+                        (error) => subscriber.error(error)
+                    );
+                })
+                .catch((error) => subscriber.error(error));
+
+            return () => unsubscribe?.();
+        });
+    }
+
+    /**
+     * Save promo codes to Firestore.
+     */
+    async savePromoCodes(codes: PromoCodes, userId: string): Promise<void> {
+        const { firestore, firestoreModule } = await this.getFirestoreContext();
+        const docRef = firestoreModule.doc(firestore, 'adminConfig', 'promoCodes');
+
+        await firestoreModule.setDoc(docRef, {
+            plusCode: codes.plusCode.toUpperCase().trim(),
+            proCode: codes.proCode.toUpperCase().trim(),
+            updatedAt: firestoreModule.serverTimestamp(),
+            updatedBy: userId
         });
     }
 
