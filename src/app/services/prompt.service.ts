@@ -585,7 +585,9 @@ export class PromptService {
 
     const title = input.title?.trim();
     const content = input.content?.trim();
-    const imageUrl = input.imageUrl?.trim();
+    // Check if imageUrl is explicitly set to empty string (indicates deletion) or has a value
+    const imageUrlToDelete = input.imageUrl === '';
+    const imageUrl = input.imageUrl && input.imageUrl !== '' ? input.imageUrl.trim() : undefined;
     const tag = input.tag?.trim();
 
     if (!title) {
@@ -611,7 +613,8 @@ export class PromptService {
     const existingImageUrl = typeof existingData['imageUrl'] === 'string' ? existingData['imageUrl'] : undefined;
 
     // Either content or imageUrl (from input or existing) must be provided
-    const finalImageUrl = imageUrl || existingImageUrl;
+    // Don't count empty string as a valid imageUrl for validation
+    const finalImageUrl = imageUrl || (imageUrlToDelete ? undefined : existingImageUrl);
     if (!content && !finalImageUrl) {
       throw new Error('Either content or an image is required to update a prompt.');
     }
@@ -637,7 +640,11 @@ export class PromptService {
       updatePayload['authorId'] = trimmedAuthorId;
     }
 
-    if (imageUrl) {
+    // Handle imageUrl: if explicitly set to empty string, delete it; if provided, use it; otherwise preserve existing
+    if (imageUrlToDelete) {
+      // Explicitly set to empty string - user wants to delete the image
+      updatePayload['imageUrl'] = firestoreModule.deleteField();
+    } else if (imageUrl) {
       // New image provided, use it
       updatePayload['imageUrl'] = imageUrl;
     } else if (existingImageUrl) {

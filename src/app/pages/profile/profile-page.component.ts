@@ -97,6 +97,7 @@ export class ProfilePageComponent {
   readonly sharePrompt = signal<PromptCard | null>(null);
   readonly isEditingPrompt = signal(false);
   readonly editingPromptId = signal<string | null>(null);
+  readonly originalImageUrlWhenEditing = signal<string | null>(null);
   readonly forkingPromptId = signal<string | null>(null);
   readonly isSavingPrompt = signal(false);
   readonly promptFormError = signal<string | null>(null);
@@ -1546,6 +1547,7 @@ export class ProfilePageComponent {
   openCreatePromptModal() {
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.originalImageUrlWhenEditing.set(null);
     this.forkingPromptId.set(null);
     this.createPromptMode.set('single');
     this.resetBulkUploadState();
@@ -1590,8 +1592,10 @@ export class ProfilePageComponent {
     if (prompt.imageUrl) {
       this.promptImagePreview.set(prompt.imageUrl);
       this.promptImageFile.set(null); // We don't have the file, just the URL
+      this.originalImageUrlWhenEditing.set(prompt.imageUrl);
     } else {
       this.removePromptImage();
+      this.originalImageUrlWhenEditing.set(null);
     }
     this.newPromptModalOpen.set(true);
   }
@@ -1605,6 +1609,7 @@ export class ProfilePageComponent {
 
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.originalImageUrlWhenEditing.set(null);
     this.forkingPromptId.set(prompt.id);
     this.createPromptMode.set('single');
     this.resetBulkUploadState();
@@ -1796,6 +1801,7 @@ export class ProfilePageComponent {
     this.newPromptModalOpen.set(false);
     this.isEditingPrompt.set(false);
     this.editingPromptId.set(null);
+    this.originalImageUrlWhenEditing.set(null);
     this.forkingPromptId.set(null);
     this.createPromptMode.set('single');
     this.resetBulkUploadState();
@@ -2079,14 +2085,29 @@ export class ProfilePageComponent {
       }
 
       if (this.isEditingPrompt() && this.editingPromptId()) {
-        // Preserve existing image if no new image was uploaded
-        const finalImageUrl = imageUrl || (this.promptImagePreview() || undefined);
+        // Determine final image URL:
+        // - If new image uploaded, use it
+        // - If user removed image (had image but preview is now null), delete it (set to empty string)
+        // - Otherwise, preserve existing image
+        let finalImageUrl: string | undefined = undefined;
+        if (imageUrl) {
+          // New image uploaded
+          finalImageUrl = imageUrl;
+        } else if (this.originalImageUrlWhenEditing() && !this.promptImagePreview()) {
+          // User removed the image (had image originally but preview is now null)
+          // Set to empty string to indicate deletion
+          finalImageUrl = '';
+        } else if (this.promptImagePreview()) {
+          // Preserve existing image
+          finalImageUrl = this.promptImagePreview() || undefined;
+        }
+        
         const updateInput: UpdatePromptInput = {
           title,
           content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl,
-          ...(finalImageUrl ? { imageUrl: finalImageUrl } : {}),
+          ...(finalImageUrl !== undefined ? { imageUrl: finalImageUrl } : {}),
           ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);
