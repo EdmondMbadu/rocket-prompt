@@ -2079,12 +2079,14 @@ export class ProfilePageComponent {
       }
 
       if (this.isEditingPrompt() && this.editingPromptId()) {
+        // Preserve existing image if no new image was uploaded
+        const finalImageUrl = imageUrl || (this.promptImagePreview() || undefined);
         const updateInput: UpdatePromptInput = {
           title,
           content: trimmedContent,
           tag,
           customUrl: trimmedCustomUrl,
-          ...(imageUrl ? { imageUrl } : {}),
+          ...(finalImageUrl ? { imageUrl: finalImageUrl } : {}),
           ...(canSetPrivate && typeof isPrivate === 'boolean' ? { isPrivate } : {})
         };
         await this.promptService.updatePrompt(this.editingPromptId()!, updateInput, currentUser.uid);

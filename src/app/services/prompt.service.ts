@@ -592,11 +592,6 @@ export class PromptService {
       throw new Error('A title is required to update a prompt.');
     }
 
-    // Either content or imageUrl must be provided
-    if (!content && !imageUrl) {
-      throw new Error('Either content or an image is required to update a prompt.');
-    }
-
     if (!tag) {
       throw new Error('A tag is required to update a prompt.');
     }
@@ -613,6 +608,13 @@ export class PromptService {
 
     const existingData = docSnap.data() as Record<string, unknown>;
     const existingAuthorId = typeof existingData['authorId'] === 'string' ? existingData['authorId'] : '';
+    const existingImageUrl = typeof existingData['imageUrl'] === 'string' ? existingData['imageUrl'] : undefined;
+
+    // Either content or imageUrl (from input or existing) must be provided
+    const finalImageUrl = imageUrl || existingImageUrl;
+    if (!content && !finalImageUrl) {
+      throw new Error('Either content or an image is required to update a prompt.');
+    }
 
     // Check if user is the author
     if (existingAuthorId && existingAuthorId !== trimmedAuthorId) {
@@ -636,9 +638,13 @@ export class PromptService {
     }
 
     if (imageUrl) {
+      // New image provided, use it
       updatePayload['imageUrl'] = imageUrl;
+    } else if (existingImageUrl) {
+      // No new image provided, but existing image exists - preserve it
+      updatePayload['imageUrl'] = existingImageUrl;
     } else {
-      // If imageUrl is being removed, delete it
+      // No image provided and no existing image - ensure it's deleted
       updatePayload['imageUrl'] = firestoreModule.deleteField();
     }
 
