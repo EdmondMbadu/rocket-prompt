@@ -24,6 +24,13 @@ export class VerifyEmailComponent {
   feedbackMessage = '';
   feedbackType: 'success' | 'error' | '' = '';
 
+  ngOnInit() {
+    const verified = this.route.snapshot.queryParamMap.get('verified');
+    if (verified === '1' || verified === 'true') {
+      void this.refreshStatus();
+    }
+  }
+
   async refreshStatus() {
     try {
       this.isReloading = true;
