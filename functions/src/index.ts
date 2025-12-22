@@ -10,6 +10,7 @@
 import * as functions from "firebase-functions/v1";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import * as https from "https";
 import Stripe from "stripe";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 // Note: GoogleAuth and @google-cloud/vertexai are still installed for future use but not imported here
@@ -39,6 +40,7 @@ admin.initializeApp();
 // These are set via Firebase secrets or .env files
 const getStripeSecret = () => process.env.STRIPE_SECRET_KEY;
 const getWebhookSecret = () => process.env.STRIPE_WEBHOOK_SECRET;
+const getSendgridApiKey = () => process.env.SENDGRID_API_KEY;
 
 // Lazy initialization of Stripe to avoid module-level config access
 let stripeInstance: Stripe | undefined;
@@ -117,6 +119,41 @@ const getRequestOrigin = (context: functions.https.CallableContext): string | un
   const originHeader = raw?.headers?.origin;
   return typeof originHeader === "string" ? originHeader : undefined;
 };
+
+const sendSendgridEmail = async (apiKey: string, payload: Record<string, unknown>): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const request = https.request(
+      {
+        hostname: "api.sendgrid.com",
+        path: "/v3/mail/send",
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body)
+        }
+      },
+      (response) => {
+        let responseBody = "";
+        response.on("data", (chunk) => {
+          responseBody += chunk;
+        });
+        response.on("end", () => {
+          const status = response.statusCode ?? 500;
+          if (status >= 200 && status < 300) {
+            resolve();
+            return;
+          }
+          reject(new Error(`SendGrid error (${status}): ${responseBody}`));
+        });
+      }
+    );
+
+    request.on("error", (error) => reject(error));
+    request.write(body);
+    request.end();
+  });
 
 export const createCheckoutSession = functions
   .region("us-central1")
@@ -1029,4 +1066,118 @@ export const generateRocketGoalsImage = functions
       imageUrl,
       prompt,
     } as RocketGoalsImageResponse;
+  });
+
+export const sendVerificationEmail = functions
+  .region("us-central1")
+  .runWith({ secrets: ["SENDGRID_API_KEY"] })
+  .https.onCall(async (_data, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "You must be logged in to request a verification email."
+      );
+    }
+
+    try {
+      const user = await admin.auth().getUser(context.auth.uid);
+      const email = user.email;
+      if (!email) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "No email found for this account."
+        );
+      }
+
+      if (user.emailVerified) {
+        return { success: true, alreadyVerified: true };
+      }
+
+      const apiKey = getSendgridApiKey();
+      if (!apiKey) {
+        throw new Error("SendGrid API key is not set.");
+      }
+
+      const actionCodeSettings = {
+        url: "https://rocketprompt.io/verify-email?verified=1",
+        handleCodeInApp: false
+      };
+
+      const verificationLink = await admin
+        .auth()
+        .generateEmailVerificationLink(email, actionCodeSettings);
+      const displayName = user.displayName?.trim() || "Rocketeer";
+
+      await sendSendgridEmail(apiKey, {
+        personalizations: [
+          {
+            to: [{ email }],
+            subject: "Verify your Rocket Prompt account"
+          }
+        ],
+        from: {
+          email: "missioncontrol@rocketgoals.com",
+          name: "Rocket Goals Mission Control"
+        },
+        content: [
+          {
+            type: "text/plain",
+            value: `Hi ${displayName},\n\nWelcome to Rocket Prompt! Please verify your email address to activate your account.\n\nVerify your email: ${verificationLink}\n\nIf you did not create this account, you can safely ignore this email.\n\nTo your success,\nThe Rocket Prompt Team`
+          },
+          {
+            type: "text/html",
+            value: `
+              <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 640px; margin: 0 auto; padding: 0;">
+                <div style="background: linear-gradient(135deg, #dc2626 0%, #000000 100%); padding: 36px 30px; border-radius: 18px 18px 0 0; text-align: center;">
+                  <div style="font-size: 40px; margin-bottom: 8px;">🚀</div>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800;">Verify Your Rocket Prompt Email</h1>
+                  <p style="color: rgba(255,255,255,0.75); margin: 10px 0 0; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase;">
+                    Rocket Prompt
+                  </p>
+                </div>
+
+                <div style="background: #ffffff; padding: 32px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 18px 18px;">
+                  <p style="color: #111827; font-size: 16px; line-height: 1.6; margin: 0 0 18px;">
+                    Hi <strong>${displayName}</strong>,
+                  </p>
+                  <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                    Confirm your email address to activate your Rocket Prompt account and unlock your saved prompts.
+                  </p>
+
+                  <div style="text-align: center; margin: 24px 0;">
+                    <a href="${verificationLink}"
+                      style="background: #111827; color: #ffffff; text-decoration: none; padding: 14px 26px; border-radius: 12px; font-weight: 700; display: inline-block;">
+                      Verify My Email
+                    </a>
+                  </div>
+
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 18px;">
+                    If the button does not work, copy and paste this link into your browser:
+                  </p>
+                  <p style="color: #111827; font-size: 13px; word-break: break-all; margin: 0 0 24px;">
+                    ${verificationLink}
+                  </p>
+
+                  <p style="color: #9ca3af; font-size: 13px; margin: 0;">
+                    If you did not create this account, you can safely ignore this email.
+                  </p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      });
+
+      functions.logger.info("Verification email sent", { uid: user.uid, email });
+      return { success: true };
+    } catch (error) {
+      functions.logger.error("Error sending verification email", error);
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to send verification email."
+      );
+    }
   });

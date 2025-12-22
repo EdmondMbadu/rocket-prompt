@@ -58,7 +58,7 @@ export class AuthService {
       }
     });
 
-    await authModule.sendEmailVerification(credential.user);
+    await this.sendCustomVerificationEmail();
 
     return credential;
   }
@@ -136,8 +136,18 @@ export class AuthService {
       throw new Error('User is not signed in.');
     }
 
-    const { authModule } = await this.getAuthContext();
-    await authModule.sendEmailVerification(user);
+    await this.sendCustomVerificationEmail();
+  }
+
+  private async sendCustomVerificationEmail(): Promise<void> {
+    const { auth } = await this.getAuthContext();
+    if (!auth.currentUser) {
+      throw new Error('User is not signed in.');
+    }
+    const functionsModule = await import('firebase/functions');
+    const functions = functionsModule.getFunctions(this.app, 'us-central1');
+    const sendVerification = functionsModule.httpsCallable(functions, 'sendVerificationEmail');
+    await sendVerification({});
   }
 
   userProfile$(uid: string) {
