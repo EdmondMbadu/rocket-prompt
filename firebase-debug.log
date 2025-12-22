@@ -1,0 +1,29 @@
+[debug] [2025-12-22T22:38:16.712Z] ----------------------------------------------------------------------
+[debug] [2025-12-22T22:38:16.713Z] Command:       /Users/edmondmbadu/.nvm/versions/node/v22.20.0/bin/node /Users/edmondmbadu/.nvm/versions/node/v22.20.0/bin/firebase deploy --only functions
+[debug] [2025-12-22T22:38:16.713Z] CLI Version:   14.17.0
+[debug] [2025-12-22T22:38:16.713Z] Platform:      darwin
+[debug] [2025-12-22T22:38:16.713Z] Node Version:  v22.20.0
+[debug] [2025-12-22T22:38:16.713Z] Time:          Mon Dec 22 2025 14:38:16 GMT-0800 (Pacific Standard Time)
+[debug] [2025-12-22T22:38:16.713Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-12-22T22:38:16.795Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-22T22:38:16.796Z] > authorizing via signed-in user (mbadungoma@gmail.com)
+[debug] [2025-12-22T22:38:16.796Z] [iam] checking project rocket-prompt for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-12-22T22:38:16.796Z] Checked if tokens are valid: true, expires at: 1766446283865
+[debug] [2025-12-22T22:38:16.796Z] Checked if tokens are valid: true, expires at: 1766446283865
+[debug] [2025-12-22T22:38:16.796Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/rocket-prompt:testIamPermissions [none]
+[debug] [2025-12-22T22:38:16.796Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/rocket-prompt:testIamPermissions x-goog-quota-user=projects/rocket-prompt
+[debug] [2025-12-22T22:38:16.796Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/rocket-prompt:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-22T22:38:17.115Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/rocket-prompt:testIamPermissions 200
+[debug] [2025-12-22T22:38:17.115Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/rocket-prompt:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-22T22:38:17.116Z] Checked if tokens are valid: true, expires at: 1766446283865
+[debug] [2025-12-22T22:38:17.116Z] Checked if tokens are valid: true, expires at: 1766446283865
+[debug] [2025-12-22T22:38:17.116Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/rocket-prompt/serviceAccounts/rocket-prompt@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-12-22T22:38:17.116Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/rocket-prompt/serviceAccounts/rocket-prompt@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-12-22T22:38:17.501Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/rocket-prompt/serviceAccounts/rocket-prompt@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-12-22T22:38:17.501Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/rocket-prompt/serviceAccounts/rocket-prompt@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'rocket-prompt'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build

@@ -1,4 +1,4 @@
-import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, DestroyRef } from '@angular/core';
+import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { of } from 'rxjs';
@@ -18,7 +18,7 @@ import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.ser
   templateUrl: './rocket-goals-ai-page.component.html',
   styleUrl: './rocket-goals-ai-page.component.css'
 })
-export class RocketGoalsAIPageComponent implements AfterViewChecked {
+export class RocketGoalsAIPageComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   @ViewChild('messageInput') private messageInput!: ElementRef<HTMLTextAreaElement>;
 
@@ -40,6 +40,11 @@ export class RocketGoalsAIPageComponent implements AfterViewChecked {
   
   private shouldScrollToBottom = false;
   private autoLaunchHandled = false;
+
+  ngOnInit(): void {
+    // Redirect to external Rocket Goals AI page
+    window.location.href = 'https://rocket-goals.web.app/ai';
+  }
 
   constructor() {
     this.authService.currentUser$
