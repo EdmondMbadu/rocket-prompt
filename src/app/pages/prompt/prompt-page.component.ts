@@ -265,16 +265,10 @@ export class PromptPageComponent {
     }
 
     const p = this.prompt();
-    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, p?.id);
+    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    
     if (typeof window !== 'undefined') {
-      window.open(launch.url, '_blank');
-    }
-
-    if (!launch.stored) {
-      this.copyTextForRocketGoals(content);
-      this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
-    } else {
-      this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
+      window.open(rocketGoalsUrl, '_blank');
     }
 
     // Track launch
@@ -312,13 +306,10 @@ export class PromptPageComponent {
       return;
     }
 
-    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, prompt.id);
-    if (!launch.stored) {
-      this.copyTextForRocketGoals(content);
-    }
+    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
 
     if (typeof window !== 'undefined') {
-      window.location.replace(launch.url);
+      window.location.replace(rocketGoalsUrl);
     }
 
     // Track launch
@@ -581,6 +572,15 @@ export class PromptPageComponent {
   private buildOneShotLink(target: 'gpt' | 'grok' | 'claude' | 'rocket'): string | null {
     const base = this.getPromptUrl();
     if (!base) return null;
+    
+    // For Rocket, redirect to RocketGoals with prompt as query parameter
+    if (target === 'rocket') {
+      const prompt = this.prompt();
+      const content = prompt?.content ?? '';
+      if (!content) return null;
+      return `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    }
+    
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'ROCKET';
     return `${base}/${suffix}`;
   }

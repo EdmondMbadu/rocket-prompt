@@ -3,7 +3,6 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PromptService } from '../../services/prompt.service';
-import { RocketGoalsLaunchService } from '../../services/rocket-goals-launch.service';
 import type { Prompt } from '../../models/prompt.model';
 
 type LaunchTarget = 'gpt' | 'grok' | 'claude' | 'rocket';
@@ -19,7 +18,6 @@ export class PromptLaunchComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly promptService = inject(PromptService);
-  private readonly rocketGoalsLaunchService = inject(RocketGoalsLaunchService);
 
   readonly status = signal<'loading' | 'launching' | 'error'>('loading');
   readonly errorMessage = signal<string | null>(null);
@@ -113,8 +111,8 @@ export class PromptLaunchComponent {
     } else if (target === 'grok') {
       url = this.createGrokUrl(text);
     } else if (target === 'rocket') {
-      const launch = this.rocketGoalsLaunchService.prepareLaunch(text, prompt.id);
-      url = launch.url;
+      // Redirect to RocketGoals with prompt as query parameter
+      url = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(text)}`;
     } else {
       url = this.createClaudeUrl(text);
     }

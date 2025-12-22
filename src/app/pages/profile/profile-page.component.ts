@@ -853,16 +853,10 @@ export class ProfilePageComponent {
       return;
     }
 
-    const launch = this.rocketGoalsLaunchService.prepareLaunch(content, prompt.id ?? undefined);
+    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    
     if (typeof window !== 'undefined') {
-      window.open(launch.url, '_blank');
-    }
-
-    if (!launch.stored) {
-      this.copyRocketGoalsPrompt(content);
-      this.showCopyMessage('Prompt copied! Paste it into Rocket AI and tap Launch to send.');
-    } else {
-      this.showCopyMessage('Prompt ready in Rocket AI - tap Launch to send.');
+      window.open(rocketGoalsUrl, '_blank');
     }
 
     // Track launch
@@ -913,6 +907,14 @@ export class ProfilePageComponent {
     if (!base) {
       return null;
     }
+    
+    // For Rocket, redirect to RocketGoals with prompt as query parameter
+    if (target === 'rocket') {
+      const content = prompt.content ?? '';
+      if (!content) return null;
+      return `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    }
+    
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'ROCKET';
     return `${base}/${suffix}`;
   }
