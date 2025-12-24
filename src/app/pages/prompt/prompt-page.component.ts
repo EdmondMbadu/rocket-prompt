@@ -573,14 +573,6 @@ export class PromptPageComponent {
     const base = this.getPromptUrl();
     if (!base) return null;
     
-    // For Rocket, redirect to RocketGoals with prompt as query parameter
-    if (target === 'rocket') {
-      const prompt = this.prompt();
-      const content = prompt?.content ?? '';
-      if (!content) return null;
-      return `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
-    }
-    
     const suffix = target === 'gpt' ? 'GPT' : target === 'grok' ? 'GROK' : target === 'claude' ? 'CLAUDE' : 'ROCKET';
     return `${base}/${suffix}`;
   }
