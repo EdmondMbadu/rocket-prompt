@@ -848,6 +848,10 @@ Mindset Anchors:
  * RocketGoals AI - A Gemini powered chatbot for answering questions.
  * Uses Google's Generative AI SDK with the latest Gemini model.
  * Converted to v2 API for better CORS handling.
+ * 
+ * Note: For v2 callable functions, CORS is handled automatically by Firebase
+ * when using the Firebase SDK's httpsCallable. The invoker option ensures
+ * the function is publicly accessible.
  */
 export const rocketGoalsAI = onCall(
   {
@@ -855,17 +859,7 @@ export const rocketGoalsAI = onCall(
     timeoutSeconds: 120,
     memory: "512MiB",
     secrets: ["GEMINI_API_KEY"],
-    cors: [
-      "http://localhost:4200",
-      "http://127.0.0.1:4200",
-      "https://rocketprompt.io",
-      "https://www.rocketprompt.io",
-      "https://rocket-prompt.web.app",
-      "https://rocket-prompt.firebaseapp.com",
-      "https://rocketgoals.com",
-      "https://www.rocketgoals.com",
-      "https://rocket-goals.web.app",
-    ],
+    invoker: "public", // Allow public access - Firebase SDK handles authentication
   },
   async (request): Promise<{ response: string; model: string }> => {
     // Authentication is optional - allow both authenticated and unauthenticated users
