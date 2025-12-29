@@ -868,14 +868,7 @@ export const rocketGoalsAI = onCall(
     ],
   },
   async (request): Promise<{ response: string; model: string }> => {
-    // Verify authentication
-    if (!request.auth?.uid) {
-      throw new HttpsError(
-        "unauthenticated",
-        "You must be signed in to use RocketGoals AI."
-      );
-    }
-
+    // Authentication is optional - allow both authenticated and unauthenticated users
     const geminiApiKey = getGeminiApiKey();
     if (!geminiApiKey) {
       functions.logger.error("Gemini API key not configured");
@@ -943,7 +936,7 @@ export const rocketGoalsAI = onCall(
       }
 
       functions.logger.info("RocketGoals AI response generated", {
-        userId: request.auth.uid,
+        userId: request.auth?.uid || "anonymous",
         messageLength: userMessage.length,
         responseLength: textResponse.length,
       });
@@ -956,7 +949,7 @@ export const rocketGoalsAI = onCall(
       const errorMessage = error instanceof Error ? error.message : String(error);
       functions.logger.error("RocketGoals AI error", {
         error: errorMessage,
-        userId: request.auth.uid,
+        userId: request.auth?.uid || "anonymous",
       });
 
       // Check for specific error types
