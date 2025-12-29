@@ -862,6 +862,9 @@ export const rocketGoalsAI = onCall(
       "https://www.rocketprompt.io",
       "https://rocket-prompt.web.app",
       "https://rocket-prompt.firebaseapp.com",
+      "https://rocketgoals.com",
+      "https://www.rocketgoals.com",
+      "https://rocket-goals.web.app",
     ],
   },
   async (request): Promise<{ response: string; model: string }> => {

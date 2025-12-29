@@ -853,7 +853,7 @@ export class ProfilePageComponent {
       return;
     }
 
-    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(content)}`;
     
     if (typeof window !== 'undefined') {
       window.open(rocketGoalsUrl, '_blank');

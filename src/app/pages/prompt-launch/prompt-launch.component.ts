@@ -112,7 +112,7 @@ export class PromptLaunchComponent {
       url = this.createGrokUrl(text);
     } else if (target === 'rocket') {
       // Redirect to RocketGoals with prompt as query parameter
-      url = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(text)}`;
+      url = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(text)}`;
     } else {
       url = this.createClaudeUrl(text);
     }

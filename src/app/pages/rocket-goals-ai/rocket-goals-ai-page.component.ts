@@ -43,7 +43,7 @@ export class RocketGoalsAIPageComponent implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     // Redirect to external Rocket Goals AI page
-    window.location.href = 'https://rocket-goals.web.app/ai';
+    window.location.href = 'https://www.rocketgoals.com/ai';
   }
 
   constructor() {

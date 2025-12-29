@@ -265,7 +265,7 @@ export class PromptPageComponent {
     }
 
     const p = this.prompt();
-    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(content)}`;
     
     if (typeof window !== 'undefined') {
       window.open(rocketGoalsUrl, '_blank');
@@ -306,7 +306,7 @@ export class PromptPageComponent {
       return;
     }
 
-    const rocketGoalsUrl = `https://rocket-goals.web.app/ai?prompt=${encodeURIComponent(content)}`;
+    const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(content)}`;
 
     if (typeof window !== 'undefined') {
       window.location.replace(rocketGoalsUrl);
