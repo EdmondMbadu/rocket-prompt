@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "rocket-prompt": "rocket-prompt"
+  },
   "targets": {},
   "etags": {
     "rocket-prompt": {
