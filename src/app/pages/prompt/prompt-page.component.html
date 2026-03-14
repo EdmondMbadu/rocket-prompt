@@ -227,6 +227,40 @@
             <!-- Prompt Content (text first, image after) -->
             <div class="content" [class.content--blurred]="isPrivateAndNotAuthor()">
                 <div *ngIf="prompt()?.content" class="relative group">
+                    <button
+                        type="button"
+                        class="copy-prompt-button absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-neutral-500 shadow-md ring-1 ring-black/5 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-600 hover:shadow-lg hover:scale-110 group-hover:opacity-100"
+                        [class.opacity-100]="copied()"
+                        [class.text-red-600]="copied()"
+                        [class.bg-red-50]="copied()"
+                        (click)="copyPrompt()"
+                        [attr.aria-label]="copied() ? 'Copied!' : 'Copy prompt'"
+                        [attr.title]="copied() ? 'Copied!' : 'Copy prompt'"
+                    >
+                        <svg
+                            *ngIf="!copied()"
+                            viewBox="0 0 24 24"
+                            class="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <svg
+                            *ngIf="copied()"
+                            viewBox="0 0 24 24"
+                            class="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                        >
+                            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
                     <pre>{{ prompt()?.content }}</pre>
                     <button
                         type="button"
