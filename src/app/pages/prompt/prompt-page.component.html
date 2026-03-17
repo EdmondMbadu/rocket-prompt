@@ -297,88 +297,18 @@
                         </svg>
                     </button>
                 </div>
+
+                <ng-container *ngIf="prompt()?.imageUrl && !isPrivateAndNotAuthor()">
+                    <ng-container [ngTemplateOutlet]="launchSectionTemplate"></ng-container>
+                </ng-container>
+
                 <img *ngIf="prompt()?.imageUrl" [src]="prompt()?.imageUrl" [alt]="prompt()?.title"
                     class="w-full h-auto rounded-2xl object-cover mt-6 shadow-sm" />
             </div>
 
-            <!-- ACTIONS: Launch this prompt -->
-            <div class="action-section action-section--launch" *ngIf="!isPrivateAndNotAuthor()">
-                <div class="action-section__header">
-                    <div class="action-section__icon-wrapper">
-                        <span class="action-section__emoji">🚀</span>
-                    </div>
-                    <div class="action-section__content">
-                        <h3 class="action-section__title">Launch this RocketPrompt</h3>
-                        <p class="action-section__description">Open this prompt in your favorite AI chatbot</p>
-                    </div>
-                </div>
-                <div class="action-section__actions">
-                    <button type="button" class="ai-platform-button ai-platform-button--gpt"
-                        aria-label="Open in ChatGPT" title="open directly in ChatGpt"
-                        (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
-                        <div class="ai-platform-button__icon">
-                            <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" />
-                        </div>
-                        <span class="ai-platform-button__label">ChatGPT</span>
-                    </button>
-
-                    <button type="button" class="ai-platform-button ai-platform-button--gemini"
-                        aria-label="Open in Gemini" title="open and paste in Gemini"
-                        (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
-                        <div class="ai-platform-button__icon">
-                            <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
-                        </div>
-                        <span class="ai-platform-button__label">Gemini</span>
-                    </button>
-
-                    <button type="button" class="ai-platform-button ai-platform-button--claude"
-                        aria-label="Open in Claude" title="open and paste in Claude"
-                        (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
-                        <div class="ai-platform-button__icon">
-                            <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
-                        </div>
-                        <span class="ai-platform-button__label">Claude</span>
-                    </button>
-
-                    <div class="grok-combo" aria-label="Launch Grok with domain toggle">
-                        <button type="button" class="ai-platform-button ai-platform-button--grok grok-combo__launch"
-                            aria-label="Open in Grok" title="open and paste in Grok ({{ useGrokCom() ? 'grok.com' : 'x.com/grok' }})"
-                            (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
-                            <div class="ai-platform-button__icon">
-                                <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
-                            </div>
-                            <span class="ai-platform-button__label">Grok</span>
-                        </button>
-                        <div class="grok-domain-switch grok-combo__switch" aria-label="Choose Grok domain">
-                            <button type="button"
-                                class="grok-domain-switch__btn"
-                                [class.is-active]="useGrokCom()"
-                                (click)="setGrokDomain(true)"
-                                title="Launch via grok.com">
-                                <span class="grok-domain-switch__dot"></span>
-                                com
-                            </button>
-                            <button type="button"
-                                class="grok-domain-switch__btn"
-                                [class.is-active]="!useGrokCom()"
-                                (click)="setGrokDomain(false)"
-                                title="Launch via x.com/grok">
-                                <span class="grok-domain-switch__dot grok-domain-switch__dot--alt"></span>
-                                x
-                            </button>
-                        </div>
-                    </div>
-
-                    <button type="button" class="ai-platform-button ai-platform-button--rocket"
-                        aria-label="Launch in Rocket AI" title="Launch in Rocket AI"
-                        (click)="openChatbot('', 'RocketGoals', prompt()?.content)">
-                        <div class="ai-platform-button__icon">
-                            <img src="assets/rocket-logo.png" alt="Rocket AI" class="ai-icon" />
-                        </div>
-                        <span class="ai-platform-button__label">Rocket</span>
-                    </button>
-                </div>
-            </div>
+            <ng-container *ngIf="!prompt()?.imageUrl && !isPrivateAndNotAuthor()">
+                <ng-container [ngTemplateOutlet]="launchSectionTemplate"></ng-container>
+            </ng-container>
 
             <!-- ACTIONS: Share this RocketPrompt -->
             <div class="action-section action-section--share"
@@ -465,6 +395,87 @@
             </footer>
         </article>
     </main>
+
+    <ng-template #launchSectionTemplate>
+        <!-- ACTIONS: Launch this prompt -->
+        <div class="action-section action-section--launch">
+            <div class="action-section__header">
+                <div class="action-section__icon-wrapper">
+                    <span class="action-section__emoji">🚀</span>
+                </div>
+                <div class="action-section__content">
+                    <h3 class="action-section__title">Launch this RocketPrompt</h3>
+                    <p class="action-section__description">Open this prompt in your favorite AI chatbot</p>
+                </div>
+            </div>
+            <div class="action-section__actions">
+                <button type="button" class="ai-platform-button ai-platform-button--gpt"
+                    aria-label="Open in ChatGPT" title="open directly in ChatGpt"
+                    (click)="openChatbot(createChatGPTUrl(prompt()?.content || ''), 'ChatGPT', prompt()?.content)">
+                    <div class="ai-platform-button__icon">
+                        <img src="assets/gpt.png" alt="ChatGPT" class="ai-icon" />
+                    </div>
+                    <span class="ai-platform-button__label">ChatGPT</span>
+                </button>
+
+                <button type="button" class="ai-platform-button ai-platform-button--gemini"
+                    aria-label="Open in Gemini" title="open and paste in Gemini"
+                    (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
+                    <div class="ai-platform-button__icon">
+                        <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
+                    </div>
+                    <span class="ai-platform-button__label">Gemini</span>
+                </button>
+
+                <button type="button" class="ai-platform-button ai-platform-button--claude"
+                    aria-label="Open in Claude" title="open and paste in Claude"
+                    (click)="openChatbot(createClaudeUrl(prompt()?.content || ''), 'Claude', prompt()?.content)">
+                    <div class="ai-platform-button__icon">
+                        <img src="assets/claude.jpeg" alt="Claude" class="ai-icon ai-icon--rounded" />
+                    </div>
+                    <span class="ai-platform-button__label">Claude</span>
+                </button>
+
+                <div class="grok-combo" aria-label="Launch Grok with domain toggle">
+                    <button type="button" class="ai-platform-button ai-platform-button--grok grok-combo__launch"
+                        aria-label="Open in Grok" title="open and paste in Grok ({{ useGrokCom() ? 'grok.com' : 'x.com/grok' }})"
+                        (click)="openChatbot(createGrokUrl(prompt()?.content || ''), 'Grok', prompt()?.content)">
+                        <div class="ai-platform-button__icon">
+                            <img src="assets/grok.jpg" alt="Grok" class="ai-icon ai-icon--rounded" />
+                        </div>
+                        <span class="ai-platform-button__label">Grok</span>
+                    </button>
+                    <div class="grok-domain-switch grok-combo__switch" aria-label="Choose Grok domain">
+                        <button type="button"
+                            class="grok-domain-switch__btn"
+                            [class.is-active]="useGrokCom()"
+                            (click)="setGrokDomain(true)"
+                            title="Launch via grok.com">
+                            <span class="grok-domain-switch__dot"></span>
+                            com
+                        </button>
+                        <button type="button"
+                            class="grok-domain-switch__btn"
+                            [class.is-active]="!useGrokCom()"
+                            (click)="setGrokDomain(false)"
+                            title="Launch via x.com/grok">
+                            <span class="grok-domain-switch__dot grok-domain-switch__dot--alt"></span>
+                            x
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" class="ai-platform-button ai-platform-button--rocket"
+                    aria-label="Launch in Rocket AI" title="Launch in Rocket AI"
+                    (click)="openChatbot('', 'RocketGoals', prompt()?.content)">
+                    <div class="ai-platform-button__icon">
+                        <img src="assets/rocket-logo.png" alt="Rocket AI" class="ai-icon" />
+                    </div>
+                    <span class="ai-platform-button__label">Rocket</span>
+                </button>
+            </div>
+        </div>
+    </ng-template>
 
     <!-- SHARE MODAL -->
     <div *ngIf="shareModalOpen()" class="modal-overlay" (click)="closeShareModal()">
