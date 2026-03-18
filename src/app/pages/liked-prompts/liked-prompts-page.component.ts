@@ -778,6 +778,23 @@ export class LikedPromptsPageComponent {
     await this.trackPromptLaunch(prompt, launchType);
   }
 
+  async launchAllChatbotsFromShare(): Promise<void> {
+    const prompt = this.sharePrompt();
+    if (!prompt?.content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+    const text = prompt.content;
+
+    this.copyTextForRocketGoals(text);
+    this.openAllLaunchTabs(text);
+    this.showCopyMessage('Opened all launch tabs. Paste with Command-V for Gemini.');
+
+    for (const launchType of ['gpt', 'gemini', 'claude', 'grok', 'rocket'] as const) {
+      await this.trackPromptLaunch(prompt, launchType);
+    }
+  }
+
   private async launchRocketGoalsPrompt(prompt: PromptCard): Promise<void> {
     const content = prompt.content ?? '';
     if (!content) {
@@ -868,6 +885,25 @@ export class LikedPromptsPageComponent {
     window.open(url, '_blank');
   }
 
+  private openAllLaunchTabs(promptText: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(promptText)}`;
+    const urls = [
+      this.createChatGPTUrl(promptText),
+      this.createGeminiUrl(promptText),
+      this.createClaudeUrl(promptText),
+      this.createGrokUrl(promptText),
+      rocketGoalsUrl
+    ];
+
+    for (const url of urls) {
+      window.open(url, '_blank');
+    }
+  }
+
   private fallbackCopyTextToClipboard(text: string) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -950,7 +986,7 @@ export class LikedPromptsPageComponent {
     });
   }
 
-  private async trackPromptLaunch(prompt: PromptCard, launchType: 'gpt' | 'gemini' | 'claude' | 'grok') {
+  private async trackPromptLaunch(prompt: PromptCard, launchType: 'gpt' | 'gemini' | 'claude' | 'grok' | 'rocket') {
     if (!prompt?.id) {
       return;
     }
@@ -967,6 +1003,7 @@ export class LikedPromptsPageComponent {
           launchGemini: result.launchGemini,
           launchClaude: result.launchClaude,
           launchGrok: result.launchGrok,
+          launchRocket: result.launchRocket,
           copied: result.copied,
           totalLaunch: result.totalLaunch
         };

@@ -800,5 +800,6 @@
 <app-share-modal [isOpen]="shareModalOpen()"
   [prompt]="sharePrompt() ? { id: sharePrompt()!.id, title: sharePrompt()!.title, content: sharePrompt()!.content, preview: sharePrompt()!.preview, customUrl: sharePrompt()!.customUrl } : null"
   (close)="closeShareModal()" (copyOneClickLink)="copyOneClickLink($event)" (openChatbot)="handleOpenChatbot($event)"
+  (launchAll)="launchAllChatbotsFromShare()"
   (copyPromptUrl)="copyPromptPageUrl()" (copyPrompt)="copyPromptFromShare()">
 </app-share-modal>

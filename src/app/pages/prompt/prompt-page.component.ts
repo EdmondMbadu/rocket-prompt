@@ -257,6 +257,28 @@ export class PromptPageComponent {
     }
   }
 
+  async launchAllChatbots(): Promise<void> {
+    const p = this.prompt();
+    if (!p?.content) {
+      this.showCopyMessage('Prompt is missing content.');
+      return;
+    }
+    const text = p.content;
+
+    this.copyTextForRocketGoals(text);
+    this.openAllLaunchTabs(text);
+    this.showCopyMessage('Opened all launch tabs. Paste with Command-V for Gemini.');
+
+    for (const launchType of ['gpt', 'gemini', 'claude', 'grok', 'rocket'] as const) {
+      try {
+        const result = await this.promptService.trackLaunch(p.id, launchType);
+        this.prompt.update(current => current ? ({ ...current, ...result } as Prompt) : current);
+      } catch (error) {
+        console.error(`Failed to track ${launchType} launch`, error);
+      }
+    }
+  }
+
   private async launchRocketGoalsPrompt(promptText: string) {
     const content = promptText?.trim();
     if (!content) {
@@ -291,6 +313,25 @@ export class PromptPageComponent {
     }
 
     this.fallbackCopyTextToClipboard(text);
+  }
+
+  private openAllLaunchTabs(promptText: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(promptText)}`;
+    const urls = [
+      this.createChatGPTUrl(promptText),
+      this.createGeminiUrl(promptText),
+      this.createClaudeUrl(promptText),
+      this.createGrokUrl(promptText),
+      rocketGoalsUrl
+    ];
+
+    for (const url of urls) {
+      window.open(url, '_blank');
+    }
   }
 
   private async autoLaunchRocketFromOneShot(prompt: Prompt) {

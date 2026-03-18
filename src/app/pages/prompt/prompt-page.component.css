@@ -1615,6 +1615,104 @@
     font-size: 0.875rem;
 }
 
+.launch-all-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    flex: 1 1 100%;
+    padding: 0.875rem 1.125rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.875rem;
+    background: #ffffff;
+    color: #1e293b;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.launch-all-button:hover {
+    transform: translateY(-1px);
+    border-color: #DC2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.launch-all-button__spark {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 0.75rem;
+    background: #fef2f2;
+    font-size: 1.125rem;
+}
+
+.launch-all-button__copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.launch-all-button__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #0f172a;
+}
+
+.launch-all-button__subtitle {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: #94a3b8;
+}
+
+.launch-all-button__stack {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: auto;
+}
+
+.launch-all-button__stack-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-left: -0.4rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    box-shadow: 0 0 0 1.5px #e2e8f0;
+}
+
+.launch-all-button__stack-chip:first-child {
+    margin-left: 0;
+}
+
+.launch-all-button__stack-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    object-fit: contain;
+}
+
+.launch-all-button__stack-icon--rounded {
+    border-radius: 9999px;
+}
+
 /* Social Share Buttons - Enhanced Design */
 .social-share-button {
     display: inline-flex;
@@ -1883,7 +1981,8 @@
     }
 
     .ai-platform-button,
-    .social-share-button {
+    .social-share-button,
+    .launch-all-button {
         width: 100%;
         justify-content: center;
         padding: 0.875rem 1rem;
@@ -1892,5 +1991,18 @@
     .ai-platform-button__label,
     .social-share-button__label {
         font-size: 0.8125rem;
+    }
+
+    .launch-all-button {
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .launch-all-button__subtitle {
+        font-size: 0.72rem;
+    }
+
+    .launch-all-button__stack {
+        margin-left: 0;
     }
 }
