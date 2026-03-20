@@ -34,7 +34,7 @@
         </button>
       </header>
 
-      <nav class="flex-1 space-y-1 px-3 py-4">
+      <nav class="space-y-1 px-3 py-4">
         <a
           *ngFor="let item of navItems"
           [routerLink]="item.route"
@@ -160,6 +160,45 @@
         </a>
       </nav>
 
+      <div class="border-t-2 border-slate-300 px-4 py-4">
+        <a
+          href="https://www.rocketgoals.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 hover:text-red-800"
+          (click)="closeMobileMenu()"
+        >
+          <span class="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-red-100">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
+            </svg>
+          </span>
+          <span>RocketGoals AI</span>
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h8v8" />
+          </svg>
+        </a>
+        <a
+          href="https://rocketgoals.beehiiv.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-2 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 hover:text-red-800"
+          (click)="closeMobileMenu()"
+        >
+          <span class="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-red-100">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.8 5.67 6.26.91-4.53 4.42 1.07 6.24L12 17.27l-5.6 2.95 1.07-6.24L2.94 9.58l6.26-.91L12 3z" />
+            </svg>
+          </span>
+          <span>Daily Rocket</span>
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h8v8" />
+          </svg>
+        </a>
+      </div>
+
     </div>
   </div>
 </ng-container>
@@ -195,7 +234,7 @@
     </header>
 
     <nav
-      class="flex flex-1 flex-col gap-1 transition-all duration-200"
+      class="flex flex-col gap-1 transition-all duration-200"
       [class.items-center]="collapsed()"
       [class.w-full]="!collapsed()"
     >
@@ -328,5 +367,78 @@
         <span *ngIf="!collapsed()" class="truncate">{{ item.label }}</span>
       </a>
     </nav>
+
+    <div
+      class="border-t-2 border-slate-300 pt-4 transition-all duration-200"
+      [class.w-full]="!collapsed()"
+      [class.flex]="collapsed()"
+      [class.justify-center]="collapsed()"
+    >
+      <ng-container *ngIf="!collapsed(); else collapsedFooter">
+        <a
+          href="https://www.rocketgoals.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 hover:text-red-800"
+        >
+          <span class="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-red-100">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
+            </svg>
+          </span>
+          <span>RocketGoals AI</span>
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h8v8" />
+          </svg>
+        </a>
+        <a
+          href="https://rocketgoals.beehiiv.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-2 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 hover:text-red-800"
+        >
+          <span class="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 text-red-600 ring-1 ring-red-100">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.8 5.67 6.26.91-4.53 4.42 1.07 6.24L12 17.27l-5.6 2.95 1.07-6.24L2.94 9.58l6.26-.91L12 3z" />
+            </svg>
+          </span>
+          <span>Daily Rocket</span>
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h8v8" />
+          </svg>
+        </a>
+      </ng-container>
+
+      <ng-template #collapsedFooter>
+        <div class="flex flex-col items-center gap-2">
+          <a
+            href="https://www.rocketgoals.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex h-10 w-10 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 transition hover:border-red-300 hover:bg-red-100"
+            aria-label="Open RocketGoals AI"
+            title="RocketGoals AI"
+          >
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m-.1-8.57L6.98 9.8a2 2 0 00-.23 2.33l3.35 5.35m.1-8.57l-3.8 3.78a2 2 0 00.09 2.9l3.71 3.3" />
+            </svg>
+          </a>
+          <a
+            href="https://rocketgoals.beehiiv.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex h-10 w-10 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 transition hover:border-red-300 hover:bg-red-100"
+            aria-label="Open Daily Rocket"
+            title="Daily Rocket"
+          >
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.8 5.67 6.26.91-4.53 4.42 1.07 6.24L12 17.27l-5.6 2.95 1.07-6.24L2.94 9.58l6.26-.91L12 3z" />
+            </svg>
+          </a>
+        </div>
+      </ng-template>
+    </div>
   </div>
 </aside>

@@ -38,11 +38,6 @@ export class SidebarComponent {
       exact: true
     },
     {
-      label: 'Rocket AI',
-      icon: 'ai',
-      route: '/ai'
-    },
-    {
       label: 'Collections',
       icon: 'collections',
       route: '/collections'
