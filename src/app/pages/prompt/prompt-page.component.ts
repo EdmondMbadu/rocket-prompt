@@ -156,9 +156,14 @@ export class PromptPageComponent {
   }
 
   createGeminiUrl(prompt: string): string {
-    // Gemini doesn't support URL parameters, so we just return the base URL
-    // The prompt will be copied to clipboard before opening
-    return 'https://gemini.google.com/app';
+    const trimmedPrompt = prompt.trim();
+    const url = new URL('https://www.google.com/search');
+    url.searchParams.set('udm', '50');
+    url.searchParams.set('aep', '11');
+    if (trimmedPrompt) {
+      url.searchParams.set('q', trimmedPrompt);
+    }
+    return url.toString();
   }
 
   createClaudeUrl(prompt: string): string {
@@ -176,8 +181,8 @@ export class PromptPageComponent {
   }
 
   async openChatbot(url: string, chatbotName: string, promptText?: string) {
-    // ChatGPT/Claude support query params. Grok tries query param but still copies for safety.
-    // Gemini relies on copy to clipboard before opening.
+    // ChatGPT, Claude, and Gemini can launch directly with the prompt in the URL.
+    // Grok tries query params but still copies for safety.
     const text = promptText ?? this.prompt()?.content ?? '';
     const p = this.prompt();
 
@@ -186,13 +191,17 @@ export class PromptPageComponent {
       return;
     }
 
-    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude') {
+    if (chatbotName === 'ChatGPT' || chatbotName === 'Claude' || chatbotName === 'Gemini') {
       // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
       // Track launch
       if (p) {
         try {
-          const launchType = chatbotName === 'ChatGPT' ? 'gpt' : 'claude';
+          const launchType = chatbotName === 'ChatGPT'
+            ? 'gpt'
+            : chatbotName === 'Claude'
+            ? 'claude'
+            : 'gemini';
           const result = await this.promptService.trackLaunch(p.id, launchType);
           this.prompt.set({ ...p, ...result } as Prompt);
         } catch (e) {
@@ -230,31 +239,6 @@ export class PromptPageComponent {
       return;
     }
 
-    // Gemini: copy to clipboard first
-    try {
-      if (text) {
-        await navigator.clipboard.writeText(text);
-        this.showCopyMessage(`${chatbotName} prompt copied!`);
-      }
-    } catch (e) {
-      if (text) {
-        this.fallbackCopyTextToClipboard(text);
-        this.showCopyMessage(`${chatbotName} prompt copied!`);
-      }
-    }
-
-    window.open(url, '_blank');
-
-    // Track launch
-    if (p) {
-      try {
-        const launchType: 'gemini' = 'gemini';
-        const result = await this.promptService.trackLaunch(p.id, launchType);
-        this.prompt.set({ ...p, ...result } as Prompt);
-      } catch (e) {
-        console.error('Failed to track launch', e);
-      }
-    }
   }
 
   async launchAllChatbots(): Promise<void> {
@@ -267,7 +251,7 @@ export class PromptPageComponent {
 
     this.copyTextForRocketGoals(text);
     this.openAllLaunchTabs(text);
-    this.showCopyMessage('Opened all launch tabs. Paste with Command-V for Gemini.');
+    this.showCopyMessage('Opened all launch tabs.');
 
     for (const launchType of ['gpt', 'gemini', 'claude', 'grok', 'rocket'] as const) {
       try {

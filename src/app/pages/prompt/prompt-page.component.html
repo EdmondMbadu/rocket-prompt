@@ -407,7 +407,7 @@
                     <h3 class="action-section__title">Launch this RocketPrompt</h3>
                     <p class="action-section__description">
                         Launch this prompt in your favorite AI. Models will launch with prompt pre-loaded for you to
-                        edit. <span class="font-bold text-[#DC2626]">Use Paste (Command-V) for Gemini.</span>
+                        edit.
                     </p>
                 </div>
             </div>
@@ -422,7 +422,7 @@
                 </button>
 
                 <button type="button" class="ai-platform-button ai-platform-button--gemini"
-                    aria-label="Open in Gemini" title="open and paste in Gemini"
+                    aria-label="Open in Gemini" title="open directly in Gemini"
                     (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
                     <div class="ai-platform-button__icon">
                         <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
