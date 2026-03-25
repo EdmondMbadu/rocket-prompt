@@ -421,14 +421,35 @@
                     <span class="ai-platform-button__label">ChatGPT</span>
                 </button>
 
-                <button type="button" class="ai-platform-button ai-platform-button--gemini"
-                    aria-label="Open in Gemini" title="open directly in Gemini"
-                    (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
-                    <div class="ai-platform-button__icon">
-                        <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
+                <div class="gemini-combo" aria-label="Launch Gemini with mode toggle">
+                    <button type="button" class="ai-platform-button ai-platform-button--gemini gemini-combo__launch"
+                        aria-label="Open in Gemini"
+                        [title]="useGeminiSearch() ? 'open directly in Gemini search' : 'open Gemini app and paste'"
+                        (click)="openChatbot(createGeminiUrl(prompt()?.content || ''), 'Gemini', prompt()?.content)">
+                        <div class="ai-platform-button__icon">
+                            <img src="assets/gemini.png" alt="Gemini" class="ai-icon" />
+                        </div>
+                        <span class="ai-platform-button__label">Gemini</span>
+                    </button>
+                    <div class="gemini-mode-switch gemini-combo__switch" aria-label="Choose Gemini launch mode">
+                        <button type="button"
+                            class="gemini-mode-switch__btn"
+                            [class.is-active]="useGeminiSearch()"
+                            (click)="setGeminiMode(true)"
+                            title="Launch via Google AI search">
+                            <span class="gemini-mode-switch__dot"></span>
+                            search
+                        </button>
+                        <button type="button"
+                            class="gemini-mode-switch__btn"
+                            [class.is-active]="!useGeminiSearch()"
+                            (click)="setGeminiMode(false)"
+                            title="Launch via Gemini app and paste">
+                            <span class="gemini-mode-switch__dot gemini-mode-switch__dot--alt"></span>
+                            app
+                        </button>
                     </div>
-                    <span class="ai-platform-button__label">Gemini</span>
-                </button>
+                </div>
 
                 <button type="button" class="ai-platform-button ai-platform-button--claude"
                     aria-label="Open in Claude" title="open and paste in Claude"

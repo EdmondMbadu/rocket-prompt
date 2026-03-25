@@ -1486,6 +1486,77 @@
     color: #1e40af;
 }
 
+.gemini-combo {
+    display: inline-flex;
+    position: relative;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px 0 0;
+}
+
+.gemini-combo__launch {
+    margin: 0;
+    box-shadow: none;
+    min-width: auto;
+}
+
+.gemini-combo__switch {
+    position: absolute;
+    right: -6px;
+    top: -8px;
+    border-color: rgba(59, 130, 246, 0.22);
+    background:
+        linear-gradient(135deg, rgba(239, 246, 255, 0.98) 0%, rgba(219, 234, 254, 0.95) 100%);
+    transform: scale(0.9);
+}
+
+.gemini-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.24);
+    border-radius: 9999px;
+    padding: 2px 4px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
+}
+
+.gemini-mode-switch__btn {
+    border: none;
+    background: transparent;
+    padding: 4px 7px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #1d4ed8;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gemini-mode-switch__btn:hover {
+    color: #1e3a8a;
+}
+
+.gemini-mode-switch__btn.is-active {
+    background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
+    color: #1e3a8a;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.18);
+}
+
+.gemini-mode-switch__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2563eb;
+    display: inline-block;
+}
+
+.gemini-mode-switch__dot--alt {
+    background: #14b8a6;
+}
+
 .ai-platform-button--claude {
     background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
     color: #991b1b;

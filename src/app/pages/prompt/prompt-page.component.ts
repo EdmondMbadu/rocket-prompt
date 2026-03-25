@@ -34,6 +34,7 @@ export class PromptPageComponent {
   readonly authorProfile = signal<UserProfile | undefined>(undefined);
   readonly organization = signal<Organization | undefined>(undefined);
   readonly useGrokCom = signal(true);
+  readonly useGeminiSearch = signal(true);
 
   // Provide like state
   readonly liked = signal(false);
@@ -156,6 +157,10 @@ export class PromptPageComponent {
   }
 
   createGeminiUrl(prompt: string): string {
+    if (!this.useGeminiSearch()) {
+      return 'https://gemini.google.com/app';
+    }
+
     const trimmedPrompt = prompt.trim();
     const url = new URL('https://www.google.com/search');
     url.searchParams.set('udm', '50');
@@ -192,6 +197,21 @@ export class PromptPageComponent {
     }
 
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude' || chatbotName === 'Gemini') {
+      const shouldCopyForGemini = chatbotName === 'Gemini' && !this.useGeminiSearch();
+      if (shouldCopyForGemini) {
+        try {
+          if (text) {
+            await navigator.clipboard.writeText(text);
+            this.showCopyMessage('Gemini prompt copied!');
+          }
+        } catch (e) {
+          if (text) {
+            this.fallbackCopyTextToClipboard(text);
+            this.showCopyMessage('Gemini prompt copied!');
+          }
+        }
+      }
+
       // Open directly (attempting to prefill via URL query string)
       window.open(url, '_blank');
       // Track launch
@@ -251,7 +271,11 @@ export class PromptPageComponent {
 
     this.copyTextForRocketGoals(text);
     this.openAllLaunchTabs(text);
-    this.showCopyMessage('Opened all launch tabs.');
+    this.showCopyMessage(
+      this.useGeminiSearch()
+        ? 'Opened all launch tabs.'
+        : 'Opened all launch tabs. Prompt copied for Gemini app.'
+    );
 
     for (const launchType of ['gpt', 'gemini', 'claude', 'grok', 'rocket'] as const) {
       try {
@@ -766,5 +790,9 @@ export class PromptPageComponent {
 
   setGrokDomain(useGrokDotCom: boolean) {
     this.useGrokCom.set(useGrokDotCom);
+  }
+
+  setGeminiMode(useSearch: boolean) {
+    this.useGeminiSearch.set(useSearch);
   }
 }
