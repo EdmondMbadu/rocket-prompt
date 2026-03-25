@@ -156,11 +156,7 @@ export class PromptPageComponent {
     return `https://chat.openai.com/?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  createGeminiUrl(prompt: string): string {
-    if (!this.useGeminiSearch()) {
-      return 'https://gemini.google.com/app';
-    }
-
+  createGeminiSearchUrl(prompt: string): string {
     const trimmedPrompt = prompt.trim();
     const url = new URL('https://www.google.com/search');
     url.searchParams.set('udm', '50');
@@ -169,6 +165,14 @@ export class PromptPageComponent {
       url.searchParams.set('q', trimmedPrompt);
     }
     return url.toString();
+  }
+
+  createGeminiUrl(prompt: string): string {
+    if (!this.useGeminiSearch()) {
+      return 'https://gemini.google.com/app';
+    }
+
+    return this.createGeminiSearchUrl(prompt);
   }
 
   createClaudeUrl(prompt: string): string {
@@ -185,7 +189,12 @@ export class PromptPageComponent {
     return `${base}?q=${encodedPrompt}&t=${timestamp}`;
   }
 
-  async openChatbot(url: string, chatbotName: string, promptText?: string) {
+  async openChatbot(
+    url: string,
+    chatbotName: string,
+    promptText?: string,
+    options?: { forceGeminiSearch?: boolean }
+  ) {
     // ChatGPT, Claude, and Gemini can launch directly with the prompt in the URL.
     // Grok tries query params but still copies for safety.
     const text = promptText ?? this.prompt()?.content ?? '';
@@ -197,7 +206,10 @@ export class PromptPageComponent {
     }
 
     if (chatbotName === 'ChatGPT' || chatbotName === 'Claude' || chatbotName === 'Gemini') {
-      const shouldCopyForGemini = chatbotName === 'Gemini' && !this.useGeminiSearch();
+      const geminiUsesSearch = chatbotName === 'Gemini'
+        ? (options?.forceGeminiSearch ?? this.useGeminiSearch())
+        : false;
+      const shouldCopyForGemini = chatbotName === 'Gemini' && !geminiUsesSearch;
       if (shouldCopyForGemini) {
         try {
           if (text) {
@@ -261,18 +273,19 @@ export class PromptPageComponent {
 
   }
 
-  async launchAllChatbots(): Promise<void> {
+  async launchAllChatbots(forceGeminiSearch = false): Promise<void> {
     const p = this.prompt();
     if (!p?.content) {
       this.showCopyMessage('Prompt is missing content.');
       return;
     }
     const text = p.content;
+    const geminiUsesSearch = forceGeminiSearch || this.useGeminiSearch();
 
     this.copyTextForRocketGoals(text);
-    this.openAllLaunchTabs(text);
+    this.openAllLaunchTabs(text, geminiUsesSearch);
     this.showCopyMessage(
-      this.useGeminiSearch()
+      geminiUsesSearch
         ? 'Opened all launch tabs.'
         : 'Opened all launch tabs. Prompt copied for Gemini app.'
     );
@@ -323,7 +336,7 @@ export class PromptPageComponent {
     this.fallbackCopyTextToClipboard(text);
   }
 
-  private openAllLaunchTabs(promptText: string): void {
+  private openAllLaunchTabs(promptText: string, geminiUsesSearch: boolean): void {
     if (typeof window === 'undefined') {
       return;
     }
@@ -331,7 +344,7 @@ export class PromptPageComponent {
     const rocketGoalsUrl = `https://www.rocketgoals.com/ai?prompt=${encodeURIComponent(promptText)}`;
     const urls = [
       this.createChatGPTUrl(promptText),
-      this.createGeminiUrl(promptText),
+      geminiUsesSearch ? this.createGeminiSearchUrl(promptText) : 'https://gemini.google.com/app',
       this.createClaudeUrl(promptText),
       this.createGrokUrl(promptText),
       rocketGoalsUrl
