@@ -2,22 +2,63 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Profile pictures: users can only write to their own folder
-    match /profile-pictures/{userId}/{allPaths=**} {
-      // Anyone can read profile pictures
-      allow read: if true;
-      
-      // Only the owner can write to their own profile picture folder
-      allow write: if request.auth != null && request.auth.uid == userId;
+    function isAuthenticated() {
+      return request.auth != null;
     }
-    
-    // All other files (collections, etc.)
-    match /{allPaths=**} {
-      // Allow anyone to read files
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Shared storage rules for the rocket-prompt Firebase project.
+    // This project backs both the rocket-prompt and rocket-goals apps.
+
+    match /profile-pictures/{userId}/{allPaths=**} {
       allow read: if true;
-      
-      // Allow only authenticated users to upload/submit files
-      allow write: if request.auth != null;
+      allow write: if isOwner(userId);
+    }
+
+    match /userProfiles/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    match /ai-attachments/{userId}/{allPaths=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /prompts/{promptId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /collections/{collectionId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /organizations/{organizationId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /journey-photos/{goalId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /goal-visualizations/{goalId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /teams/{teamId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

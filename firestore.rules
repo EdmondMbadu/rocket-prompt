@@ -1,18 +1,128 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-   match /public/{documentId} {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isGrowthLeadShareUpdate() {
+      return resource.data.leadSource == 'growth-lead'
+        && request.resource.data.leadSource == 'growth-lead'
+        && request.resource.data.shareToken is string
+        && request.resource.data.shareToken == resource.data.shareToken
+        && request.resource.data.sharedPlatforms is map
+        && request.resource.data.sharedPlatforms.keys().hasOnly(['fb', 'tw', 'li'])
+        && request.resource.data.sharedPlatforms.fb is bool
+        && request.resource.data.sharedPlatforms.tw is bool
+        && request.resource.data.sharedPlatforms.li is bool
+        && request.resource.data.shareCount is int
+        && request.resource.data.shareCount >= 0
+        && request.resource.data.shareCount <= 3
+        && request.resource.data.codeUnlocked is bool
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'shareToken',
+          'sharedPlatforms',
+          'shareCount',
+          'codeUnlocked',
+          'codeUnlockedAt',
+          'shareUpdatedAt'
+        ])
+        && (request.resource.data.codeUnlockedAt == null || request.resource.data.codeUnlockedAt is timestamp)
+        && (request.resource.data.shareUpdatedAt == null || request.resource.data.shareUpdatedAt is timestamp);
+    }
+
+    function isGrowthLeadSessionUpdate() {
+      return resource.data.leadSource == 'growth-lead'
+        && request.resource.data.leadSource == 'growth-lead'
+        && request.resource.data.quizName == 'growth-mindset-test'
+        && request.resource.data.quizMode is string
+        && (request.resource.data.quizMode == 'adult' || request.resource.data.quizMode == 'student')
+        && request.resource.data.shareToken is string
+        && request.resource.data.shareToken == resource.data.shareToken
+        && request.resource.data.answerCount is int
+        && request.resource.data.answerCount >= 0
+        && request.resource.data.answerCount <= 12
+        && request.resource.data.questionCount is int
+        && (request.resource.data.questionCount == 8 || request.resource.data.questionCount == 12)
+        && (request.resource.data.currentQuestionNumber == null || request.resource.data.currentQuestionNumber is int)
+        && request.resource.data.progressPercent is int
+        && request.resource.data.progressPercent >= 0
+        && request.resource.data.progressPercent <= 100
+        && request.resource.data.lastPhase is string
+        && request.resource.data.sessionStatus is string
+        && request.resource.data.quizCompleted is bool
+        && request.resource.data.emailCaptured is bool
+        && request.resource.data.finishedLeadCaptured is bool
+        && request.resource.data.droppedOff is bool
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'userId',
+          'firstName',
+          'lastName',
+          'email',
+          'hasAccount',
+          'isAnonymous',
+          'leadSource',
+          'quizName',
+          'quizMode',
+          'shareToken',
+          'sessionStatus',
+          'answerCount',
+          'questionCount',
+          'currentQuestionNumber',
+          'progressPercent',
+          'lastPhase',
+          'quizCompleted',
+          'emailCaptured',
+          'droppedOff',
+          'finishedLeadId',
+          'finishedLeadCaptured',
+          'scoreSnapshot',
+          'archetypeSnapshot',
+          'scoresSnapshot',
+          'answers',
+          'lastActiveAt',
+          'completedAt',
+          'droppedOffAt'
+        ])
+        && (request.resource.data.lastActiveAt == null || request.resource.data.lastActiveAt is timestamp)
+        && (request.resource.data.completedAt == null || request.resource.data.completedAt is timestamp)
+        && (request.resource.data.droppedOffAt == null || request.resource.data.droppedOffAt is timestamp);
+    }
+
+    // Shared public docs used by rocket-prompt.
+    match /public/{documentId} {
       allow read, write: if true;
     }
+
+    // Lead capture flows used by rocket-goals.
+    match /bookDownloads/{document} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update: if isAuthenticated() || isGrowthLeadShareUpdate();
+      allow delete: if isAuthenticated();
+    }
+
+    match /growthLeadSessions/{document} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update: if isAuthenticated() || isGrowthLeadSessionUpdate();
+      allow delete: if isAuthenticated();
+    }
+
+    // Cloud Functions only.
+    match /telegramToUser/{telegramId} {
+      allow read, write: if false;
+    }
+
+    match /telegramLinkTokens/{token} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
     match /{document=**} {
-      // Allow anyone to read data
       allow read: if true;
-      
-      // Allow only authenticated users to write/edit data
-      allow write: if request.auth != null;
+      allow write: if isAuthenticated();
     }
   }
 }
-
-

@@ -59,7 +59,7 @@
   "functions": [
     {
       "source": "functions",
-      "codebase": "default",
+      "codebase": "rocket-prompt",
       "ignore": [
         "node_modules",
         ".git",
