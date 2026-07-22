@@ -9,7 +9,8 @@ import {
   AdminEmailService,
   type EmailAudience,
   type EmailAudienceSummary,
-  type EmailCampaignMode
+  type EmailCampaignMode,
+  type EmailDirectoryUser
 } from '../../services/admin-email.service';
 import { CollectionService } from '../../services/collection.service';
 
@@ -47,6 +48,9 @@ export class AdminEmailManagementComponent {
   readonly customHtml = signal(this.defaultCustomHtml());
   readonly selectedAudience = signal<EmailAudience>('all');
   readonly audienceSummary = signal<EmailAudienceSummary | null>(null);
+  readonly users = signal<EmailDirectoryUser[]>([]);
+  readonly userSearch = signal('');
+  readonly testEmail = signal('');
   readonly audienceLoading = signal(true);
   readonly collectionLoading = signal(false);
   readonly sending = signal(false);
@@ -73,6 +77,17 @@ export class AdminEmailManagementComponent {
     this.audienceOptions.find(option => option.id === this.selectedAudience())?.label ?? 'Everyone'
   );
 
+  readonly filteredUsers = computed(() => {
+    const search = this.userSearch().trim().toLowerCase();
+    if (!search) {
+      return this.users();
+    }
+    return this.users().filter(user =>
+      user.email.toLowerCase().includes(search) ||
+      user.name.toLowerCase().includes(search)
+    );
+  });
+
   constructor() {
     void this.refreshAudienceSummary();
   }
@@ -94,7 +109,19 @@ export class AdminEmailManagementComponent {
     this.audienceLoading.set(true);
     this.error.set(null);
     try {
-      this.audienceSummary.set(await this.emailService.getAudienceSummary());
+      const data = await this.withTimeout(
+        this.emailService.getManagementData(),
+        20_000,
+        'User loading took too long. Confirm the latest email functions are deployed, then try Refresh.'
+      );
+      if (!data?.summary || !Array.isArray(data.users)) {
+        throw new Error('The deployed email function is out of date. Deploy the latest functions and refresh this page.');
+      }
+      this.audienceSummary.set(data.summary);
+      this.users.set(data.users);
+      if (!this.testEmail().trim()) {
+        this.testEmail.set(data.adminEmail);
+      }
     } catch (error) {
       this.error.set(this.errorMessage(error, 'Could not load the email audience.'));
     } finally {
@@ -143,8 +170,37 @@ export class AdminEmailManagementComponent {
     }
   }
 
+  loadCollectionIfNeeded(): void {
+    if (this.collectionUrl().trim() && !this.collectionLoading()) {
+      void this.loadCollection();
+    }
+  }
+
   previewHtml(): string {
     return this.mode() === 'custom' ? this.customHtml() : this.collectionEmailHtml();
+  }
+
+  renderedPreviewHtml(): string {
+    return this.previewHtml().replace(/\{\{\s*first[_\s-]*name\s*\}\}/gi, 'Alex');
+  }
+
+  openFullPreview(): void {
+    this.error.set(null);
+    const safeHtml = this.sanitizePreviewHtml(this.renderedPreviewHtml());
+    const blob = new Blob([safeHtml], { type: 'text/html;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    const previewWindow = window.open(blobUrl, '_blank');
+    if (!previewWindow) {
+      URL.revokeObjectURL(blobUrl);
+      this.error.set('Your browser blocked the preview tab. Allow pop-ups for this site and try again.');
+      return;
+    }
+    previewWindow.opener = null;
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
+
+  isTestEmailValid(): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.testEmail().trim());
   }
 
   async send(testOnly: boolean): Promise<void> {
@@ -165,6 +221,10 @@ export class AdminEmailManagementComponent {
       this.error.set('Load a public collection before sending this campaign.');
       return;
     }
+    if (testOnly && !this.isTestEmailValid()) {
+      this.error.set('Enter a valid test email address.');
+      return;
+    }
     if (!testOnly && (!this.confirmed() || this.recipientCount() === 0)) {
       this.error.set('Confirm the audience and make sure it contains at least one recipient.');
       return;
@@ -172,7 +232,7 @@ export class AdminEmailManagementComponent {
 
     if (!testOnly) {
       const accepted = window.confirm(
-        `Send this email to ${this.recipientCount().toLocaleString()} ${this.selectedAudienceLabel().toLowerCase()} recipient(s)? This cannot be undone.`
+        `Send this email to ${this.recipientCount().toLocaleString()} recipient(s) in the ${this.selectedAudienceLabel()} audience? This cannot be undone.`
       );
       if (!accepted) {
         return;
@@ -189,11 +249,12 @@ export class AdminEmailManagementComponent {
         mode: this.mode(),
         collectionUrl: this.mode() === 'collection' ? this.canonicalCollectionUrl() : undefined,
         testOnly,
-        expectedRecipientCount: this.recipientCount()
+        expectedRecipientCount: this.recipientCount(),
+        testEmail: testOnly ? this.testEmail().trim() : undefined
       });
 
       this.success.set(testOnly
-        ? 'Test email sent to your signed-in admin email address.'
+        ? `Test email sent to ${this.testEmail().trim()}.`
         : `Campaign sent to ${result.recipientCount.toLocaleString()} recipient(s).`
       );
       if (!testOnly) {
@@ -237,25 +298,26 @@ export class AdminEmailManagementComponent {
     const url = this.escapeAttribute(this.canonicalCollectionUrl() || 'https://rocketprompt.io/collections');
     const image = collection?.heroImageUrl
       ? `<img src="${this.escapeAttribute(collection.heroImageUrl)}" alt="" style="display:block;width:100%;height:260px;object-fit:cover;">`
-      : `<div style="height:220px;background:linear-gradient(135deg,#111827 0%,#dc2626 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:54px;">🚀</div>`;
+      : `<div style="height:220px;background:linear-gradient(135deg,#111827 0%,#dc2626 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-weight:800;">RocketPrompt</div>`;
 
     return `<!doctype html>
-<html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RocketPrompt collection</title></head><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
   <div style="padding:32px 16px;">
     <div style="max-width:640px;margin:0 auto;">
-      <div style="padding:0 0 18px;text-align:center;font-size:20px;font-weight:800;letter-spacing:-0.02em;">🚀 RocketPrompt</div>
+      <div style="padding:0 0 18px;text-align:center;font-size:20px;font-weight:800;letter-spacing:-0.02em;">RocketPrompt</div>
       <div style="overflow:hidden;border:1px solid #e2e8f0;border-radius:20px;background:#ffffff;box-shadow:0 12px 30px rgba(15,23,42,.08);">
         ${image}
         <div style="padding:32px;">
           <div style="margin-bottom:12px;color:#dc2626;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">${tag}</div>
+          <p style="margin:0 0 16px;color:#334155;font-size:16px;line-height:1.6;">Hello {{firstName}},</p>
           <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;letter-spacing:-.03em;">${name}</h1>
           <p style="margin:0 0 12px;color:#475569;font-size:16px;line-height:1.7;">${blurb}</p>
           <p style="margin:0 0 26px;color:#475569;font-size:16px;line-height:1.7;">${message}</p>
-          <a href="${url}" style="display:inline-block;border-radius:12px;background:#dc2626;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;">Explore the collection →</a>
+          <a href="${url}" style="display:inline-block;border-radius:12px;background:#dc2626;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;">Explore the collection &rarr;</a>
           <div style="margin-top:22px;color:#94a3b8;font-size:12px;">${collection?.promptIds.length ?? 0} prompt${(collection?.promptIds.length ?? 0) === 1 ? '' : 's'} in this collection</div>
         </div>
       </div>
-      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">RocketPrompt · Put the right prompt within reach.</div>
+      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">RocketPrompt &middot; Put the right prompt within reach.</div>
     </div>
   </div>
 </body></html>`;
@@ -263,10 +325,12 @@ export class AdminEmailManagementComponent {
 
   private defaultCustomHtml(): string {
     return `<!doctype html>
-<html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RocketPrompt email</title></head>
   <body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
     <div style="max-width:640px;margin:0 auto;padding:40px 20px;">
-      <h1 style="font-size:30px;">Your RocketPrompt update 🚀</h1>
+      <p style="font-size:16px;line-height:1.7;color:#334155;">Hello {{firstName}},</p>
+      <h1 style="font-size:30px;">Your RocketPrompt update</h1>
       <p style="font-size:16px;line-height:1.7;color:#475569;">Replace this content with your own HTML email.</p>
       <a href="https://rocketprompt.io" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:700;">Visit RocketPrompt</a>
     </div>
@@ -287,6 +351,15 @@ export class AdminEmailManagementComponent {
       .trim();
   }
 
+  private sanitizePreviewHtml(html: string): string {
+    return html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<object[\s\S]*?<\/object>/gi, '')
+      .replace(/<form[\s\S]*?<\/form>/gi, '')
+      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
+  }
+
   private escapeHtml(value: string): string {
     return value
       .replace(/&/g, '&amp;')
@@ -305,5 +378,21 @@ export class AdminEmailManagementComponent {
       return error.message;
     }
     return fallback;
+  }
+
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeout = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+      promise.then(
+        value => {
+          window.clearTimeout(timeout);
+          resolve(value);
+        },
+        error => {
+          window.clearTimeout(timeout);
+          reject(error);
+        }
+      );
+    });
   }
 }

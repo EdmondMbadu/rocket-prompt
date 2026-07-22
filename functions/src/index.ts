@@ -1177,15 +1177,27 @@ type BulkEmailAudience = "all" | "paying" | "free" | "no-prompts" | "with-prompt
 interface BulkEmailRecipient {
   id: string;
   email: string;
+  firstName: string;
   name?: string;
   isPaying: boolean;
   hasPrompts: boolean;
 }
 
+interface BulkEmailDirectoryEntry extends BulkEmailRecipient {
+  emailVerified: boolean;
+  disabled: boolean;
+  optedOut: boolean;
+  eligible: boolean;
+  eligibility: "eligible" | "missing-email" | "opted-out" | "disabled" | "duplicate-email";
+  createdAt: string;
+}
+
 interface BulkEmailAudienceData {
   recipients: BulkEmailRecipient[];
+  directory: BulkEmailDirectoryEntry[];
   optedOut: number;
   missingEmail: number;
+  disabled: number;
 }
 
 const bulkEmailAudienceValues = new Set<BulkEmailAudience>([
@@ -1253,11 +1265,23 @@ const bulkEmailSubscriptionIsActive = (data: Record<string, unknown>): boolean =
   return Number.isFinite(expirationMillis) && expirationMillis > Date.now();
 };
 
+const listAllFirebaseAuthUsers = async (): Promise<admin.auth.UserRecord[]> => {
+  const users: admin.auth.UserRecord[] = [];
+  let pageToken: string | undefined;
+  do {
+    const page = await admin.auth().listUsers(1000, pageToken);
+    users.push(...page.users);
+    pageToken = page.pageToken;
+  } while (pageToken);
+  return users;
+};
+
 const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
   const firestore = admin.firestore();
-  const [usersSnapshot, promptsSnapshot] = await Promise.all([
+  const [usersSnapshot, promptsSnapshot, authUsers] = await Promise.all([
     firestore.collection("users").get(),
-    firestore.collection("prompts").select("authorId").get()
+    firestore.collection("prompts").select("authorId").get(),
+    listAllFirebaseAuthUsers()
   ]);
 
   const promptAuthorIds = new Set<string>();
@@ -1268,17 +1292,30 @@ const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
     }
   });
 
+  const profilesByUid = new Map<string, Record<string, unknown>>();
+  usersSnapshot.docs.forEach((userDocument) => {
+    const profile = userDocument.data();
+    profilesByUid.set(userDocument.id, profile);
+    const profileUserId = typeof profile.userId === "string" ? profile.userId.trim() : "";
+    if (profileUserId) {
+      profilesByUid.set(profileUserId, profile);
+    }
+  });
+
   const recipients: BulkEmailRecipient[] = [];
+  const directory: BulkEmailDirectoryEntry[] = [];
   const seenEmails = new Set<string>();
   let optedOut = 0;
   let missingEmail = 0;
+  let disabled = 0;
 
-  usersSnapshot.docs.forEach((userDocument) => {
-    const data = userDocument.data();
-    const email = data.email;
-    if (!isValidBulkEmailAddress(email)) {
+  authUsers.forEach((authUser) => {
+    const data = profilesByUid.get(authUser.uid) ?? {};
+    const profileEmail = typeof data.email === "string" ? data.email : "";
+    const email = authUser.email?.trim() || profileEmail.trim();
+    const validEmail = isValidBulkEmailAddress(email);
+    if (!validEmail) {
       missingEmail += 1;
-      return;
     }
 
     const preferences = data.preferences as Record<string, unknown> | undefined;
@@ -1288,32 +1325,64 @@ const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
       preferences?.marketingEmails === false;
     if (hasOptedOut) {
       optedOut += 1;
-      return;
+    }
+    if (authUser.disabled) {
+      disabled += 1;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    if (seenEmails.has(normalizedEmail)) {
-      return;
+    const normalizedEmail = validEmail ? email.toLowerCase() : "";
+    const duplicateEmail = validEmail && seenEmails.has(normalizedEmail);
+    if (validEmail && !duplicateEmail) {
+      seenEmails.add(normalizedEmail);
     }
-    seenEmails.add(normalizedEmail);
 
-    const userId = typeof data.userId === "string" && data.userId.trim() ?
-      data.userId.trim() :
-      userDocument.id;
-    const firstName = typeof data.firstName === "string" ? data.firstName.trim() : "";
+    const profileFirstName = typeof data.firstName === "string" ? data.firstName.trim() : "";
     const lastName = typeof data.lastName === "string" ? data.lastName.trim() : "";
-    const name = `${firstName} ${lastName}`.trim();
+    const authDisplayName = authUser.displayName?.trim() ?? "";
+    const firstName = profileFirstName || authDisplayName.split(/\s+/)[0] || "";
+    const name = `${profileFirstName} ${lastName}`.trim() || authDisplayName;
+    const isPaying = bulkEmailSubscriptionIsActive(data);
+    const hasPrompts = promptAuthorIds.has(authUser.uid);
+    const eligibility: BulkEmailDirectoryEntry["eligibility"] = authUser.disabled ?
+      "disabled" :
+      !validEmail ?
+        "missing-email" :
+        hasOptedOut ?
+          "opted-out" :
+          duplicateEmail ?
+            "duplicate-email" :
+            "eligible";
+    const eligible = eligibility === "eligible";
 
-    recipients.push({
-      id: userDocument.id,
-      email: email.trim(),
+    const entry: BulkEmailDirectoryEntry = {
+      id: authUser.uid,
+      email: validEmail ? email : "",
+      firstName,
       ...(name ? { name } : {}),
-      isPaying: bulkEmailSubscriptionIsActive(data),
-      hasPrompts: promptAuthorIds.has(userDocument.id) || promptAuthorIds.has(userId)
-    });
+      isPaying,
+      hasPrompts,
+      emailVerified: authUser.emailVerified,
+      disabled: authUser.disabled,
+      optedOut: hasOptedOut,
+      eligible,
+      eligibility,
+      createdAt: authUser.metadata.creationTime || ""
+    };
+    directory.push(entry);
+    if (eligible) {
+      recipients.push({
+        id: entry.id,
+        email: entry.email,
+        firstName: entry.firstName,
+        ...(entry.name ? { name: entry.name } : {}),
+        isPaying: entry.isPaying,
+        hasPrompts: entry.hasPrompts
+      });
+    }
   });
 
-  return { recipients, optedOut, missingEmail };
+  directory.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  return { recipients, directory, optedOut, missingEmail, disabled };
 };
 
 const selectBulkEmailRecipients = (
@@ -1341,7 +1410,8 @@ const bulkEmailSummary = (audienceData: BulkEmailAudienceData) => ({
   noPrompts: selectBulkEmailRecipients(audienceData.recipients, "no-prompts").length,
   withPrompts: selectBulkEmailRecipients(audienceData.recipients, "with-prompts").length,
   optedOut: audienceData.optedOut,
-  missingEmail: audienceData.missingEmail
+  missingEmail: audienceData.missingEmail,
+  disabled: audienceData.disabled
 });
 
 const sanitizeBulkEmailHtml = (html: string): string =>
@@ -1374,9 +1444,14 @@ export const getBulkEmailAudienceSummary = functions
   .region("us-central1")
   .runWith({ maxInstances: 3, timeoutSeconds: 120, memory: "256MB" })
   .https.onCall(async (_data, context) => {
-    await assertBulkEmailAdmin(context);
+    const adminUid = await assertBulkEmailAdmin(context);
     const audienceData = await loadBulkEmailAudienceData();
-    return bulkEmailSummary(audienceData);
+    const adminUser = await admin.auth().getUser(adminUid);
+    return {
+      summary: bulkEmailSummary(audienceData),
+      users: audienceData.directory,
+      adminEmail: adminUser.email ?? ""
+    };
   });
 
 export const sendBulkEmailCampaign = functions
@@ -1396,6 +1471,7 @@ export const sendBulkEmailCampaign = functions
     const mode = data?.mode === "collection" || data?.mode === "custom" ? data.mode : undefined;
     const collectionUrl = typeof data?.collectionUrl === "string" ? data.collectionUrl.trim() : "";
     const testOnly = data?.testOnly === true;
+    const testEmail = typeof data?.testEmail === "string" ? data.testEmail.trim() : "";
     const expectedRecipientCount = typeof data?.expectedRecipientCount === "number" ?
       data.expectedRecipientCount :
       Number.NaN;
@@ -1414,6 +1490,9 @@ export const sendBulkEmailCampaign = functions
     }
     if (collectionUrl.length > 2048) {
       throw new functions.https.HttpsError("invalid-argument", "The collection URL is too long.");
+    }
+    if (testOnly && !isValidBulkEmailAddress(testEmail)) {
+      throw new functions.https.HttpsError("invalid-argument", "Enter a valid test email address.");
     }
 
     const apiKey = getSendgridApiKey();
@@ -1435,17 +1514,14 @@ export const sendBulkEmailCampaign = functions
     let deliveryRecipients = selectedRecipients;
 
     if (testOnly) {
-      const adminUser = await admin.auth().getUser(adminUid);
-      if (!adminUser.email || !isValidBulkEmailAddress(adminUser.email)) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "Your signed-in admin account does not have a valid email address."
-        );
-      }
+      const matchingUser = audienceData.directory.find(
+        (user) => user.email.toLowerCase() === testEmail.toLowerCase()
+      );
       deliveryRecipients = [{
-        id: adminUid,
-        email: adminUser.email,
-        ...(adminUser.displayName ? { name: adminUser.displayName } : {}),
+        id: matchingUser?.id ?? "test-recipient",
+        email: testEmail,
+        firstName: matchingUser?.firstName || "there",
+        ...(matchingUser?.name ? { name: matchingUser.name } : {}),
         isPaying: false,
         hasPrompts: false
       }];
@@ -1455,8 +1531,12 @@ export const sendBulkEmailCampaign = functions
       throw new functions.https.HttpsError("failed-precondition", "This audience has no eligible recipients.");
     }
 
-    const html = addBulkEmailFooter(sanitizeBulkEmailHtml(rawHtml));
-    const text = `${rawText || "Open this email in an HTML-capable email app."}\n\nTo stop receiving campaign emails, contact missioncontrol@rocketgoals.com.`;
+    const html = addBulkEmailFooter(
+      sanitizeBulkEmailHtml(rawHtml).replace(/\{\{\s*first[_\s-]*name\s*\}\}/gi, "-firstName-")
+    );
+    const personalizedText = rawText
+      .replace(/\{\{\s*first[_\s-]*name\s*\}\}/gi, "-firstName-");
+    const text = `${personalizedText || "Open this email in an HTML-capable email app."}\n\nTo stop receiving campaign emails, contact missioncontrol@rocketgoals.com.`;
     const campaignRef = admin.firestore().collection("emailCampaigns").doc();
     await campaignRef.set({
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1480,7 +1560,10 @@ export const sendBulkEmailCampaign = functions
               email: recipient.email,
               ...(recipient.name ? { name: recipient.name } : {})
             }],
-            subject
+            subject,
+            substitutions: {
+              "-firstName-": recipient.firstName || "there"
+            }
           })),
           from: {
             email: "missioncontrol@rocketgoals.com",

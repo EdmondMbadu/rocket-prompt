@@ -13,6 +13,28 @@ export interface EmailAudienceSummary {
   readonly withPrompts: number;
   readonly optedOut: number;
   readonly missingEmail: number;
+  readonly disabled: number;
+}
+
+export interface EmailDirectoryUser {
+  readonly id: string;
+  readonly email: string;
+  readonly firstName: string;
+  readonly name: string;
+  readonly isPaying: boolean;
+  readonly hasPrompts: boolean;
+  readonly emailVerified: boolean;
+  readonly disabled: boolean;
+  readonly optedOut: boolean;
+  readonly eligible: boolean;
+  readonly eligibility: 'eligible' | 'missing-email' | 'opted-out' | 'disabled' | 'duplicate-email';
+  readonly createdAt: string;
+}
+
+export interface EmailManagementData {
+  readonly summary: EmailAudienceSummary;
+  readonly users: EmailDirectoryUser[];
+  readonly adminEmail: string;
 }
 
 export interface SendEmailCampaignInput {
@@ -24,6 +46,7 @@ export interface SendEmailCampaignInput {
   readonly collectionUrl?: string;
   readonly testOnly: boolean;
   readonly expectedRecipientCount: number;
+  readonly testEmail?: string;
 }
 
 export interface SendEmailCampaignResult {
@@ -38,8 +61,8 @@ export interface SendEmailCampaignResult {
 export class AdminEmailService {
   private readonly functions = getFunctions(getApp(), 'us-central1');
 
-  async getAudienceSummary(): Promise<EmailAudienceSummary> {
-    const callable = httpsCallable<Record<string, never>, EmailAudienceSummary>(
+  async getManagementData(): Promise<EmailManagementData> {
+    const callable = httpsCallable<Record<string, never>, EmailManagementData>(
       this.functions,
       'getBulkEmailAudienceSummary'
     );

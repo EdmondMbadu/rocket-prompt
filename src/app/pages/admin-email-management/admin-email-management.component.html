@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-slate-50">
   <header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <button type="button" (click)="router.navigate(['/admin'])"
-        class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-900">
+        class="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-900">
         <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -11,7 +11,7 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div class="flex items-center gap-3">
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Email Management</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Email Management</h1>
             <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">Admin only</span>
           </div>
           <p class="mt-2 text-sm text-slate-500">Build, preview, test, and send campaigns to selected customer groups.</p>
@@ -27,7 +27,7 @@
     </div>
   </header>
 
-  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <main class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
     <div *ngIf="error()" class="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
       <span>{{ error() }}</span>
       <button type="button" (click)="error.set(null)" class="font-bold">×</button>
@@ -37,10 +37,10 @@
       <button type="button" (click)="success.set(null)" class="font-bold">×</button>
     </div>
 
-    <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)]">
-      <div class="space-y-6">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5">
+    <div class="grid gap-5 xl:h-[calc(100vh-9.5rem)] xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)] xl:overflow-hidden">
+      <div class="space-y-4 xl:overflow-y-auto xl:pr-3">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="mb-3">
             <div class="text-xs font-bold uppercase tracking-[0.16em] text-red-600">Step 1</div>
             <h2 class="mt-1 text-xl font-bold text-slate-900">Choose the email type</h2>
           </div>
@@ -49,19 +49,19 @@
               class="rounded-2xl border-2 p-4 text-left transition"
               [ngClass]="mode() === 'collection' ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300'">
               <div class="font-bold text-slate-900">Collection campaign</div>
-              <p class="mt-1 text-sm leading-5 text-slate-500">Paste a collection link and use the generated branded email.</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Generate an email from a collection link.</p>
             </button>
             <button type="button" (click)="setMode('custom')"
               class="rounded-2xl border-2 p-4 text-left transition"
               [ngClass]="mode() === 'custom' ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300'">
               <div class="font-bold text-slate-900">Custom HTML</div>
-              <p class="mt-1 text-sm leading-5 text-slate-500">Paste or write a complete HTML email and preview it live.</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Paste your own HTML.</p>
             </button>
           </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="mb-3">
             <div class="text-xs font-bold uppercase tracking-[0.16em] text-red-600">Step 2</div>
             <h2 class="mt-1 text-xl font-bold text-slate-900">Build the message</h2>
           </div>
@@ -74,7 +74,7 @@
             <label class="mt-5 block text-sm font-semibold text-slate-700" for="collection-url">Collection link</label>
             <div class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input id="collection-url" type="url" [ngModel]="collectionUrl()" (ngModelChange)="collectionUrl.set($event); confirmed.set(false)"
-                (keyup.enter)="loadCollection()" placeholder="https://rocketprompt.io/collection/your-collection"
+                (keyup.enter)="loadCollection()" (blur)="loadCollectionIfNeeded()" placeholder="https://rocketprompt.io/collection/your-collection"
                 class="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
               <button type="button" (click)="loadCollection()" [disabled]="collectionLoading()"
                 class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
@@ -103,15 +103,19 @@
             <label class="mt-5 block text-sm font-semibold text-slate-700" for="custom-html">HTML source</label>
             <textarea id="custom-html" rows="18" spellcheck="false" [ngModel]="customHtml()" (ngModelChange)="customHtml.set($event); confirmed.set(false)"
               class="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-6 text-slate-100 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"></textarea>
-            <p class="mt-2 text-xs leading-5 text-slate-500">Use inline CSS for the most consistent appearance across email apps. Scripts will not run in the preview or most inboxes.</p>
+            <p class="mt-2 text-xs leading-5 text-slate-500">
+              Use inline CSS for the most consistent appearance across email apps. Add
+              <code class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">{{ '{{firstName}}' }}</code>
+              anywhere you want the recipient's first name.
+            </p>
           </ng-template>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="mb-5">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="mb-3">
             <div class="text-xs font-bold uppercase tracking-[0.16em] text-red-600">Step 3</div>
             <h2 class="mt-1 text-xl font-bold text-slate-900">Choose recipients</h2>
-            <p class="mt-1 text-sm text-slate-500">Counts exclude users who opted out or do not have a valid email address.</p>
+            <p class="mt-1 text-xs text-slate-500">Opted-out, disabled, and invalid-email accounts are excluded.</p>
           </div>
 
           <div class="grid gap-3 sm:grid-cols-2">
@@ -138,27 +142,85 @@
           <div *ngIf="audienceSummary() as summary" class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
             <span>{{ summary.optedOut }} opted out</span>
             <span>{{ summary.missingEmail }} missing/invalid email</span>
+            <span>{{ summary.disabled }} disabled account(s)</span>
+          </div>
+
+          <div class="mt-7 border-t border-slate-200 pt-6">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 class="font-bold text-slate-900">Firebase Authentication users</h3>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{ users().length | number }} total account(s), including users who cannot receive campaigns.
+                </p>
+              </div>
+              <label class="block sm:w-72">
+                <span class="sr-only">Search users</span>
+                <input type="search" [ngModel]="userSearch()" (ngModelChange)="userSearch.set($event)"
+                  placeholder="Search name or email"
+                  class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+              </label>
+            </div>
+
+            <div class="mt-4 max-h-[280px] overflow-auto rounded-2xl border border-slate-200">
+              <div *ngIf="audienceLoading()" class="p-8 text-center text-sm text-slate-500">Loading Firebase Authentication users…</div>
+              <div *ngIf="!audienceLoading() && filteredUsers().length === 0" class="p-8 text-center text-sm text-slate-500">No users match this search.</div>
+              <div *ngFor="let user of filteredUsers()" class="flex flex-col gap-3 border-b border-slate-100 p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-semibold text-slate-900">{{ user.name || 'Unnamed user' }}</span>
+                    <span *ngIf="user.emailVerified" class="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">Verified</span>
+                  </div>
+                  <div class="mt-0.5 break-all text-sm text-slate-500">{{ user.email || 'No email address' }}</div>
+                </div>
+                <div class="flex shrink-0 flex-wrap items-center gap-2 text-xs">
+                  <span class="rounded-full px-2.5 py-1 font-semibold"
+                    [ngClass]="user.isPaying ? 'bg-violet-50 text-violet-700' : 'bg-slate-100 text-slate-600'">
+                    {{ user.isPaying ? 'Paying' : 'Free' }}
+                  </span>
+                  <span class="rounded-full px-2.5 py-1 font-semibold"
+                    [ngClass]="user.hasPrompts ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+                    {{ user.hasPrompts ? 'Has posted' : 'No posts' }}
+                  </span>
+                  <span class="rounded-full px-2.5 py-1 font-semibold"
+                    [ngClass]="user.eligible ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
+                    {{ user.eligible ? 'Eligible' :
+                       user.eligibility === 'opted-out' ? 'Opted out' :
+                       user.eligibility === 'disabled' ? 'Disabled' :
+                       user.eligibility === 'duplicate-email' ? 'Duplicate email' : 'Missing email' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div>
             <div>
               <div class="text-xs font-bold uppercase tracking-[0.16em] text-red-600">Step 4</div>
               <h2 class="mt-1 text-xl font-bold text-slate-900">Test and send</h2>
-              <p class="mt-1 text-sm text-slate-500">A test email always goes only to your signed-in admin address.</p>
+              <p class="mt-1 text-sm text-slate-500">Send one copy to any email address before sending the campaign.</p>
             </div>
-            <button type="button" (click)="send(true)" [disabled]="sending()"
-              class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-              {{ sending() ? 'Working…' : 'Send test email' }}
-            </button>
+            <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+              <label class="min-w-0 flex-1">
+                <span class="mb-2 block text-sm font-semibold text-slate-700">Test recipient email</span>
+                <input type="email" [ngModel]="testEmail()" (ngModelChange)="testEmail.set($event)"
+                  placeholder="you@example.com"
+                  class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+              </label>
+              <button type="button" (click)="send(true)" [disabled]="sending() || !isTestEmailValid()"
+                class="self-end inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                {{ sending() ? 'Working…' : 'Send test email' }}
+              </button>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">If the test email belongs to a Firebase user, their first name will be used. Otherwise the greeting uses “there”.</p>
           </div>
 
           <label class="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <input type="checkbox" [ngModel]="confirmed()" (ngModelChange)="confirmed.set($event)" class="mt-0.5 h-5 w-5 rounded border-amber-400 text-red-600 focus:ring-red-500">
             <span class="text-sm leading-6 text-amber-900">
-              I confirm this campaign should be sent to
-              <strong>{{ recipientCount() | number }} {{ selectedAudienceLabel().toLowerCase() }} recipient(s)</strong>.
+              I confirm sending this campaign to <strong>{{ recipientCount() | number }} recipient(s)</strong>
+              in the <strong>{{ selectedAudienceLabel() }}</strong> audience.
             </span>
           </label>
 
@@ -174,18 +236,24 @@
         </section>
       </div>
 
-      <aside class="xl:sticky xl:top-6 xl:self-start">
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+      <aside class="xl:min-h-0 xl:h-full">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:flex xl:h-full xl:flex-col">
+          <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
             <div>
               <h2 class="font-bold text-slate-900">Email preview</h2>
-              <p class="text-xs text-slate-500">Sandboxed desktop preview</p>
+              <p class="text-xs text-slate-500">Sample recipient: Alex</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Live</span>
+            <button type="button" (click)="openFullPreview()"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5h5v5m0-5l-9 9M19 14v4a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h4" />
+              </svg>
+              Full preview
+            </button>
           </div>
-          <div class="bg-slate-200 p-3 sm:p-5">
-            <iframe title="Email preview" sandbox="" [attr.srcdoc]="previewHtml()"
-              class="h-[720px] w-full rounded-xl border-0 bg-white shadow-inner"></iframe>
+          <div class="bg-slate-200 p-3 sm:p-4 xl:min-h-0 xl:flex-1">
+            <iframe title="Email preview" sandbox="" [attr.srcdoc]="renderedPreviewHtml()"
+              class="h-[640px] w-full rounded-xl border-0 bg-white shadow-inner xl:h-full"></iframe>
           </div>
         </div>
       </aside>
