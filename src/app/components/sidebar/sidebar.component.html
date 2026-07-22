@@ -203,11 +203,16 @@
   </div>
 </ng-container>
 
-<aside
-  class="hidden min-h-screen shrink-0 border-r border-slate-200 bg-white text-slate-700 transition-all duration-200 sm:flex"
+<div
+  class="hidden h-screen shrink-0 transition-all duration-200 sm:block"
   [class.w-56]="!collapsed()"
   [class.w-20]="collapsed()"
 >
+  <aside
+    class="fixed inset-y-0 left-0 z-40 flex h-screen overflow-y-auto border-r border-slate-200 bg-white text-slate-700 transition-all duration-200"
+    [class.w-56]="!collapsed()"
+    [class.w-20]="collapsed()"
+  >
   <div
     class="flex w-full flex-col px-4 py-6 transition-all duration-200"
     [class.gap-6]="!collapsed()"
@@ -441,4 +446,5 @@
       </ng-template>
     </div>
   </div>
-</aside>
+  </aside>
+</div>
