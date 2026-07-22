@@ -71,7 +71,17 @@
             class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
 
           <ng-container *ngIf="mode() === 'collection'; else customHtmlEditor">
-            <label class="mt-5 block text-sm font-semibold text-slate-700" for="collection-url">Collection link</label>
+            <label class="mt-5 block text-sm font-semibold text-slate-700" for="collection-select">Featured collection</label>
+            <select id="collection-select" [ngModel]="loadedCollection()?.id ?? ''" (ngModelChange)="selectCollection($event)"
+              [disabled]="collectionsLoading() || collections().length === 0"
+              class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-slate-100">
+              <option value="" disabled>{{ collectionsLoading() ? 'Loading collections…' : 'Choose a collection' }}</option>
+              <option *ngFor="let collection of collections()" [value]="collection.id">
+                {{ collection.name }} · {{ collection.promptIds.length }} prompts
+              </option>
+            </select>
+
+            <label class="mt-4 block text-xs font-semibold text-slate-500" for="collection-url">Or paste a collection link</label>
             <div class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input id="collection-url" type="url" [ngModel]="collectionUrl()" (ngModelChange)="collectionUrl.set($event); confirmed.set(false)"
                 (keyup.enter)="loadCollection()" (blur)="loadCollectionIfNeeded()" placeholder="https://rocketprompt.io/collection/your-collection"
@@ -118,25 +128,33 @@
             <p class="mt-1 text-xs text-slate-500">Opted-out, disabled, and invalid-email accounts are excluded.</p>
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <button *ngFor="let option of audienceOptions" type="button" (click)="selectAudience(option.id)"
-              class="flex items-start justify-between gap-3 rounded-2xl border-2 p-4 text-left transition"
-              [ngClass]="selectedAudience() === option.id ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300'">
-              <div>
-                <div class="font-bold text-slate-900">{{ option.label }}</div>
-                <p class="mt-1 text-xs leading-5 text-slate-500">{{ option.description }}</p>
-              </div>
-              <span class="rounded-full bg-white px-2.5 py-1 text-sm font-bold text-slate-700 shadow-sm">
-                <ng-container *ngIf="!audienceLoading(); else countLoading">
-                  {{ option.id === 'all' ? (audienceSummary()?.all ?? 0) :
-                     option.id === 'paying' ? (audienceSummary()?.paying ?? 0) :
-                     option.id === 'free' ? (audienceSummary()?.free ?? 0) :
-                     option.id === 'no-prompts' ? (audienceSummary()?.noPrompts ?? 0) :
-                     (audienceSummary()?.withPrompts ?? 0) }}
-                </ng-container>
-                <ng-template #countLoading>…</ng-template>
-              </span>
-            </button>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-semibold text-slate-600">Account source</span>
+              <select [ngModel]="recipientScope()" (ngModelChange)="updateRecipientScope($event)"
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+                <option value="real">Real users ({{ realUserCount() }})</option>
+                <option value="all-auth">All Auth accounts (+{{ possibleBotCount() }} possible bots)</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-semibold text-slate-600">Plan</span>
+              <select [ngModel]="planFilter()" (ngModelChange)="updatePlanFilter($event)"
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+                <option value="all">Any plan</option>
+                <option value="paying">Paying only</option>
+                <option value="free">Free only</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-semibold text-slate-600">Posting activity</span>
+              <select [ngModel]="activityFilter()" (ngModelChange)="updateActivityFilter($event)"
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100">
+                <option value="all">Any activity</option>
+                <option value="with-prompts">Has posted</option>
+                <option value="no-prompts">No posts yet</option>
+              </select>
+            </label>
           </div>
 
           <div *ngIf="audienceSummary() as summary" class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
@@ -145,30 +163,33 @@
             <span>{{ summary.disabled }} disabled account(s)</span>
           </div>
 
-          <div class="mt-7 border-t border-slate-200 pt-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div class="mt-5 border-t border-slate-200 pt-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 class="font-bold text-slate-900">Firebase Authentication users</h3>
-                <p class="mt-1 text-sm text-slate-500">
-                  {{ users().length | number }} total account(s), including users who cannot receive campaigns.
-                </p>
+                <h3 class="font-bold text-slate-900">Recipients if sent now</h3>
+                <p class="mt-1 text-sm text-slate-500"><strong class="text-slate-900">{{ recipientCount() | number }}</strong> selected from {{ matchingRecipients().length | number }} matching user(s).</p>
               </div>
-              <label class="block sm:w-72">
-                <span class="sr-only">Search users</span>
-                <input type="search" [ngModel]="userSearch()" (ngModelChange)="userSearch.set($event)"
-                  placeholder="Search name or email"
-                  class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
-              </label>
+              <div class="flex gap-2 text-xs font-semibold">
+                <button type="button" (click)="selectAllMatching()" class="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50">Select all</button>
+                <button type="button" (click)="clearAllMatching()" class="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50">Clear</button>
+              </div>
             </div>
 
+            <input type="search" [ngModel]="userSearch()" (ngModelChange)="userSearch.set($event)"
+              placeholder="Search these results by name or email"
+              class="mt-3 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100">
+            <p class="mt-1 text-[11px] text-slate-400">Search only changes what is visible below; use the checkboxes to include or exclude people.</p>
+
             <div class="mt-4 max-h-[280px] overflow-auto rounded-2xl border border-slate-200">
-              <div *ngIf="audienceLoading()" class="p-8 text-center text-sm text-slate-500">Loading Firebase Authentication users…</div>
-              <div *ngIf="!audienceLoading() && filteredUsers().length === 0" class="p-8 text-center text-sm text-slate-500">No users match this search.</div>
-              <div *ngFor="let user of filteredUsers()" class="flex flex-col gap-3 border-b border-slate-100 p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-                <div class="min-w-0">
+              <div *ngIf="audienceLoading()" class="p-8 text-center text-sm text-slate-500">Loading users…</div>
+              <div *ngIf="!audienceLoading() && visibleRecipients().length === 0" class="p-8 text-center text-sm text-slate-500">No eligible users match these filters.</div>
+              <label *ngFor="let user of visibleRecipients()" class="flex cursor-pointer items-center gap-3 border-b border-slate-100 p-3 last:border-b-0 hover:bg-slate-50">
+                <input type="checkbox" [ngModel]="recipientIsSelected(user.id)" (ngModelChange)="toggleRecipient(user.id, $event)"
+                  class="h-4 w-4 shrink-0 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold text-slate-900">{{ user.name || 'Unnamed user' }}</span>
-                    <span *ngIf="user.emailVerified" class="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">Verified</span>
+                    <span *ngIf="!user.isRealUser" class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700">Possible bot</span>
                   </div>
                   <div class="mt-0.5 break-all text-sm text-slate-500">{{ user.email || 'No email address' }}</div>
                 </div>
@@ -181,15 +202,8 @@
                     [ngClass]="user.hasPrompts ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
                     {{ user.hasPrompts ? 'Has posted' : 'No posts' }}
                   </span>
-                  <span class="rounded-full px-2.5 py-1 font-semibold"
-                    [ngClass]="user.eligible ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
-                    {{ user.eligible ? 'Eligible' :
-                       user.eligibility === 'opted-out' ? 'Opted out' :
-                       user.eligibility === 'disabled' ? 'Disabled' :
-                       user.eligibility === 'duplicate-email' ? 'Duplicate email' : 'Missing email' }}
-                  </span>
                 </div>
-              </div>
+              </label>
             </div>
           </div>
         </section>
@@ -219,8 +233,7 @@
           <label class="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <input type="checkbox" [ngModel]="confirmed()" (ngModelChange)="confirmed.set($event)" class="mt-0.5 h-5 w-5 rounded border-amber-400 text-red-600 focus:ring-red-500">
             <span class="text-sm leading-6 text-amber-900">
-              I confirm sending this campaign to <strong>{{ recipientCount() | number }} recipient(s)</strong>
-              in the <strong>{{ selectedAudienceLabel() }}</strong> audience.
+              I confirm sending this campaign to the <strong>{{ recipientCount() | number }} selected recipient(s)</strong> shown above.
             </span>
           </label>
 

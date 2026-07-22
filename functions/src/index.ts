@@ -1188,6 +1188,7 @@ interface BulkEmailDirectoryEntry extends BulkEmailRecipient {
   disabled: boolean;
   optedOut: boolean;
   eligible: boolean;
+  isRealUser: boolean;
   eligibility: "eligible" | "missing-email" | "opted-out" | "disabled" | "duplicate-email";
   createdAt: string;
 }
@@ -1199,14 +1200,6 @@ interface BulkEmailAudienceData {
   missingEmail: number;
   disabled: number;
 }
-
-const bulkEmailAudienceValues = new Set<BulkEmailAudience>([
-  "all",
-  "paying",
-  "free",
-  "no-prompts",
-  "with-prompts"
-]);
 
 const assertBulkEmailAdmin = async (context: functions.https.CallableContext): Promise<string> => {
   const uid = context.auth?.uid;
@@ -1310,6 +1303,7 @@ const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
   let disabled = 0;
 
   authUsers.forEach((authUser) => {
+    const isRealUser = profilesByUid.has(authUser.uid);
     const data = profilesByUid.get(authUser.uid) ?? {};
     const profileEmail = typeof data.email === "string" ? data.email : "";
     const email = authUser.email?.trim() || profileEmail.trim();
@@ -1365,6 +1359,7 @@ const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
       disabled: authUser.disabled,
       optedOut: hasOptedOut,
       eligible,
+      isRealUser,
       eligibility,
       createdAt: authUser.metadata.creationTime || ""
     };
@@ -1411,7 +1406,8 @@ const bulkEmailSummary = (audienceData: BulkEmailAudienceData) => ({
   withPrompts: selectBulkEmailRecipients(audienceData.recipients, "with-prompts").length,
   optedOut: audienceData.optedOut,
   missingEmail: audienceData.missingEmail,
-  disabled: audienceData.disabled
+  disabled: audienceData.disabled,
+  real: audienceData.directory.filter((user) => user.isRealUser).length
 });
 
 const sanitizeBulkEmailHtml = (html: string): string =>
@@ -1447,9 +1443,20 @@ export const getBulkEmailAudienceSummary = functions
     const adminUid = await assertBulkEmailAdmin(context);
     const audienceData = await loadBulkEmailAudienceData();
     const adminUser = await admin.auth().getUser(adminUid);
+    const summary = bulkEmailSummary(audienceData);
+    const realUserIds = audienceData.directory
+      .filter((user) => user.isRealUser)
+      .map((user) => user.id);
+    functions.logger.info("Bulk email management data loaded", {
+      adminUid,
+      authAccounts: audienceData.directory.length,
+      realUsers: realUserIds.length,
+      eligibleRecipients: audienceData.recipients.length
+    });
     return {
-      summary: bulkEmailSummary(audienceData),
+      summary,
       users: audienceData.directory,
+      realUserIds,
       adminEmail: adminUser.email ?? ""
     };
   });
@@ -1464,7 +1471,7 @@ export const sendBulkEmailCampaign = functions
   })
   .https.onCall(async (data, context) => {
     const adminUid = await assertBulkEmailAdmin(context);
-    const audience = typeof data?.audience === "string" ? data.audience as BulkEmailAudience : undefined;
+    const recipientIds = Array.isArray(data?.recipientIds) ? data.recipientIds : [];
     const subject = typeof data?.subject === "string" ? data.subject.trim() : "";
     const rawHtml = typeof data?.html === "string" ? data.html.trim() : "";
     const rawText = typeof data?.text === "string" ? data.text.trim() : "";
@@ -1476,9 +1483,6 @@ export const sendBulkEmailCampaign = functions
       data.expectedRecipientCount :
       Number.NaN;
 
-    if (!audience || !bulkEmailAudienceValues.has(audience)) {
-      throw new functions.https.HttpsError("invalid-argument", "Choose a valid email audience.");
-    }
     if (!subject || subject.length > 150 || /[\r\n]/.test(subject)) {
       throw new functions.https.HttpsError("invalid-argument", "Use a subject between 1 and 150 characters.");
     }
@@ -1494,6 +1498,13 @@ export const sendBulkEmailCampaign = functions
     if (testOnly && !isValidBulkEmailAddress(testEmail)) {
       throw new functions.https.HttpsError("invalid-argument", "Enter a valid test email address.");
     }
+    if (!testOnly && (
+      recipientIds.length === 0 ||
+      recipientIds.length > 5000 ||
+      recipientIds.some((value: unknown) => typeof value !== "string" || !value.trim())
+    )) {
+      throw new functions.https.HttpsError("invalid-argument", "Choose at least one valid recipient.");
+    }
 
     const apiKey = getSendgridApiKey();
     if (!apiKey) {
@@ -1501,7 +1512,18 @@ export const sendBulkEmailCampaign = functions
     }
 
     const audienceData = await loadBulkEmailAudienceData();
-    const selectedRecipients = selectBulkEmailRecipients(audienceData.recipients, audience);
+    const requestedRecipientIds = new Set<string>(
+      recipientIds.map((value: string) => value.trim())
+    );
+    const selectedRecipients = audienceData.recipients.filter(
+      (recipient) => requestedRecipientIds.has(recipient.id)
+    );
+    if (!testOnly && selectedRecipients.length !== requestedRecipientIds.size) {
+      throw new functions.https.HttpsError(
+        "aborted",
+        "One or more selected recipients are no longer eligible. Refresh the list and confirm again."
+      );
+    }
     if (!testOnly && (
       !Number.isInteger(expectedRecipientCount) ||
       expectedRecipientCount !== selectedRecipients.length
@@ -1542,7 +1564,8 @@ export const sendBulkEmailCampaign = functions
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       createdBy: adminUid,
       status: "sending",
-      audience,
+      audience: "manual-selection",
+      recipientFilters: data?.recipientFilters ?? null,
       audienceCount: selectedRecipients.length,
       recipientCount: deliveryRecipients.length,
       subject,
@@ -1589,7 +1612,6 @@ export const sendBulkEmailCampaign = functions
       functions.logger.info("Bulk email campaign sent", {
         campaignId: campaignRef.id,
         adminUid,
-        audience,
         recipientCount: deliveryRecipients.length,
         testOnly
       });

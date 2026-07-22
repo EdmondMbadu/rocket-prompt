@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import { getApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
-export type EmailAudience = 'all' | 'paying' | 'free' | 'no-prompts' | 'with-prompts';
 export type EmailCampaignMode = 'collection' | 'custom';
+export type EmailRecipientScope = 'real' | 'all-auth';
+export type EmailPlanFilter = 'all' | 'paying' | 'free';
+export type EmailActivityFilter = 'all' | 'with-prompts' | 'no-prompts';
 
 export interface EmailAudienceSummary {
   readonly all: number;
@@ -14,6 +16,7 @@ export interface EmailAudienceSummary {
   readonly optedOut: number;
   readonly missingEmail: number;
   readonly disabled: number;
+  readonly real: number;
 }
 
 export interface EmailDirectoryUser {
@@ -27,6 +30,7 @@ export interface EmailDirectoryUser {
   readonly disabled: boolean;
   readonly optedOut: boolean;
   readonly eligible: boolean;
+  readonly isRealUser: boolean;
   readonly eligibility: 'eligible' | 'missing-email' | 'opted-out' | 'disabled' | 'duplicate-email';
   readonly createdAt: string;
 }
@@ -34,11 +38,12 @@ export interface EmailDirectoryUser {
 export interface EmailManagementData {
   readonly summary: EmailAudienceSummary;
   readonly users: EmailDirectoryUser[];
+  readonly realUserIds: readonly string[];
   readonly adminEmail: string;
 }
 
 export interface SendEmailCampaignInput {
-  readonly audience: EmailAudience;
+  readonly recipientIds: readonly string[];
   readonly subject: string;
   readonly html: string;
   readonly text: string;
@@ -47,6 +52,11 @@ export interface SendEmailCampaignInput {
   readonly testOnly: boolean;
   readonly expectedRecipientCount: number;
   readonly testEmail?: string;
+  readonly recipientFilters: {
+    readonly scope: EmailRecipientScope;
+    readonly plan: EmailPlanFilter;
+    readonly activity: EmailActivityFilter;
+  };
 }
 
 export interface SendEmailCampaignResult {

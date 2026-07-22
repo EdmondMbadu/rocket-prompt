@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -7,18 +8,14 @@ import { take } from 'rxjs/operators';
 import type { PromptCollection } from '../../models/collection.model';
 import {
   AdminEmailService,
-  type EmailAudience,
+  type EmailActivityFilter,
   type EmailAudienceSummary,
   type EmailCampaignMode,
-  type EmailDirectoryUser
+  type EmailDirectoryUser,
+  type EmailPlanFilter,
+  type EmailRecipientScope
 } from '../../services/admin-email.service';
 import { CollectionService } from '../../services/collection.service';
-
-interface AudienceOption {
-  readonly id: EmailAudience;
-  readonly label: string;
-  readonly description: string;
-}
 
 @Component({
   selector: 'app-admin-email-management',
@@ -29,27 +26,25 @@ interface AudienceOption {
 export class AdminEmailManagementComponent {
   private readonly emailService = inject(AdminEmailService);
   private readonly collectionService = inject(CollectionService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly router = inject(Router);
-
-  readonly audienceOptions: readonly AudienceOption[] = [
-    { id: 'all', label: 'Everyone', description: 'Every eligible user with an email address' },
-    { id: 'paying', label: 'Paying customers', description: 'Plus, Pro, and Team customers' },
-    { id: 'free', label: 'Free customers', description: 'Users without a paid plan' },
-    { id: 'no-prompts', label: 'No posts yet', description: 'Users who have not posted a prompt' },
-    { id: 'with-prompts', label: 'Has posted', description: 'Users who have posted at least one prompt' }
-  ];
 
   readonly mode = signal<EmailCampaignMode>('collection');
   readonly subject = signal('Discover a new collection on RocketPrompt');
-  readonly message = signal('We found a collection we think you will enjoy. Take a look and find your next great prompt.');
+  readonly message = signal('Take a look at this featured collection and explore the prompts inside.');
+  readonly collections = signal<PromptCollection[]>([]);
+  readonly collectionsLoading = signal(true);
   readonly collectionUrl = signal('');
   readonly loadedCollection = signal<PromptCollection | null>(null);
   readonly canonicalCollectionUrl = signal('');
   readonly customHtml = signal(this.defaultCustomHtml());
-  readonly selectedAudience = signal<EmailAudience>('all');
   readonly audienceSummary = signal<EmailAudienceSummary | null>(null);
   readonly users = signal<EmailDirectoryUser[]>([]);
   readonly userSearch = signal('');
+  readonly recipientScope = signal<EmailRecipientScope>('real');
+  readonly planFilter = signal<EmailPlanFilter>('all');
+  readonly activityFilter = signal<EmailActivityFilter>('all');
+  readonly excludedRecipientIds = signal<Set<string>>(new Set());
   readonly testEmail = signal('');
   readonly audienceLoading = signal(true);
   readonly collectionLoading = signal(false);
@@ -58,38 +53,55 @@ export class AdminEmailManagementComponent {
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
 
-  readonly recipientCount = computed(() => {
-    const summary = this.audienceSummary();
-    if (!summary) {
-      return 0;
-    }
-
-    switch (this.selectedAudience()) {
-      case 'paying': return summary.paying;
-      case 'free': return summary.free;
-      case 'no-prompts': return summary.noPrompts;
-      case 'with-prompts': return summary.withPrompts;
-      default: return summary.all;
-    }
+  readonly matchingRecipients = computed(() => {
+    const scope = this.recipientScope();
+    const plan = this.planFilter();
+    const activity = this.activityFilter();
+    return this.users().filter(user => {
+      if (!user.eligible) return false;
+      if (scope === 'real' && !user.isRealUser) return false;
+      if (plan === 'paying' && !user.isPaying) return false;
+      if (plan === 'free' && user.isPaying) return false;
+      if (activity === 'with-prompts' && !user.hasPrompts) return false;
+      if (activity === 'no-prompts' && user.hasPrompts) return false;
+      return true;
+    });
   });
 
-  readonly selectedAudienceLabel = computed(() =>
-    this.audienceOptions.find(option => option.id === this.selectedAudience())?.label ?? 'Everyone'
-  );
+  readonly selectedRecipients = computed(() => {
+    const excluded = this.excludedRecipientIds();
+    return this.matchingRecipients().filter(user => !excluded.has(user.id));
+  });
 
-  readonly filteredUsers = computed(() => {
+  readonly visibleRecipients = computed(() => {
     const search = this.userSearch().trim().toLowerCase();
     if (!search) {
-      return this.users();
+      return this.matchingRecipients();
     }
-    return this.users().filter(user =>
+    return this.matchingRecipients().filter(user =>
       user.email.toLowerCase().includes(search) ||
       user.name.toLowerCase().includes(search)
     );
   });
 
+  readonly recipientCount = computed(() => this.selectedRecipients().length);
+  readonly realUserCount = computed(() => this.audienceSummary()?.real ?? 0);
+  readonly possibleBotCount = computed(() => this.users().filter(user => user.eligible && !user.isRealUser).length);
+
   constructor() {
     void this.refreshAudienceSummary();
+    this.collectionService.collections$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: collections => {
+          this.collections.set(collections);
+          this.collectionsLoading.set(false);
+          if (!this.loadedCollection() && collections.length > 0) {
+            this.applyCollection(collections[0]);
+          }
+        },
+        error: () => this.collectionsLoading.set(false)
+      });
   }
 
   setMode(mode: EmailCampaignMode): void {
@@ -99,10 +111,44 @@ export class AdminEmailManagementComponent {
     this.confirmed.set(false);
   }
 
-  selectAudience(audience: EmailAudience): void {
-    this.selectedAudience.set(audience);
+  updateRecipientScope(scope: EmailRecipientScope): void {
+    this.recipientScope.set(scope);
+    this.resetManualRecipientSelection();
+  }
+
+  updatePlanFilter(filter: EmailPlanFilter): void {
+    this.planFilter.set(filter);
+    this.resetManualRecipientSelection();
+  }
+
+  updateActivityFilter(filter: EmailActivityFilter): void {
+    this.activityFilter.set(filter);
+    this.resetManualRecipientSelection();
+  }
+
+  toggleRecipient(userId: string, selected: boolean): void {
+    const next = new Set(this.excludedRecipientIds());
+    if (selected) {
+      next.delete(userId);
+    } else {
+      next.add(userId);
+    }
+    this.excludedRecipientIds.set(next);
     this.confirmed.set(false);
-    this.success.set(null);
+  }
+
+  selectAllMatching(): void {
+    this.excludedRecipientIds.set(new Set());
+    this.confirmed.set(false);
+  }
+
+  clearAllMatching(): void {
+    this.excludedRecipientIds.set(new Set(this.matchingRecipients().map(user => user.id)));
+    this.confirmed.set(false);
+  }
+
+  recipientIsSelected(userId: string): boolean {
+    return !this.excludedRecipientIds().has(userId);
   }
 
   async refreshAudienceSummary(): Promise<void> {
@@ -118,7 +164,12 @@ export class AdminEmailManagementComponent {
         throw new Error('The deployed email function is out of date. Deploy the latest functions and refresh this page.');
       }
       this.audienceSummary.set(data.summary);
-      this.users.set(data.users);
+      const realUserIds = new Set(data.realUserIds ?? []);
+      this.users.set(data.users.map(user => ({
+        ...user,
+        isRealUser: realUserIds.has(user.id)
+      })));
+      this.excludedRecipientIds.set(new Set());
       if (!this.testEmail().trim()) {
         this.testEmail.set(data.adminEmail);
       }
@@ -159,10 +210,7 @@ export class AdminEmailManagementComponent {
         ? `https://rocketprompt.io/collection/${encodeURIComponent(collection.customUrl)}`
         : `https://rocketprompt.io/collections/${encodeURIComponent(collection.id)}`;
 
-      this.loadedCollection.set(collection);
-      this.canonicalCollectionUrl.set(publicUrl);
-      this.subject.set(`Discover ${collection.name} on RocketPrompt`);
-      this.confirmed.set(false);
+      this.applyCollection(collection, publicUrl);
     } catch (error) {
       this.error.set(this.errorMessage(error, 'Could not load that collection.'));
     } finally {
@@ -173,6 +221,13 @@ export class AdminEmailManagementComponent {
   loadCollectionIfNeeded(): void {
     if (this.collectionUrl().trim() && !this.collectionLoading()) {
       void this.loadCollection();
+    }
+  }
+
+  selectCollection(collectionId: string): void {
+    const collection = this.collections().find(item => item.id === collectionId);
+    if (collection) {
+      this.applyCollection(collection);
     }
   }
 
@@ -232,7 +287,7 @@ export class AdminEmailManagementComponent {
 
     if (!testOnly) {
       const accepted = window.confirm(
-        `Send this email to ${this.recipientCount().toLocaleString()} recipient(s) in the ${this.selectedAudienceLabel()} audience? This cannot be undone.`
+        `Send this email to the ${this.recipientCount().toLocaleString()} selected recipient(s)? This cannot be undone.`
       );
       if (!accepted) {
         return;
@@ -242,7 +297,7 @@ export class AdminEmailManagementComponent {
     this.sending.set(true);
     try {
       const result = await this.emailService.sendCampaign({
-        audience: this.selectedAudience(),
+        recipientIds: this.selectedRecipients().map(user => user.id),
         subject,
         html,
         text: this.plainTextFromHtml(html),
@@ -250,7 +305,12 @@ export class AdminEmailManagementComponent {
         collectionUrl: this.mode() === 'collection' ? this.canonicalCollectionUrl() : undefined,
         testOnly,
         expectedRecipientCount: this.recipientCount(),
-        testEmail: testOnly ? this.testEmail().trim() : undefined
+        testEmail: testOnly ? this.testEmail().trim() : undefined,
+        recipientFilters: {
+          scope: this.recipientScope(),
+          plan: this.planFilter(),
+          activity: this.activityFilter()
+        }
       });
 
       this.success.set(testOnly
@@ -266,6 +326,23 @@ export class AdminEmailManagementComponent {
     } finally {
       this.sending.set(false);
     }
+  }
+
+  private applyCollection(collection: PromptCollection, suppliedUrl?: string): void {
+    const publicUrl = suppliedUrl || (collection.customUrl
+      ? `https://rocketprompt.io/collection/${encodeURIComponent(collection.customUrl)}`
+      : `https://rocketprompt.io/collections/${encodeURIComponent(collection.id)}`);
+    this.loadedCollection.set(collection);
+    this.canonicalCollectionUrl.set(publicUrl);
+    this.collectionUrl.set(publicUrl);
+    this.subject.set(`Discover ${collection.name} on RocketPrompt`);
+    this.confirmed.set(false);
+  }
+
+  private resetManualRecipientSelection(): void {
+    this.excludedRecipientIds.set(new Set());
+    this.confirmed.set(false);
+    this.success.set(null);
   }
 
   private parseCollectionTarget(rawValue: string): { type: 'custom' | 'id'; value: string } {
@@ -313,8 +390,9 @@ export class AdminEmailManagementComponent {
           <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;letter-spacing:-.03em;">${name}</h1>
           <p style="margin:0 0 12px;color:#475569;font-size:16px;line-height:1.7;">${blurb}</p>
           <p style="margin:0 0 26px;color:#475569;font-size:16px;line-height:1.7;">${message}</p>
-          <a href="${url}" style="display:inline-block;border-radius:12px;background:#dc2626;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;">Explore the collection &rarr;</a>
+          <a href="${url}" style="display:inline-block;border-radius:12px;background:#dc2626;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;">Check out this collection &rarr;</a>
           <div style="margin-top:22px;color:#94a3b8;font-size:12px;">${collection?.promptIds.length ?? 0} prompt${(collection?.promptIds.length ?? 0) === 1 ? '' : 's'} in this collection</div>
+          <p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.6;">Want to explore something else? <a href="https://rocketprompt.io/collections" style="color:#dc2626;font-weight:700;">Browse all RocketPrompt collections here.</a></p>
         </div>
       </div>
       <div style="padding:20px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">RocketPrompt &middot; Put the right prompt within reach.</div>
