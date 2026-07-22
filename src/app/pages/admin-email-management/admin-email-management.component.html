@@ -110,11 +110,17 @@
           </ng-container>
 
           <ng-template #customHtmlEditor>
-            <label class="mt-5 block text-sm font-semibold text-slate-700" for="custom-html">HTML source</label>
-            <textarea id="custom-html" rows="18" spellcheck="false" [ngModel]="customHtml()" (ngModelChange)="customHtml.set($event); confirmed.set(false)"
+            <div class="mt-5 flex items-center justify-between gap-3">
+              <label class="block text-sm font-semibold text-slate-700" for="custom-html">HTML source</label>
+              <button type="button" (click)="resetCustomHtmlToCollectionTemplate()"
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                Reset to collection template
+              </button>
+            </div>
+            <textarea id="custom-html" rows="18" spellcheck="false" [ngModel]="customHtml()" (ngModelChange)="updateCustomHtml($event)"
               class="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-6 text-slate-100 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"></textarea>
             <p class="mt-2 text-xs leading-5 text-slate-500">
-              Use inline CSS for the most consistent appearance across email apps. Add
+              This starts with the current collection email. Edit any part of it, or replace it completely. Add
               <code class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">{{ '{{firstName}}' }}</code>
               anywhere you want the recipient's first name.
             </p>

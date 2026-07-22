@@ -37,7 +37,8 @@ export class AdminEmailManagementComponent {
   readonly collectionUrl = signal('');
   readonly loadedCollection = signal<PromptCollection | null>(null);
   readonly canonicalCollectionUrl = signal('');
-  readonly customHtml = signal(this.defaultCustomHtml());
+  readonly customHtml = signal('');
+  readonly customHtmlTouched = signal(false);
   readonly audienceSummary = signal<EmailAudienceSummary | null>(null);
   readonly users = signal<EmailDirectoryUser[]>([]);
   readonly userSearch = signal('');
@@ -105,10 +106,26 @@ export class AdminEmailManagementComponent {
   }
 
   setMode(mode: EmailCampaignMode): void {
+    if (mode === 'custom' && !this.customHtmlTouched()) {
+      this.customHtml.set(this.collectionEmailHtml());
+    }
     this.mode.set(mode);
     this.error.set(null);
     this.success.set(null);
     this.confirmed.set(false);
+  }
+
+  updateCustomHtml(html: string): void {
+    this.customHtml.set(html);
+    this.customHtmlTouched.set(true);
+    this.confirmed.set(false);
+  }
+
+  resetCustomHtmlToCollectionTemplate(): void {
+    this.customHtml.set(this.collectionEmailHtml());
+    this.customHtmlTouched.set(false);
+    this.confirmed.set(false);
+    this.success.set(null);
   }
 
   updateRecipientScope(scope: EmailRecipientScope): void {
@@ -336,6 +353,9 @@ export class AdminEmailManagementComponent {
     this.canonicalCollectionUrl.set(publicUrl);
     this.collectionUrl.set(publicUrl);
     this.subject.set(`Discover ${collection.name} on RocketPrompt`);
+    if (!this.customHtmlTouched()) {
+      this.customHtml.set(this.collectionEmailHtml());
+    }
     this.confirmed.set(false);
   }
 
@@ -399,21 +419,6 @@ export class AdminEmailManagementComponent {
     </div>
   </div>
 </body></html>`;
-  }
-
-  private defaultCustomHtml(): string {
-    return `<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RocketPrompt email</title></head>
-  <body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
-    <div style="max-width:640px;margin:0 auto;padding:40px 20px;">
-      <p style="font-size:16px;line-height:1.7;color:#334155;">Hello {{firstName}},</p>
-      <h1 style="font-size:30px;">Your RocketPrompt update</h1>
-      <p style="font-size:16px;line-height:1.7;color:#475569;">Replace this content with your own HTML email.</p>
-      <a href="https://rocketprompt.io" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:700;">Visit RocketPrompt</a>
-    </div>
-  </body>
-</html>`;
   }
 
   private plainTextFromHtml(html: string): string {
