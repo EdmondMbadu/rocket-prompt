@@ -5,6 +5,22 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environments';
 import type { CreatePromptInput, Prompt, UpdatePromptInput } from '../models/prompt.model';
 
+interface FirestoreRestValue {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  timestampValue?: string;
+  nullValue?: null;
+  arrayValue?: { values?: FirestoreRestValue[] };
+  mapValue?: { fields?: Record<string, FirestoreRestValue> };
+}
+
+interface FirestoreRestDocument {
+  name: string;
+  fields?: Record<string, FirestoreRestValue>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -13,6 +29,7 @@ export class PromptService {
 
   private firestore: Firestore | null = null;
   private firestoreModule?: typeof import('firebase/firestore');
+  private readonly promptNavigationCache = new Map<string, Prompt>();
 
   prompts$(): Observable<Prompt[]> {
     return new Observable<Prompt[]>((subscriber) => {
@@ -745,10 +762,14 @@ export class PromptService {
 
   private mapPrompt(
     doc: QueryDocumentSnapshot,
-    firestoreModule: typeof import('firebase/firestore')
+    _firestoreModule: typeof import('firebase/firestore')
   ): Prompt {
     const data = doc.data() as Record<string, unknown>;
 
+    return this.cachePromptForNavigation(this.mapPromptData(doc.id, data));
+  }
+
+  private mapPromptData(id: string, data: Record<string, unknown>): Prompt {
     const authorIdValue = data['authorId'];
     const titleValue = data['title'];
     const contentValue = data['content'];
@@ -796,7 +817,7 @@ export class PromptService {
       : launchGpt + launchGemini + launchClaude + launchGrok + launchRocket + copied;
 
     return {
-      id: doc.id,
+      id,
       authorId: typeof authorIdValue === 'string' ? authorIdValue : '',
       title: typeof titleValue === 'string' ? titleValue : '',
       content: typeof contentValue === 'string' ? contentValue : '',
@@ -814,8 +835,8 @@ export class PromptService {
       totalLaunch,
       isInvisible: typeof isInvisibleValue === 'boolean' ? isInvisibleValue : false,
       isPrivate: typeof isPrivateValue === 'boolean' ? isPrivateValue : false,
-      createdAt: this.toDate(createdAtValue, firestoreModule),
-      updatedAt: this.toDate(updatedAtValue, firestoreModule),
+      createdAt: this.toDate(createdAtValue),
+      updatedAt: this.toDate(updatedAtValue),
       forkedFromPromptId: typeof forkedFromPromptIdValue === 'string' ? forkedFromPromptIdValue : undefined,
       forkedFromAuthorId: typeof forkedFromAuthorIdValue === 'string' ? forkedFromAuthorIdValue : undefined,
       forkedFromTitle: typeof forkedFromTitleValue === 'string' ? forkedFromTitleValue : undefined,
@@ -867,17 +888,19 @@ export class PromptService {
     await firestoreModule.deleteDoc(docRef);
   }
 
-  private toDate(
-    value: unknown,
-    firestoreModule: typeof import('firebase/firestore')
-  ): Date | undefined {
-    if (value instanceof firestoreModule.Timestamp) {
-      return value.toDate();
+  private toDate(value: unknown): Date | undefined {
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? undefined : value;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? undefined : parsed;
     }
 
     if (value && typeof value === 'object' && 'toDate' in (value as { toDate?: () => Date })) {
       const possibleDate = (value as { toDate?: () => Date }).toDate;
-      return typeof possibleDate === 'function' ? possibleDate() : undefined;
+      return typeof possibleDate === 'function' ? possibleDate.call(value) : undefined;
     }
 
     return undefined;
@@ -1144,6 +1167,19 @@ export class PromptService {
       return undefined;
     }
 
+    const cached = this.takeCachedPromptForNavigation(trimmed);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      return await this.getPromptByCustomUrlFromRest(trimmed);
+    } catch (error) {
+      // Preserve the SDK query as a resilience fallback. The REST path lets public
+      // prompt pages render without first downloading the full Firestore SDK.
+      console.warn('Fast prompt lookup failed; falling back to Firestore SDK.', error);
+    }
+
     const { firestore, firestoreModule } = await this.getFirestoreContext();
 
     // Query for prompt with this custom URL
@@ -1168,6 +1204,117 @@ export class PromptService {
     return prompt;
   }
 
+  private async getPromptByCustomUrlFromRest(customUrl: string): Promise<Prompt | undefined> {
+    const projectId = environment.firebase.projectId;
+    const apiKey = environment.firebase.apiKey;
+    const endpoint =
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
+      `/databases/(default)/documents:runQuery?key=${encodeURIComponent(apiKey)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'prompts' }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: 'customUrl' },
+                op: 'EQUAL',
+                value: { stringValue: customUrl }
+              }
+            },
+            limit: 1
+          }
+        }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Prompt query returned HTTP ${response.status}.`);
+      }
+
+      const results = await response.json() as Array<{ document?: FirestoreRestDocument }>;
+      const document = Array.isArray(results)
+        ? results.find(result => result.document)?.document
+        : undefined;
+
+      if (!document) {
+        return undefined;
+      }
+
+      const prompt = this.mapRestPrompt(document);
+      return prompt.isInvisible ? undefined : prompt;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private mapRestPrompt(document: FirestoreRestDocument): Prompt {
+    const data = Object.fromEntries(
+      Object.entries(document.fields ?? {}).map(([key, value]) => [
+        key,
+        this.decodeFirestoreRestValue(value)
+      ])
+    );
+    const id = decodeURIComponent(document.name.split('/').pop() ?? '');
+
+    return this.cachePromptForNavigation(this.mapPromptData(id, data));
+  }
+
+  private cachePromptForNavigation(prompt: Prompt): Prompt {
+    if (prompt.isInvisible) {
+      return prompt;
+    }
+
+    this.promptNavigationCache.set(prompt.id, prompt);
+    this.promptNavigationCache.set(prompt.id.slice(0, 8), prompt);
+    if (prompt.customUrl) {
+      this.promptNavigationCache.set(prompt.customUrl, prompt);
+    }
+    return prompt;
+  }
+
+  private takeCachedPromptForNavigation(identifier: string): Prompt | undefined {
+    const prompt = this.promptNavigationCache.get(identifier);
+    if (!prompt) {
+      return undefined;
+    }
+
+    this.promptNavigationCache.delete(prompt.id);
+    this.promptNavigationCache.delete(prompt.id.slice(0, 8));
+    if (prompt.customUrl) {
+      this.promptNavigationCache.delete(prompt.customUrl);
+    }
+    return prompt;
+  }
+
+  private decodeFirestoreRestValue(value: FirestoreRestValue): unknown {
+    if (typeof value.stringValue === 'string') return value.stringValue;
+    if (typeof value.integerValue === 'string') return Number(value.integerValue);
+    if (typeof value.doubleValue === 'number') return value.doubleValue;
+    if (typeof value.booleanValue === 'boolean') return value.booleanValue;
+    if (typeof value.timestampValue === 'string') return new Date(value.timestampValue);
+    if ('nullValue' in value) return null;
+    if (value.arrayValue) {
+      return (value.arrayValue.values ?? []).map(item => this.decodeFirestoreRestValue(item));
+    }
+    if (value.mapValue) {
+      return Object.fromEntries(
+        Object.entries(value.mapValue.fields ?? {}).map(([key, item]) => [
+          key,
+          this.decodeFirestoreRestValue(item)
+        ])
+      );
+    }
+    return undefined;
+  }
+
   /**
    * Get a prompt by its ID. Supports full ID or short prefix match.
    * @param id The prompt ID or short prefix
@@ -1177,6 +1324,19 @@ export class PromptService {
     const trimmed = id?.trim();
     if (!trimmed) {
       return undefined;
+    }
+
+    const cached = this.takeCachedPromptForNavigation(trimmed);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      return trimmed.length < 20
+        ? await this.getPromptByIdPrefixFromRest(trimmed)
+        : await this.getPromptByIdFromRest(trimmed);
+    } catch (error) {
+      console.warn('Fast prompt ID lookup failed; falling back to Firestore SDK.', error);
     }
 
     const { firestore, firestoreModule } = await this.getFirestoreContext();
@@ -1209,6 +1369,102 @@ export class PromptService {
       .find(p => (p.id === trimmed || p.id.startsWith(trimmed)) && !p.isInvisible);
 
     return found;
+  }
+
+  private async getPromptByIdFromRest(id: string): Promise<Prompt | undefined> {
+    const projectId = environment.firebase.projectId;
+    const apiKey = environment.firebase.apiKey;
+    const endpoint =
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
+      `/databases/(default)/documents/prompts/${encodeURIComponent(id)}` +
+      `?key=${encodeURIComponent(apiKey)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    try {
+      const response = await fetch(endpoint, { signal: controller.signal });
+
+      if (response.status === 404) {
+        return undefined;
+      }
+      if (!response.ok) {
+        throw new Error(`Prompt lookup returned HTTP ${response.status}.`);
+      }
+
+      const document = await response.json() as FirestoreRestDocument;
+      const prompt = this.mapRestPrompt(document);
+      return prompt.isInvisible ? undefined : prompt;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async getPromptByIdPrefixFromRest(idPrefix: string): Promise<Prompt | undefined> {
+    const projectId = environment.firebase.projectId;
+    const apiKey = environment.firebase.apiKey;
+    const endpoint =
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
+      `/databases/(default)/documents:runQuery?key=${encodeURIComponent(apiKey)}`;
+    const documentPrefix =
+      `projects/${projectId}/databases/(default)/documents/prompts/${idPrefix}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'prompts' }],
+            where: {
+              compositeFilter: {
+                op: 'AND',
+                filters: [
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: '__name__' },
+                      op: 'GREATER_THAN_OR_EQUAL',
+                      value: { referenceValue: documentPrefix }
+                    }
+                  },
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: '__name__' },
+                      op: 'LESS_THAN',
+                      value: { referenceValue: `${documentPrefix}\uf8ff` }
+                    }
+                  }
+                ]
+              }
+            },
+            orderBy: [{ field: { fieldPath: '__name__' }, direction: 'ASCENDING' }],
+            limit: 1
+          }
+        }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Prompt prefix query returned HTTP ${response.status}.`);
+      }
+
+      const results = await response.json() as Array<{ document?: FirestoreRestDocument }>;
+      const document = Array.isArray(results)
+        ? results.find(result => result.document)?.document
+        : undefined;
+
+      if (!document) {
+        return undefined;
+      }
+
+      const prompt = this.mapRestPrompt(document);
+      return prompt.isInvisible ? undefined : prompt;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**

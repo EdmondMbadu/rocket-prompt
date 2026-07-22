@@ -107,16 +107,18 @@ export class PromptPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(paramMap => {
         // Support both 'id' (for /prompt/:id) and 'customUrl' (for /:customUrl) route parameters
-        const idParam = String(paramMap.get('id') ?? paramMap.get('customUrl') ?? '');
+        const idRouteParam = paramMap.get('id');
+        const customUrlRouteParam = paramMap.get('customUrl');
+        const identifier = String(idRouteParam ?? customUrlRouteParam ?? '');
 
-        if (!idParam) {
+        if (!identifier) {
           this.isLoading.set(false);
           this.loadError.set('Invalid prompt URL.');
           return;
         }
 
         // Load the prompt directly - this works for both authenticated and unauthenticated users
-        void this.loadPrompt(idParam);
+        void this.loadPrompt(identifier, idRouteParam !== null ? 'id' : 'customUrl');
       });
 
     // re-evaluate liked state when auth changes (login/logout)
@@ -512,19 +514,23 @@ export class PromptPageComponent {
     }
   }
 
-  private async loadPrompt(identifier: string) {
+  private async loadPrompt(identifier: string, lookupType: 'id' | 'customUrl') {
     // Reset state
     this.isLoading.set(true);
     this.loadError.set(null);
     this.prompt.set(undefined);
 
     try {
-      // First, try to find by customUrl (most efficient for custom URLs)
-      let found = await this.promptService.getPromptByCustomUrl(identifier);
+      // Use the route shape to avoid a guaranteed failed request before the real lookup.
+      let found = lookupType === 'customUrl'
+        ? await this.promptService.getPromptByCustomUrl(identifier)
+        : await this.promptService.getPromptById(identifier);
 
-      // If not found by customUrl, try by ID (supports full ID or short prefix)
+      // Preserve support for legacy links that put the other identifier type in this route.
       if (!found) {
-        found = await this.promptService.getPromptById(identifier);
+        found = lookupType === 'customUrl'
+          ? await this.promptService.getPromptById(identifier)
+          : await this.promptService.getPromptByCustomUrl(identifier);
       }
 
       if (!found) {
