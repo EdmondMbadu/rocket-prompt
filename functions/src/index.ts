@@ -1171,3 +1171,372 @@ export const sendVerificationEmail = functions
       );
     }
   });
+
+type BulkEmailAudience = "all" | "paying" | "free" | "no-prompts" | "with-prompts";
+
+interface BulkEmailRecipient {
+  id: string;
+  email: string;
+  name?: string;
+  isPaying: boolean;
+  hasPrompts: boolean;
+}
+
+interface BulkEmailAudienceData {
+  recipients: BulkEmailRecipient[];
+  optedOut: number;
+  missingEmail: number;
+}
+
+const bulkEmailAudienceValues = new Set<BulkEmailAudience>([
+  "all",
+  "paying",
+  "free",
+  "no-prompts",
+  "with-prompts"
+]);
+
+const assertBulkEmailAdmin = async (context: functions.https.CallableContext): Promise<string> => {
+  const uid = context.auth?.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "You must be signed in to manage email campaigns."
+    );
+  }
+
+  const profile = await admin.firestore().collection("users").doc(uid).get();
+  const data = profile.data();
+  if (!profile.exists || (data?.role !== "admin" && data?.admin !== true)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only administrators can manage email campaigns."
+    );
+  }
+
+  return uid;
+};
+
+const isValidBulkEmailAddress = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.trim().length <= 320 &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+const bulkEmailSubscriptionIsActive = (data: Record<string, unknown>): boolean => {
+  const status = typeof data.subscriptionStatus === "string" ?
+    data.subscriptionStatus.toLowerCase() :
+    "";
+  if (status === "plus") {
+    return true;
+  }
+  if (status !== "pro" && status !== "team") {
+    return false;
+  }
+
+  const expiration = data.subscriptionExpiresAt as
+    { toMillis?: () => number; seconds?: number } | Date | string | undefined;
+  if (!expiration) {
+    return status === "pro";
+  }
+
+  let expirationMillis = Number.NaN;
+  if (expiration instanceof Date) {
+    expirationMillis = expiration.getTime();
+  } else if (typeof expiration === "string") {
+    expirationMillis = new Date(expiration).getTime();
+  } else if (typeof expiration.toMillis === "function") {
+    expirationMillis = expiration.toMillis();
+  } else if (typeof expiration.seconds === "number") {
+    expirationMillis = expiration.seconds * 1000;
+  }
+
+  return Number.isFinite(expirationMillis) && expirationMillis > Date.now();
+};
+
+const loadBulkEmailAudienceData = async (): Promise<BulkEmailAudienceData> => {
+  const firestore = admin.firestore();
+  const [usersSnapshot, promptsSnapshot] = await Promise.all([
+    firestore.collection("users").get(),
+    firestore.collection("prompts").select("authorId").get()
+  ]);
+
+  const promptAuthorIds = new Set<string>();
+  promptsSnapshot.docs.forEach((promptDocument) => {
+    const authorId = promptDocument.get("authorId");
+    if (typeof authorId === "string" && authorId.trim()) {
+      promptAuthorIds.add(authorId.trim());
+    }
+  });
+
+  const recipients: BulkEmailRecipient[] = [];
+  const seenEmails = new Set<string>();
+  let optedOut = 0;
+  let missingEmail = 0;
+
+  usersSnapshot.docs.forEach((userDocument) => {
+    const data = userDocument.data();
+    const email = data.email;
+    if (!isValidBulkEmailAddress(email)) {
+      missingEmail += 1;
+      return;
+    }
+
+    const preferences = data.preferences as Record<string, unknown> | undefined;
+    const hasOptedOut =
+      data.emailMarketingOptOut === true ||
+      data.marketingEmailsOptOut === true ||
+      preferences?.marketingEmails === false;
+    if (hasOptedOut) {
+      optedOut += 1;
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (seenEmails.has(normalizedEmail)) {
+      return;
+    }
+    seenEmails.add(normalizedEmail);
+
+    const userId = typeof data.userId === "string" && data.userId.trim() ?
+      data.userId.trim() :
+      userDocument.id;
+    const firstName = typeof data.firstName === "string" ? data.firstName.trim() : "";
+    const lastName = typeof data.lastName === "string" ? data.lastName.trim() : "";
+    const name = `${firstName} ${lastName}`.trim();
+
+    recipients.push({
+      id: userDocument.id,
+      email: email.trim(),
+      ...(name ? { name } : {}),
+      isPaying: bulkEmailSubscriptionIsActive(data),
+      hasPrompts: promptAuthorIds.has(userDocument.id) || promptAuthorIds.has(userId)
+    });
+  });
+
+  return { recipients, optedOut, missingEmail };
+};
+
+const selectBulkEmailRecipients = (
+  recipients: BulkEmailRecipient[],
+  audience: BulkEmailAudience
+): BulkEmailRecipient[] => {
+  switch (audience) {
+  case "paying":
+    return recipients.filter((recipient) => recipient.isPaying);
+  case "free":
+    return recipients.filter((recipient) => !recipient.isPaying);
+  case "no-prompts":
+    return recipients.filter((recipient) => !recipient.hasPrompts);
+  case "with-prompts":
+    return recipients.filter((recipient) => recipient.hasPrompts);
+  default:
+    return recipients;
+  }
+};
+
+const bulkEmailSummary = (audienceData: BulkEmailAudienceData) => ({
+  all: audienceData.recipients.length,
+  paying: selectBulkEmailRecipients(audienceData.recipients, "paying").length,
+  free: selectBulkEmailRecipients(audienceData.recipients, "free").length,
+  noPrompts: selectBulkEmailRecipients(audienceData.recipients, "no-prompts").length,
+  withPrompts: selectBulkEmailRecipients(audienceData.recipients, "with-prompts").length,
+  optedOut: audienceData.optedOut,
+  missingEmail: audienceData.missingEmail
+});
+
+const sanitizeBulkEmailHtml = (html: string): string =>
+  html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<object[\s\S]*?<\/object>/gi, "")
+    .replace(/<form[\s\S]*?<\/form>/gi, "")
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, "");
+
+const addBulkEmailFooter = (html: string): string => {
+  const footer = `
+    <div style="max-width:640px;margin:20px auto;padding:0 20px;text-align:center;color:#94a3b8;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;">
+      You are receiving this email because you have a RocketPrompt account.<br>
+      To stop receiving campaign emails, email
+      <a href="mailto:missioncontrol@rocketgoals.com?subject=Unsubscribe%20from%20RocketPrompt%20emails" style="color:#64748b;">missioncontrol@rocketgoals.com</a>.
+    </div>`;
+  return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${footer}</body>`) : `${html}${footer}`;
+};
+
+const chunksOf = <T>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+};
+
+export const getBulkEmailAudienceSummary = functions
+  .region("us-central1")
+  .runWith({ maxInstances: 3, timeoutSeconds: 120, memory: "256MB" })
+  .https.onCall(async (_data, context) => {
+    await assertBulkEmailAdmin(context);
+    const audienceData = await loadBulkEmailAudienceData();
+    return bulkEmailSummary(audienceData);
+  });
+
+export const sendBulkEmailCampaign = functions
+  .region("us-central1")
+  .runWith({
+    secrets: ["SENDGRID_API_KEY"],
+    maxInstances: 1,
+    timeoutSeconds: 540,
+    memory: "512MB"
+  })
+  .https.onCall(async (data, context) => {
+    const adminUid = await assertBulkEmailAdmin(context);
+    const audience = typeof data?.audience === "string" ? data.audience as BulkEmailAudience : undefined;
+    const subject = typeof data?.subject === "string" ? data.subject.trim() : "";
+    const rawHtml = typeof data?.html === "string" ? data.html.trim() : "";
+    const rawText = typeof data?.text === "string" ? data.text.trim() : "";
+    const mode = data?.mode === "collection" || data?.mode === "custom" ? data.mode : undefined;
+    const collectionUrl = typeof data?.collectionUrl === "string" ? data.collectionUrl.trim() : "";
+    const testOnly = data?.testOnly === true;
+    const expectedRecipientCount = typeof data?.expectedRecipientCount === "number" ?
+      data.expectedRecipientCount :
+      Number.NaN;
+
+    if (!audience || !bulkEmailAudienceValues.has(audience)) {
+      throw new functions.https.HttpsError("invalid-argument", "Choose a valid email audience.");
+    }
+    if (!subject || subject.length > 150 || /[\r\n]/.test(subject)) {
+      throw new functions.https.HttpsError("invalid-argument", "Use a subject between 1 and 150 characters.");
+    }
+    if (!rawHtml || rawHtml.length > 200000) {
+      throw new functions.https.HttpsError("invalid-argument", "Email HTML must be between 1 and 200,000 characters.");
+    }
+    if (!mode) {
+      throw new functions.https.HttpsError("invalid-argument", "Choose a valid campaign mode.");
+    }
+    if (collectionUrl.length > 2048) {
+      throw new functions.https.HttpsError("invalid-argument", "The collection URL is too long.");
+    }
+
+    const apiKey = getSendgridApiKey();
+    if (!apiKey) {
+      throw new functions.https.HttpsError("failed-precondition", "SendGrid is not configured.");
+    }
+
+    const audienceData = await loadBulkEmailAudienceData();
+    const selectedRecipients = selectBulkEmailRecipients(audienceData.recipients, audience);
+    if (!testOnly && (
+      !Number.isInteger(expectedRecipientCount) ||
+      expectedRecipientCount !== selectedRecipients.length
+    )) {
+      throw new functions.https.HttpsError(
+        "aborted",
+        `The audience changed and now contains ${selectedRecipients.length} recipients. Refresh the counts and confirm again.`
+      );
+    }
+    let deliveryRecipients = selectedRecipients;
+
+    if (testOnly) {
+      const adminUser = await admin.auth().getUser(adminUid);
+      if (!adminUser.email || !isValidBulkEmailAddress(adminUser.email)) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Your signed-in admin account does not have a valid email address."
+        );
+      }
+      deliveryRecipients = [{
+        id: adminUid,
+        email: adminUser.email,
+        ...(adminUser.displayName ? { name: adminUser.displayName } : {}),
+        isPaying: false,
+        hasPrompts: false
+      }];
+    }
+
+    if (deliveryRecipients.length === 0) {
+      throw new functions.https.HttpsError("failed-precondition", "This audience has no eligible recipients.");
+    }
+
+    const html = addBulkEmailFooter(sanitizeBulkEmailHtml(rawHtml));
+    const text = `${rawText || "Open this email in an HTML-capable email app."}\n\nTo stop receiving campaign emails, contact missioncontrol@rocketgoals.com.`;
+    const campaignRef = admin.firestore().collection("emailCampaigns").doc();
+    await campaignRef.set({
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: adminUid,
+      status: "sending",
+      audience,
+      audienceCount: selectedRecipients.length,
+      recipientCount: deliveryRecipients.length,
+      subject,
+      mode,
+      testOnly,
+      ...(collectionUrl ? { collectionUrl } : {})
+    });
+
+    let deliveredCount = 0;
+    try {
+      for (const recipientChunk of chunksOf(deliveryRecipients, 500)) {
+        await sendSendgridEmail(apiKey, {
+          personalizations: recipientChunk.map((recipient) => ({
+            to: [{
+              email: recipient.email,
+              ...(recipient.name ? { name: recipient.name } : {})
+            }],
+            subject
+          })),
+          from: {
+            email: "missioncontrol@rocketgoals.com",
+            name: "RocketPrompt Mission Control"
+          },
+          reply_to: {
+            email: "missioncontrol@rocketgoals.com",
+            name: "RocketPrompt Mission Control"
+          },
+          content: [
+            { type: "text/plain", value: text },
+            { type: "text/html", value: html }
+          ]
+        });
+        deliveredCount += recipientChunk.length;
+        await campaignRef.update({ deliveredCount });
+      }
+
+      await campaignRef.update({
+        status: testOnly ? "test-sent" : "sent",
+        sentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      functions.logger.info("Bulk email campaign sent", {
+        campaignId: campaignRef.id,
+        adminUid,
+        audience,
+        recipientCount: deliveryRecipients.length,
+        testOnly
+      });
+
+      return {
+        success: true,
+        recipientCount: deliveryRecipients.length,
+        audienceCount: selectedRecipients.length,
+        testOnly,
+        campaignId: campaignRef.id
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown SendGrid error";
+      await campaignRef.update({
+        status: deliveredCount > 0 ? "partially-failed" : "failed",
+        deliveredCount,
+        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+        error: message
+      });
+      functions.logger.error("Bulk email campaign failed", {
+        campaignId: campaignRef.id,
+        adminUid,
+        deliveredCount,
+        error
+      });
+      throw new functions.https.HttpsError(
+        "internal",
+        deliveredCount > 0 ?
+          `Delivery stopped after ${deliveredCount} recipient(s). Do not retry until you review the campaign log.` :
+          "The campaign could not be delivered."
+      );
+    }
+  });

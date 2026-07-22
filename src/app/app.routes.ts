@@ -86,6 +86,14 @@ export const routes: Routes = [
       import('./pages/prompt-launch/prompt-launch.component').then(m => m.PromptLaunchComponent)
   },
   {
+    path: 'admin/email-management',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./pages/admin-email-management/admin-email-management.component').then(
+        m => m.AdminEmailManagementComponent
+      )
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () =>
