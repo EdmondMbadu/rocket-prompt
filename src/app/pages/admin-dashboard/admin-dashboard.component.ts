@@ -419,8 +419,21 @@ export class AdminDashboardComponent {
 
 
 
+    readonly usersByNewest = computed(() =>
+        [...this.users()].sort((a, b) => {
+            const joinedDifference = this.getDateTimestamp(b.createdAt) - this.getDateTimestamp(a.createdAt);
+
+            if (joinedDifference !== 0) {
+                return joinedDifference;
+            }
+
+            // Keep the order deterministic when join dates are equal or unavailable.
+            return (a.email || '').localeCompare(b.email || '');
+        })
+    );
+
     readonly filteredUsers = computed(() => {
-        const users = this.users();
+        const users = this.usersByNewest();
         const term = this.searchTerm().trim().toLowerCase();
 
         if (!term) {
@@ -748,7 +761,7 @@ export class AdminDashboardComponent {
             'Subscription Expires',
             'User ID'
         ];
-        const rows = this.users().map(user => [
+        const rows = this.usersByNewest().map(user => [
             user.firstName,
             user.lastName,
             user.email,
@@ -786,6 +799,36 @@ export class AdminDashboardComponent {
         }
 
         return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    private getDateTimestamp(date: unknown): number {
+        if (date instanceof Date) {
+            return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+        }
+
+        if (date && typeof date === 'object') {
+            if ('toMillis' in date && typeof (date as { toMillis: () => number }).toMillis === 'function') {
+                const timestamp = (date as { toMillis: () => number }).toMillis();
+                return Number.isFinite(timestamp) ? timestamp : 0;
+            }
+
+            if ('toDate' in date && typeof (date as { toDate: () => Date }).toDate === 'function') {
+                const convertedDate = (date as { toDate: () => Date }).toDate();
+                return Number.isNaN(convertedDate.getTime()) ? 0 : convertedDate.getTime();
+            }
+
+            if ('seconds' in date && typeof (date as { seconds: unknown }).seconds === 'number') {
+                const timestamp = (date as { seconds: number }).seconds * 1000;
+                return Number.isFinite(timestamp) ? timestamp : 0;
+            }
+        }
+
+        if (typeof date === 'string' || typeof date === 'number') {
+            const timestamp = new Date(date).getTime();
+            return Number.isNaN(timestamp) ? 0 : timestamp;
+        }
+
+        return 0;
     }
 
     formatDate(date: unknown): string {
