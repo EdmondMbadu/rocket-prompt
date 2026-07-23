@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isAuthenticated()
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true
+        );
+    }
+
     function isGrowthLeadShareUpdate() {
       return resource.data.leadSource == 'growth-lead'
         && request.resource.data.leadSource == 'growth-lead'
@@ -120,9 +128,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /{document=**} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+    // Reusable campaign HTML is private to administrators.
+    match /emailTemplates/{templateId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{collectionId}/{document=**} {
+      allow read: if collectionId != 'emailTemplates';
+      allow write: if collectionId != 'emailTemplates' && isAuthenticated();
     }
   }
 }

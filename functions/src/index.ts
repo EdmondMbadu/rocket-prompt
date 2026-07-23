@@ -1201,6 +1201,17 @@ interface BulkEmailAudienceData {
   disabled: number;
 }
 
+interface BulkEmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  html: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+}
+
 const assertBulkEmailAdmin = async (context: functions.https.CallableContext): Promise<string> => {
   const uid = context.auth?.uid;
   if (!uid) {
@@ -1435,6 +1446,180 @@ const chunksOf = <T>(items: T[], size: number): T[][] => {
   }
   return chunks;
 };
+
+const bulkEmailTemplateTimestamp = (value: unknown): string => {
+  if (value instanceof admin.firestore.Timestamp) {
+    return value.toDate().toISOString();
+  }
+  if (value && typeof value === "object" && "toDate" in value) {
+    const toDate = (value as { toDate?: unknown }).toDate;
+    if (typeof toDate === "function") {
+      const date = toDate.call(value) as Date;
+      return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+    }
+  }
+  return "";
+};
+
+const bulkEmailTemplateFromDocument = (
+  document: admin.firestore.DocumentSnapshot
+): BulkEmailTemplate => {
+  const data = document.data() ?? {};
+  const updatedAt = bulkEmailTemplateTimestamp(data.updatedAt);
+  return {
+    id: document.id,
+    name: typeof data.name === "string" ? data.name : "",
+    subject: typeof data.subject === "string" ? data.subject : "",
+    html: typeof data.html === "string" ? data.html : "",
+    createdAt: bulkEmailTemplateTimestamp(data.createdAt) || updatedAt,
+    updatedAt,
+    createdBy: typeof data.createdBy === "string" ? data.createdBy : "",
+    updatedBy: typeof data.updatedBy === "string" ? data.updatedBy : ""
+  };
+};
+
+const validBulkEmailTemplateId = (value: string): boolean =>
+  /^[A-Za-z0-9_-]{1,128}$/.test(value);
+
+export const getBulkEmailTemplates = functions
+  .region("us-central1")
+  .runWith({ maxInstances: 3, timeoutSeconds: 60, memory: "256MB" })
+  .https.onCall(async (_data, context) => {
+    const adminUid = await assertBulkEmailAdmin(context);
+    const snapshot = await admin.firestore()
+      .collection("emailTemplates")
+      .orderBy("updatedAt", "desc")
+      .limit(100)
+      .get();
+    const templates = snapshot.docs.map(bulkEmailTemplateFromDocument);
+    functions.logger.info("Bulk email templates loaded", {
+      adminUid,
+      templateCount: templates.length
+    });
+    return { templates };
+  });
+
+export const saveBulkEmailTemplate = functions
+  .region("us-central1")
+  .runWith({ maxInstances: 3, timeoutSeconds: 60, memory: "256MB" })
+  .https.onCall(async (data, context) => {
+    const adminUid = await assertBulkEmailAdmin(context);
+    const templateId = typeof data?.templateId === "string" ?
+      data.templateId.trim() :
+      "";
+    const name = typeof data?.name === "string" ? data.name.trim() : "";
+    const subject = typeof data?.subject === "string" ? data.subject.trim() : "";
+    const html = typeof data?.html === "string" ? data.html.trim() : "";
+
+    if (templateId && !validBulkEmailTemplateId(templateId)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Choose a valid saved email template."
+      );
+    }
+    if (!name || name.length > 80) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Use a template name between 1 and 80 characters."
+      );
+    }
+    if (!subject || subject.length > 150 || /[\r\n]/.test(subject)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Use a subject between 1 and 150 characters."
+      );
+    }
+    if (!html || html.length > 200000) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Email HTML must be between 1 and 200,000 characters."
+      );
+    }
+
+    const templates = admin.firestore().collection("emailTemplates");
+    const templateRef = templateId ? templates.doc(templateId) : templates.doc();
+    const existing = templateId ? await templateRef.get() : null;
+    if (templateId && !existing?.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "That saved email template no longer exists."
+      );
+    }
+
+    const timestamp = admin.firestore.FieldValue.serverTimestamp();
+    if (existing) {
+      await templateRef.update({
+        name,
+        subject,
+        html,
+        updatedAt: timestamp,
+        updatedBy: adminUid
+      });
+    } else {
+      await templateRef.set({
+        name,
+        subject,
+        html,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        createdBy: adminUid,
+        updatedBy: adminUid
+      });
+    }
+
+    const savedAt = new Date().toISOString();
+    const existingTemplate = existing?.exists ?
+      bulkEmailTemplateFromDocument(existing) :
+      null;
+    const template: BulkEmailTemplate = {
+      id: templateRef.id,
+      name,
+      subject,
+      html,
+      createdAt: existingTemplate?.createdAt || savedAt,
+      updatedAt: savedAt,
+      createdBy: existingTemplate?.createdBy || adminUid,
+      updatedBy: adminUid
+    };
+    functions.logger.info("Bulk email template saved", {
+      adminUid,
+      templateId: template.id,
+      updated: Boolean(existing)
+    });
+    return { template };
+  });
+
+export const deleteBulkEmailTemplate = functions
+  .region("us-central1")
+  .runWith({ maxInstances: 3, timeoutSeconds: 60, memory: "256MB" })
+  .https.onCall(async (data, context) => {
+    const adminUid = await assertBulkEmailAdmin(context);
+    const templateId = typeof data?.templateId === "string" ?
+      data.templateId.trim() :
+      "";
+    if (!validBulkEmailTemplateId(templateId)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Choose a valid saved email template."
+      );
+    }
+
+    const templateRef = admin.firestore().collection("emailTemplates").doc(templateId);
+    const existing = await templateRef.get();
+    if (!existing.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "That saved email template no longer exists."
+      );
+    }
+
+    await templateRef.delete();
+    functions.logger.info("Bulk email template deleted", {
+      adminUid,
+      templateId
+    });
+    return { success: true, templateId };
+  });
 
 export const getBulkEmailAudienceSummary = functions
   .region("us-central1")

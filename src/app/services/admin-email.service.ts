@@ -67,6 +67,24 @@ export interface SendEmailCampaignResult {
   readonly campaignId: string;
 }
 
+export interface EmailHtmlTemplate {
+  readonly id: string;
+  readonly name: string;
+  readonly subject: string;
+  readonly html: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly createdBy: string;
+  readonly updatedBy: string;
+}
+
+export interface SaveEmailHtmlTemplateInput {
+  readonly templateId?: string;
+  readonly name: string;
+  readonly subject: string;
+  readonly html: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminEmailService {
   private readonly functions = getFunctions(getApp(), 'us-central1');
@@ -87,5 +105,31 @@ export class AdminEmailService {
     );
     const result = await callable(input);
     return result.data;
+  }
+
+  async getHtmlTemplates(): Promise<EmailHtmlTemplate[]> {
+    const callable = httpsCallable<Record<string, never>, { templates: EmailHtmlTemplate[] }>(
+      this.functions,
+      'getBulkEmailTemplates'
+    );
+    const result = await callable({});
+    return result.data.templates;
+  }
+
+  async saveHtmlTemplate(input: SaveEmailHtmlTemplateInput): Promise<EmailHtmlTemplate> {
+    const callable = httpsCallable<SaveEmailHtmlTemplateInput, { template: EmailHtmlTemplate }>(
+      this.functions,
+      'saveBulkEmailTemplate'
+    );
+    const result = await callable(input);
+    return result.data.template;
+  }
+
+  async deleteHtmlTemplate(templateId: string): Promise<void> {
+    const callable = httpsCallable<{ templateId: string }, { success: boolean }>(
+      this.functions,
+      'deleteBulkEmailTemplate'
+    );
+    await callable({ templateId });
   }
 }

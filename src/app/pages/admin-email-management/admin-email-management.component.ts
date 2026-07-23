@@ -12,6 +12,7 @@ import {
   type EmailAudienceSummary,
   type EmailCampaignMode,
   type EmailDirectoryUser,
+  type EmailHtmlTemplate,
   type EmailPlanFilter,
   type EmailRecipientScope
 } from '../../services/admin-email.service';
@@ -39,6 +40,14 @@ export class AdminEmailManagementComponent {
   readonly canonicalCollectionUrl = signal('');
   readonly customHtml = signal('');
   readonly customHtmlTouched = signal(false);
+  readonly htmlTemplates = signal<EmailHtmlTemplate[]>([]);
+  readonly templatesLoading = signal(true);
+  readonly templateSaving = signal(false);
+  readonly templateDeleting = signal(false);
+  readonly selectedTemplateId = signal('');
+  readonly templateName = signal('');
+  readonly templateError = signal<string | null>(null);
+  readonly templateNotice = signal<string | null>(null);
   readonly audienceSummary = signal<EmailAudienceSummary | null>(null);
   readonly users = signal<EmailDirectoryUser[]>([]);
   readonly userSearch = signal('');
@@ -91,6 +100,7 @@ export class AdminEmailManagementComponent {
 
   constructor() {
     void this.refreshAudienceSummary();
+    void this.refreshHtmlTemplates();
     this.collectionService.collections$()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -126,6 +136,161 @@ export class AdminEmailManagementComponent {
     this.customHtmlTouched.set(false);
     this.confirmed.set(false);
     this.success.set(null);
+  }
+
+  async refreshHtmlTemplates(): Promise<void> {
+    this.templatesLoading.set(true);
+    this.templateError.set(null);
+
+    try {
+      const templates = await this.emailService.getHtmlTemplates();
+      this.htmlTemplates.set(this.sortHtmlTemplates(templates));
+
+      const selectedId = this.selectedTemplateId();
+      if (selectedId && !templates.some(template => template.id === selectedId)) {
+        this.selectedTemplateId.set('');
+        this.templateName.set('');
+      }
+    } catch (error) {
+      this.templateError.set(this.errorMessage(error, 'Could not load saved HTML templates.'));
+    } finally {
+      this.templatesLoading.set(false);
+    }
+  }
+
+  loadHtmlTemplate(templateId: string): void {
+    this.selectedTemplateId.set(templateId);
+    this.templateError.set(null);
+    this.templateNotice.set(null);
+
+    if (!templateId) {
+      this.templateName.set('');
+      return;
+    }
+
+    const template = this.htmlTemplates().find(item => item.id === templateId);
+    if (!template) {
+      this.templateError.set('That saved template is no longer available. Refresh the library and try again.');
+      return;
+    }
+
+    this.templateName.set(template.name);
+    this.subject.set(template.subject);
+    this.customHtml.set(template.html);
+    this.customHtmlTouched.set(true);
+    this.confirmed.set(false);
+    this.templateNotice.set(`Loaded “${template.name}”.`);
+  }
+
+  startNewHtmlTemplate(): void {
+    this.selectedTemplateId.set('');
+    this.templateName.set('');
+    this.templateError.set(null);
+    this.templateNotice.set('Current subject and HTML are ready to save as a new template.');
+  }
+
+  async importHtmlFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    this.templateError.set(null);
+    this.templateNotice.set(null);
+    try {
+      if (file.size > 200_000) {
+        throw new Error('HTML template files must be 200 KB or smaller.');
+      }
+
+      const html = await file.text();
+      if (!html.trim()) {
+        throw new Error('That file does not contain any HTML.');
+      }
+
+      this.customHtml.set(html);
+      this.customHtmlTouched.set(true);
+      this.selectedTemplateId.set('');
+      this.templateName.set(file.name.replace(/\.(html?|txt)$/i, ''));
+      this.confirmed.set(false);
+      this.templateNotice.set(`Imported “${file.name}”. Name it and save it to keep it in the library.`);
+    } catch (error) {
+      this.templateError.set(this.errorMessage(error, 'Could not import that HTML file.'));
+    } finally {
+      input.value = '';
+    }
+  }
+
+  async saveHtmlTemplate(): Promise<void> {
+    const name = this.templateName().trim();
+    const subject = this.subject().trim();
+    const html = this.customHtml().trim();
+
+    this.templateError.set(null);
+    this.templateNotice.set(null);
+
+    if (!name) {
+      this.templateError.set('Give this template a name before saving it.');
+      return;
+    }
+    if (!subject) {
+      this.templateError.set('Add an email subject before saving this template.');
+      return;
+    }
+    if (!html) {
+      this.templateError.set('Add email HTML before saving this template.');
+      return;
+    }
+
+    this.templateSaving.set(true);
+    try {
+      const template = await this.emailService.saveHtmlTemplate({
+        templateId: this.selectedTemplateId() || undefined,
+        name,
+        subject,
+        html
+      });
+      const templates = this.htmlTemplates().filter(item => item.id !== template.id);
+      this.htmlTemplates.set(this.sortHtmlTemplates([template, ...templates]));
+      this.selectedTemplateId.set(template.id);
+      this.templateName.set(template.name);
+      this.templateNotice.set(`Saved “${template.name}”.`);
+    } catch (error) {
+      this.templateError.set(this.errorMessage(error, 'Could not save this HTML template.'));
+    } finally {
+      this.templateSaving.set(false);
+    }
+  }
+
+  async deleteHtmlTemplate(): Promise<void> {
+    const templateId = this.selectedTemplateId();
+    const template = this.htmlTemplates().find(item => item.id === templateId);
+    if (!template) {
+      this.templateError.set('Choose a saved template to delete.');
+      return;
+    }
+
+    const accepted = window.confirm(
+      `Delete the saved template “${template.name}”? This cannot be undone.`
+    );
+    if (!accepted) {
+      return;
+    }
+
+    this.templateDeleting.set(true);
+    this.templateError.set(null);
+    this.templateNotice.set(null);
+    try {
+      await this.emailService.deleteHtmlTemplate(template.id);
+      this.htmlTemplates.set(this.htmlTemplates().filter(item => item.id !== template.id));
+      this.selectedTemplateId.set('');
+      this.templateName.set('');
+      this.templateNotice.set(`Deleted “${template.name}”. The current editor content was kept.`);
+    } catch (error) {
+      this.templateError.set(this.errorMessage(error, 'Could not delete this HTML template.'));
+    } finally {
+      this.templateDeleting.set(false);
+    }
   }
 
   updateRecipientScope(scope: EmailRecipientScope): void {
@@ -363,6 +528,10 @@ export class AdminEmailManagementComponent {
     this.excludedRecipientIds.set(new Set());
     this.confirmed.set(false);
     this.success.set(null);
+  }
+
+  private sortHtmlTemplates(templates: EmailHtmlTemplate[]): EmailHtmlTemplate[] {
+    return [...templates].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
   private parseCollectionTarget(rawValue: string): { type: 'custom' | 'id'; value: string } {
