@@ -734,6 +734,60 @@ export class AdminDashboardComponent {
         this.searchTerm.set(term);
     }
 
+    downloadUsersCsv(): void {
+        const headers = [
+            'First Name',
+            'Last Name',
+            'Email',
+            'Username',
+            'Role',
+            'Subscription',
+            'Prompt Count',
+            'Joined',
+            'Subscription Paid',
+            'Subscription Expires',
+            'User ID'
+        ];
+        const rows = this.users().map(user => [
+            user.firstName,
+            user.lastName,
+            user.email,
+            user.username || '',
+            user.role === 'admin' || user.admin ? 'Admin' : 'User',
+            this.getSubscriptionStatus(user).label,
+            this.getPromptCount(user),
+            this.formatDate(user.createdAt),
+            this.formatDate(user.subscriptionPaidAt),
+            this.formatDate(user.subscriptionExpiresAt),
+            user.id || user.userId
+        ]);
+        const csv = [headers, ...rows]
+            .map(row => row.map(value => this.escapeCsvCell(value)).join(','))
+            .join('\r\n');
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const date = new Date().toISOString().slice(0, 10);
+
+        link.href = downloadUrl;
+        link.download = `rocket-prompt-users-${date}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+    }
+
+    private escapeCsvCell(value: unknown): string {
+        let text = value === null || value === undefined ? '' : String(value);
+
+        // Prevent spreadsheet apps from interpreting user-controlled values as formulas.
+        if (/^[=+\-@]/.test(text)) {
+            text = `'${text}`;
+        }
+
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
     formatDate(date: unknown): string {
         if (!date) return 'N/A';
 
